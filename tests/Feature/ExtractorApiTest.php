@@ -164,6 +164,39 @@ class ExtractorApiTest extends TestCase
         $this->assertStringNotContainsString('invented', $csv);
     }
 
+    public function test_csv_export_can_filter_by_lead_ids(): void
+    {
+        $job = ExtractionJob::create([
+            'uuid' => '55555555-5555-5555-5555-555555555555',
+            'prompt' => 'Find clinics in Lahore',
+            'query' => 'clinics in Lahore',
+            'status' => 'completed',
+            'limit' => 10,
+        ]);
+
+        $lead1 = ExtractedLead::create([
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Clinic Alpha',
+            'address' => 'Lahore, Pakistan',
+            'phone' => '+92 42 1111111',
+            'source' => 'Google Maps',
+        ]);
+
+        $lead2 = ExtractedLead::create([
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Clinic Beta',
+            'address' => 'Lahore, Pakistan',
+            'phone' => '+92 42 2222222',
+            'source' => 'Google Maps',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/export?ids={$lead1->id}");
+        $response->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Clinic Alpha', $csv);
+        $this->assertStringNotContainsString('Clinic Beta', $csv);
+    }
+
     public function test_mock_mode_is_hidden_in_production(): void
     {
         config(['extractor.allow_mock' => false]);

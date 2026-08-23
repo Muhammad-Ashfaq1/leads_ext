@@ -134,9 +134,16 @@ class ExtractorController extends Controller
         }
     }
 
-    public function export(ExtractionJob $job): StreamedResponse
+    public function export(Request $request, ExtractionJob $job): StreamedResponse
     {
-        return $this->csvExporter->download($job);
+        $ids = null;
+        if ($request->filled('ids')) {
+            $rawIds = $request->input('ids');
+            $ids = is_array($rawIds) ? array_map('intval', $rawIds) : array_map('intval', explode(',', (string) $rawIds));
+            $ids = array_values(array_filter($ids, fn (int $id) => $id > 0));
+        }
+
+        return $this->csvExporter->download($job, $ids);
     }
 
     public function stream(ExtractionJob $job): StreamedResponse

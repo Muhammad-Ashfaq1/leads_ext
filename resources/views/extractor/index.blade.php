@@ -145,17 +145,172 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="mb-0">Leads</h5>
-        <span class="badge bg-label-primary" id="leadCountBadge">0</span>
+<div class="card mb-4" id="leadsSection">
+    <div class="card-header border-bottom py-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h5 class="mb-0">Leads</h5>
+                <span class="badge bg-label-primary" id="leadCountBadge" title="Total leads extracted">0 total</span>
+                <span class="badge bg-label-info d-none" id="leadFilterBadge" title="Currently visible filtered leads">0 shown</span>
+                <span class="badge bg-label-success d-none" id="leadSelectedBadge" title="Currently selected leads">0 selected</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-primary dropdown-toggle disabled" type="button" id="exportDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="icon-base ti tabler-download me-1"></i>
+                        Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="exportDropdownBtn">
+                        <li><h6 class="dropdown-header">Export All Leads</h6></li>
+                        <li><a class="dropdown-item" href="#" id="exportAllCsvBtn"><i class="icon-base ti tabler-file-type-csv me-2 text-success"></i>Export All (CSV)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportAllJsonBtn"><i class="icon-base ti tabler-file-type-json me-2 text-warning"></i>Export All (JSON)</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">Filtered Leads</h6></li>
+                        <li><a class="dropdown-item" href="#" id="exportFilteredCsvBtn"><i class="icon-base ti tabler-filter me-2 text-info"></i>Export Filtered (CSV)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportFilteredJsonBtn"><i class="icon-base ti tabler-code me-2 text-info"></i>Export Filtered (JSON)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="card-body border-bottom bg-light-subtle py-3 px-3 px-md-4 extractor-filter-panel">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4 col-lg-3">
+                <div class="input-group input-group-merge input-group-sm">
+                    <span class="input-group-text"><i class="icon-base ti tabler-search"></i></span>
+                    <input type="text" id="leadSearchInput" class="form-control form-control-sm" placeholder="Search name, phone, email, category..." autocomplete="off">
+                    <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="leadSearchClear" title="Clear search">
+                        <i class="icon-base ti tabler-x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2 col-lg-2">
+                <select id="filterEmail" class="form-select form-select-sm" title="Filter by email availability">
+                    <option value="all">Emails: All</option>
+                    <option value="has">Has Email</option>
+                    <option value="none">No Email</option>
+                </select>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2 col-lg-2">
+                <select id="filterWebsite" class="form-select form-select-sm" title="Filter by website availability">
+                    <option value="all">Websites: All</option>
+                    <option value="has">Has Website</option>
+                    <option value="none">No Website</option>
+                </select>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2 col-lg-2">
+                <select id="filterPhone" class="form-select form-select-sm" title="Filter by phone availability">
+                    <option value="all">Phones: All</option>
+                    <option value="has">Has Phone</option>
+                    <option value="none">No Phone</option>
+                </select>
+            </div>
+            <div class="col-6 col-sm-6 col-md-2 col-lg-1">
+                <select id="filterRating" class="form-select form-select-sm" title="Filter by minimum rating">
+                    <option value="all">Rating: All</option>
+                    <option value="4.5">★ 4.5+</option>
+                    <option value="4.0">★ 4.0+</option>
+                    <option value="3.5">★ 3.5+</option>
+                    <option value="has">Rated only</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                <select id="sortLeads" class="form-select form-select-sm" title="Sort leads">
+                    <option value="newest">Sort: Newest First</option>
+                    <option value="oldest">Sort: Oldest First</option>
+                    <option value="rating_desc">Sort: Highest Rated</option>
+                    <option value="reviews_desc">Sort: Most Reviews</option>
+                    <option value="name_asc">Sort: Name (A to Z)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Quick filter pills row -->
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 pt-1 extractor-quick-filters">
+            <span class="text-muted small me-1">Quick:</span>
+            <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="email">
+                <i class="icon-base ti tabler-mail me-1"></i>Has Email
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="website">
+                <i class="icon-base ti tabler-world-www me-1"></i>Has Website
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="phone">
+                <i class="icon-base ti tabler-phone me-1"></i>Has Phone
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="high_rating">
+                <i class="icon-base ti tabler-star me-1"></i>4.0+ Stars
+            </button>
+            <button type="button" class="btn btn-xs btn-link text-danger text-decoration-none d-none ms-auto" id="resetFiltersBtn">
+                <i class="icon-base ti tabler-rotate me-1"></i>Reset Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Selection Toolbar (Active when items checked) -->
+    <div class="card-body border-bottom bg-primary-subtle py-2 px-3 px-md-4 extractor-bulk-bar d-none" id="bulkBar">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="form-check m-0">
+                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox">
+                    <label class="form-check-label fw-semibold text-primary" for="selectAllCheckbox" id="bulkCountLabel">
+                        0 selected
+                    </label>
+                </div>
+                <button type="button" class="btn btn-xs btn-outline-primary" id="selectAllFilteredBtn">Select All (<span id="bulkFilteredCount">0</span>)</button>
+                <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="bulkDeselectBtn">Deselect</button>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-primary" id="bulkExportCsvBtn">
+                    <i class="icon-base ti tabler-download me-1"></i>Export Selected (CSV)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="bulkExportJsonBtn">
+                    <i class="icon-base ti tabler-file-type-json me-1"></i>JSON
+                </button>
+                <button type="button" class="btn btn-sm btn-label-secondary" id="bulkCopyEmailsBtn" title="Copy all emails from selected leads">
+                    <i class="icon-base ti tabler-copy me-1"></i>Emails
+                </button>
+                <button type="button" class="btn btn-sm btn-label-secondary" id="bulkCopyPhonesBtn" title="Copy all phones from selected leads">
+                    <i class="icon-base ti tabler-phone me-1"></i>Phones
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leads Grid Section with Small UI Cards -->
     <div class="card-body p-3 p-md-4">
-        <div id="leadsGrid" class="extractor-leads-grid">
+        <!-- Master select row when bulk bar is hidden -->
+        <div class="d-flex align-items-center justify-content-between mb-3 extractor-leads-topbar" id="leadsTopbar">
+            <div class="form-check m-0">
+                <input class="form-check-input" type="checkbox" id="masterCheckbox" disabled>
+                <label class="form-check-label small text-muted user-select-none" for="masterCheckbox">Select All</label>
+            </div>
+            <div class="small text-muted" id="leadsSummaryText">0 leads found</div>
+        </div>
+
+        <div id="leadsGrid" class="extractor-leads-grid extractor-small-cards-grid">
             <div id="leadsEmpty" class="extractor-leads-empty">
                 <i class="icon-base ti tabler-building-store display-4 mb-2 text-muted"></i>
                 <p class="mb-0 text-muted">No leads yet. Start an extraction to stream results here.</p>
             </div>
+        </div>
+
+        <div id="noFilterResults" class="extractor-leads-empty d-none py-5">
+            <i class="icon-base ti tabler-filter-off display-4 mb-2 text-muted"></i>
+            <h6 class="text-muted mb-1">No matching leads found</h6>
+            <p class="small text-muted mb-3">Try adjusting your keyword search or active filter toggles.</p>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="noFilterResetBtn">Reset Filters</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="extractorToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage">Action completed.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     </div>
 </div>

@@ -3,8 +3,19 @@
     const state = {
         jobId: null,
         source: null,
-        leads: new Map(),
+        leads: new Map(), // key -> lead object with _index
+        selectedKeys: new Set(),
         running: false,
+        leadCounter: 0,
+        filters: {
+            query: '',
+            email: 'all',
+            website: 'all',
+            phone: 'all',
+            rating: 'all',
+            sort: 'newest',
+            quick: new Set(),
+        },
     };
 
     const els = {
@@ -16,7 +27,7 @@
         newExtraction: document.getElementById('newExtractionBtn'),
         summaryNew: document.getElementById('summaryNewBtn'),
         clear: document.getElementById('clearBtn'),
-        export: document.getElementById('exportBtn'),
+        exportSummary: document.getElementById('exportBtn'),
         mock: document.getElementById('mockToggle'),
         verify: document.getElementById('verifyToggle'),
         completeMock: document.getElementById('completeMockVerifyBtn'),
@@ -34,10 +45,57 @@
         kpiSeen: document.getElementById('kpiSeen'),
         kpiEmails: document.getElementById('kpiEmails'),
         kpiWebsites: document.getElementById('kpiWebsites'),
+
+        // Leads section
         leadsGrid: document.getElementById('leadsGrid'),
         leadsEmpty: document.getElementById('leadsEmpty'),
-        leadCount: document.getElementById('leadCountBadge'),
+        noFilterResults: document.getElementById('noFilterResults'),
+        leadCountBadge: document.getElementById('leadCountBadge'),
+        leadFilterBadge: document.getElementById('leadFilterBadge'),
+        leadSelectedBadge: document.getElementById('leadSelectedBadge'),
+        leadsSummaryText: document.getElementById('leadsSummaryText'),
+        masterCheckbox: document.getElementById('masterCheckbox'),
+
+        // Filter controls
+        searchInput: document.getElementById('leadSearchInput'),
+        searchClear: document.getElementById('leadSearchClear'),
+        filterEmail: document.getElementById('filterEmail'),
+        filterWebsite: document.getElementById('filterWebsite'),
+        filterPhone: document.getElementById('filterPhone'),
+        filterRating: document.getElementById('filterRating'),
+        sortLeads: document.getElementById('sortLeads'),
+        filterChips: document.querySelectorAll('.extractor-filter-chip'),
+        resetFiltersBtn: document.getElementById('resetFiltersBtn'),
+        noFilterResetBtn: document.getElementById('noFilterResetBtn'),
+
+        // Bulk toolbar
+        bulkBar: document.getElementById('bulkBar'),
+        selectAllCheckbox: document.getElementById('selectAllCheckbox'),
+        bulkCountLabel: document.getElementById('bulkCountLabel'),
+        selectAllFilteredBtn: document.getElementById('selectAllFilteredBtn'),
+        bulkFilteredCount: document.getElementById('bulkFilteredCount'),
+        bulkDeselectBtn: document.getElementById('bulkDeselectBtn'),
+        bulkExportCsvBtn: document.getElementById('bulkExportCsvBtn'),
+        bulkExportJsonBtn: document.getElementById('bulkExportJsonBtn'),
+        bulkCopyEmailsBtn: document.getElementById('bulkCopyEmailsBtn'),
+        bulkCopyPhonesBtn: document.getElementById('bulkCopyPhonesBtn'),
+
+        // Export Dropdown
+        exportDropdownBtn: document.getElementById('exportDropdownBtn'),
+        exportAllCsvBtn: document.getElementById('exportAllCsvBtn'),
+        exportAllJsonBtn: document.getElementById('exportAllJsonBtn'),
+        exportFilteredCsvBtn: document.getElementById('exportFilteredCsvBtn'),
+        exportFilteredJsonBtn: document.getElementById('exportFilteredJsonBtn'),
+
+        // Toast
+        toastEl: document.getElementById('extractorToast'),
+        toastMessage: document.getElementById('toastMessage'),
     };
+
+    let toastInstance = null;
+    if (els.toastEl && window.bootstrap && window.bootstrap.Toast) {
+        toastInstance = new window.bootstrap.Toast(els.toastEl, { delay: 3500 });
+    }
 
     const labels = {
         ready: 'Ready',
@@ -52,6 +110,15 @@
         verification_timeout: 'Verification timed out',
         blocked: 'Blocked',
     };
+
+    function showToast(message, isDanger = false) {
+        if (!els.toastEl || !els.toastMessage) return;
+        els.toastMessage.textContent = message;
+        els.toastEl.className = `toast align-items-center border-0 ${isDanger ? 'text-bg-danger' : 'text-bg-primary'}`;
+        if (toastInstance) {
+            toastInstance.show();
+        }
+    }
 
     function jobUrl(template) {
         return template.replace('__JOB__', encodeURIComponent(state.jobId));
@@ -104,6 +171,18 @@
         return lead.place_id || `${(lead.business_name || '').toLowerCase()}|${(lead.address || '').toLowerCase()}`;
     }
 
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(value) {
+        return escapeHtml(value).replace(/'/g, '&#39;');
+    }
+
     function renderStars(rating) {
         const value = Number(rating);
         if (!Number.isFinite(value) || value <= 0) {
@@ -127,7 +206,7 @@
     function formatReviewCount(count) {
         const value = Number(count);
         if (!Number.isFinite(value) || value <= 0) return '';
-        return `(${value.toLocaleString()} review${value === 1 ? '' : 's'})`;
+        return `(${value.toLocaleString()})`;
     }
 
     function initials(name) {
@@ -135,94 +214,402 @@
         return parts.map((part) => part.charAt(0).toUpperCase()).join('') || 'B';
     }
 
-    function buildLeadCard(lead) {
-        const rating = lead.rating != null ? Number(lead.rating).toFixed(1) : null;
+    function buildLeadCard(lead, key) {
+        const isSelected = state.selectedKeys.has(key);
+        const rating = lead.rating != null && lead.rating > 0 ? Number(lead.rating).toFixed(1) : null;
         const reviews = formatReviewCount(lead.review_count);
         const emails = Array.isArray(lead.emails) ? lead.emails.filter(Boolean) : [];
         const emailHtml = emails.length
-            ? emails.map((email) => `<a href="mailto:${escapeAttr(email)}" class="extractor-lead-contact-link">${escapeHtml(email)}</a>`).join('')
+            ? emails.map((email) => `<a href="mailto:${escapeAttr(email)}" class="extractor-lead-contact-link" title="${escapeAttr(email)}">${escapeHtml(email)}</a>`).join(', ')
             : '<span class="text-muted">No email listed</span>';
         const phoneHtml = lead.phone
-            ? `<a href="tel:${escapeAttr(lead.phone)}" class="extractor-lead-contact-link">${escapeHtml(lead.phone)}</a>`
+            ? `<a href="tel:${escapeAttr(lead.phone)}" class="extractor-lead-contact-link" title="${escapeAttr(lead.phone)}">${escapeHtml(lead.phone)}</a>`
             : '<span class="text-muted">No phone listed</span>';
-        const category = lead.category ? `<span class="extractor-lead-tag">${escapeHtml(lead.category)}</span>` : '';
+        const category = lead.category || '';
         const sourceTag = lead.source && lead.source !== 'Google Maps'
             ? `<span class="extractor-lead-tag extractor-lead-tag-muted">${escapeHtml(lead.source)}</span>`
             : '';
         const websiteBtn = lead.website
-            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn extractor-lead-cta"><i class="icon-base ti tabler-world-www me-1"></i>Visit Website</a>`
+            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-primary" title="Visit Website"><i class="icon-base ti tabler-world-www"></i> Website</a>`
             : '';
         const mapsBtn = lead.google_maps_url
-            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-outline-secondary extractor-lead-secondary"><i class="icon-base ti tabler-map-pin me-1"></i>Google Maps</a>`
+            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-outline-secondary" title="View on Google Maps"><i class="icon-base ti tabler-map-pin"></i> Maps</a>`
             : '';
-        const snippet = lead.address
-            ? escapeHtml(lead.address)
-            : 'Public business listing from Google Maps.';
 
         return `
-            <article class="extractor-lead-card">
-                <div class="extractor-lead-media" aria-hidden="true">
+            <article class="extractor-lead-card ${isSelected ? 'is-selected' : ''}" data-key="${escapeAttr(key)}">
+                <div class="extractor-lead-header">
+                    <div class="extractor-lead-check-wrap">
+                        <input class="form-check-input extractor-card-checkbox" type="checkbox" ${isSelected ? 'checked' : ''} data-key="${escapeAttr(key)}" aria-label="Select lead">
+                    </div>
                     <div class="extractor-lead-avatar">${escapeHtml(initials(lead.business_name))}</div>
+                    <div class="extractor-lead-title-area">
+                        <h6 class="extractor-lead-name" title="${escapeAttr(lead.business_name || '')}">${escapeHtml(dash(lead.business_name))}</h6>
+                        <div class="extractor-lead-badges">
+                            ${category ? `<span class="extractor-lead-tag" title="${escapeAttr(category)}">${escapeHtml(category)}</span>` : ''}
+                            ${sourceTag}
+                        </div>
+                    </div>
                 </div>
-                <div class="extractor-lead-body">
-                    <div class="extractor-lead-top">
-                        <h6 class="extractor-lead-name">${escapeHtml(dash(lead.business_name))}</h6>
-                        <div class="extractor-lead-address">${escapeHtml(dash(lead.address))}</div>
+
+                <div class="extractor-lead-rating-row">
+                    <div class="extractor-stars" aria-label="${rating ? `${rating} out of 5 stars` : 'No rating'}">${renderStars(lead.rating)}</div>
+                    ${rating ? `<span class="extractor-lead-rating-value">${escapeHtml(rating)}</span>` : ''}
+                    ${reviews ? `<span class="extractor-lead-review-count">${escapeHtml(reviews)}</span>` : ''}
+                </div>
+
+                <div class="extractor-lead-details">
+                    <div class="extractor-lead-detail-row ${lead.address ? 'has-value' : ''}">
+                        <i class="icon-base ti tabler-map-pin"></i>
+                        <span class="extractor-lead-detail-text is-address" title="${escapeAttr(lead.address || '')}">${escapeHtml(dash(lead.address))}</span>
                     </div>
-                    <div class="extractor-lead-rating-row">
-                        <div class="extractor-stars" aria-label="${rating ? `${rating} out of 5 stars` : 'No rating'}">${renderStars(lead.rating)}</div>
-                        ${rating ? `<span class="extractor-lead-rating-value">${escapeHtml(rating)}</span>` : ''}
-                        ${reviews ? `<span class="extractor-lead-review-count">${escapeHtml(reviews)}</span>` : ''}
+                    <div class="extractor-lead-detail-row ${lead.phone ? 'has-value' : ''}">
+                        <i class="icon-base ti tabler-phone"></i>
+                        <span class="extractor-lead-detail-text">${phoneHtml}</span>
                     </div>
-                    <div class="extractor-lead-tags">${category}${sourceTag}</div>
-                    <div class="extractor-lead-meta">
-                        <div class="extractor-lead-meta-item">
-                            <i class="icon-base ti tabler-mail"></i>
-                            <div>${emailHtml}</div>
-                        </div>
-                        <div class="extractor-lead-meta-item">
-                            <i class="icon-base ti tabler-phone"></i>
-                            <div>${phoneHtml}</div>
-                        </div>
+                    <div class="extractor-lead-detail-row ${emails.length ? 'has-value' : ''}">
+                        <i class="icon-base ti tabler-mail"></i>
+                        <span class="extractor-lead-detail-text">${emailHtml}</span>
                     </div>
-                    <p class="extractor-lead-snippet">${snippet}</p>
-                    <div class="extractor-lead-actions">
-                        <div class="extractor-lead-actions-left">
-                            <span class="badge bg-label-success">Extracted</span>
-                        </div>
-                        <div class="extractor-lead-actions-right">
-                            ${mapsBtn}
-                            ${websiteBtn}
-                        </div>
+                </div>
+
+                <div class="extractor-lead-footer">
+                    <span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;">Extracted</span>
+                    <div class="extractor-lead-btn-group">
+                        ${mapsBtn}
+                        ${websiteBtn}
                     </div>
                 </div>
             </article>
         `;
     }
 
+    // Filter matching logic
+    function matchLead(lead) {
+        const f = state.filters;
+        const q = f.query.toLowerCase().trim();
+
+        if (q) {
+            const name = (lead.business_name || '').toLowerCase();
+            const address = (lead.address || '').toLowerCase();
+            const category = (lead.category || '').toLowerCase();
+            const phone = (lead.phone || '').toLowerCase();
+            const emails = Array.isArray(lead.emails) ? lead.emails.join(' ').toLowerCase() : '';
+            if (!name.includes(q) && !address.includes(q) && !category.includes(q) && !phone.includes(q) && !emails.includes(q)) {
+                return false;
+            }
+        }
+
+        // Email filter
+        const hasEmail = Array.isArray(lead.emails) && lead.emails.length > 0;
+        if (f.email === 'has' && !hasEmail) return false;
+        if (f.email === 'none' && hasEmail) return false;
+        if (f.quick.has('email') && !hasEmail) return false;
+
+        // Website filter
+        const hasWebsite = Boolean(lead.website && lead.website.trim());
+        if (f.website === 'has' && !hasWebsite) return false;
+        if (f.website === 'none' && hasWebsite) return false;
+        if (f.quick.has('website') && !hasWebsite) return false;
+
+        // Phone filter
+        const hasPhone = Boolean(lead.phone && lead.phone.trim());
+        if (f.phone === 'has' && !hasPhone) return false;
+        if (f.phone === 'none' && hasPhone) return false;
+        if (f.quick.has('phone') && !hasPhone) return false;
+
+        // Rating filter
+        const rating = Number(lead.rating) || 0;
+        if (f.rating === '4.5' && rating < 4.5) return false;
+        if (f.rating === '4.0' && rating < 4.0) return false;
+        if (f.rating === '3.5' && rating < 3.5) return false;
+        if (f.rating === 'has' && rating <= 0) return false;
+        if (f.quick.has('high_rating') && rating < 4.0) return false;
+
+        return true;
+    }
+
+    function sortLeadsList(list) {
+        const sort = state.filters.sort;
+        return [...list].sort((a, b) => {
+            if (sort === 'newest') return (b.lead._index || 0) - (a.lead._index || 0);
+            if (sort === 'oldest') return (a.lead._index || 0) - (b.lead._index || 0);
+            if (sort === 'rating_desc') return (Number(b.lead.rating) || 0) - (Number(a.lead.rating) || 0);
+            if (sort === 'reviews_desc') return (Number(b.lead.review_count) || 0) - (Number(a.lead.review_count) || 0);
+            if (sort === 'name_asc') return (a.lead.business_name || '').localeCompare(b.lead.business_name || '');
+            return 0;
+        });
+    }
+
+    function getFilteredLeads() {
+        const matched = [];
+        for (const [key, lead] of state.leads.entries()) {
+            if (matchLead(lead)) {
+                matched.push({ key, lead });
+            }
+        }
+        return sortLeadsList(matched);
+    }
+
+    function isFilterActive() {
+        const f = state.filters;
+        return Boolean(
+            f.query.trim() ||
+            f.email !== 'all' ||
+            f.website !== 'all' ||
+            f.phone !== 'all' ||
+            f.rating !== 'all' ||
+            f.sort !== 'newest' ||
+            f.quick.size > 0
+        );
+    }
+
+    function renderLeads() {
+        const total = state.leads.size;
+        const filtered = getFilteredLeads();
+        const filterActive = isFilterActive();
+
+        // Update counts
+        els.leadCountBadge.textContent = `${total} total`;
+        els.exportDropdownBtn.classList.toggle('disabled', total === 0);
+        els.masterCheckbox.disabled = filtered.length === 0;
+
+        if (filterActive) {
+            els.leadFilterBadge.classList.remove('d-none');
+            els.leadFilterBadge.textContent = `${filtered.length} shown`;
+            els.leadsSummaryText.textContent = `Showing ${filtered.length} of ${total} leads`;
+            els.resetFiltersBtn.classList.remove('d-none');
+        } else {
+            els.leadFilterBadge.classList.add('d-none');
+            els.leadsSummaryText.textContent = `${total} lead${total === 1 ? '' : 's'} found`;
+            els.resetFiltersBtn.classList.add('d-none');
+        }
+
+        if (total === 0) {
+            els.leadsGrid.innerHTML = `
+                <div id="leadsEmpty" class="extractor-leads-empty">
+                    <i class="icon-base ti tabler-building-store display-4 mb-2 text-muted"></i>
+                    <p class="mb-0 text-muted">No leads yet. Start an extraction to stream results here.</p>
+                </div>
+            `;
+            els.noFilterResults.classList.add('d-none');
+            updateSelectionUi();
+            return;
+        }
+
+        if (filtered.length === 0) {
+            els.leadsGrid.innerHTML = '';
+            els.noFilterResults.classList.remove('d-none');
+            updateSelectionUi();
+            return;
+        }
+
+        els.noFilterResults.classList.add('d-none');
+        const fragmentHtml = filtered.map(({ key, lead }) => buildLeadCard(lead, key)).join('');
+        els.leadsGrid.innerHTML = fragmentHtml;
+
+        updateSelectionUi();
+    }
+
+    function updateSelectionUi() {
+        const selectedCount = state.selectedKeys.size;
+        const filtered = getFilteredLeads();
+        const filteredKeys = new Set(filtered.map((item) => item.key));
+
+        let selectedInFiltered = 0;
+        for (const key of filteredKeys) {
+            if (state.selectedKeys.has(key)) selectedInFiltered += 1;
+        }
+
+        // Master checkbox state
+        if (filtered.length > 0 && selectedInFiltered === filtered.length) {
+            els.masterCheckbox.checked = true;
+            els.masterCheckbox.indeterminate = false;
+            els.selectAllCheckbox.checked = true;
+            els.selectAllCheckbox.indeterminate = false;
+        } else if (selectedInFiltered > 0) {
+            els.masterCheckbox.checked = false;
+            els.masterCheckbox.indeterminate = true;
+            els.selectAllCheckbox.checked = false;
+            els.selectAllCheckbox.indeterminate = true;
+        } else {
+            els.masterCheckbox.checked = false;
+            els.masterCheckbox.indeterminate = false;
+            els.selectAllCheckbox.checked = false;
+            els.selectAllCheckbox.indeterminate = false;
+        }
+
+        // Bulk bar & badge
+        if (selectedCount > 0) {
+            els.bulkBar.classList.remove('d-none');
+            els.leadSelectedBadge.classList.remove('d-none');
+            els.leadSelectedBadge.textContent = `${selectedCount} selected`;
+            els.bulkCountLabel.textContent = `${selectedCount} selected`;
+            els.bulkFilteredCount.textContent = String(filtered.length);
+        } else {
+            els.bulkBar.classList.add('d-none');
+            els.leadSelectedBadge.classList.add('d-none');
+        }
+    }
+
     function upsertLead(lead) {
         const key = leadKey(lead);
         if (state.leads.has(key)) return;
+        state.leadCounter += 1;
+        lead._index = state.leadCounter;
         state.leads.set(key, lead);
-        if (els.leadsEmpty) els.leadsEmpty.remove();
 
-        const card = document.createElement('div');
-        card.className = 'extractor-lead-card-wrap';
-        card.innerHTML = buildLeadCard(lead);
-        els.leadsGrid.prepend(card.firstElementChild);
-        els.leadCount.textContent = String(state.leads.size);
+        renderLeads();
     }
 
-    function escapeHtml(value) {
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+    // Bulk selection helpers
+    function toggleLeadSelection(key, force) {
+        const shouldSelect = force !== undefined ? force : !state.selectedKeys.has(key);
+        if (shouldSelect) {
+            state.selectedKeys.add(key);
+        } else {
+            state.selectedKeys.delete(key);
+        }
+
+        const card = els.leadsGrid.querySelector(`.extractor-lead-card[data-key="${CSS.escape(key)}"]`);
+        if (card) {
+            card.classList.toggle('is-selected', shouldSelect);
+            const cb = card.querySelector('.extractor-card-checkbox');
+            if (cb) cb.checked = shouldSelect;
+        }
+
+        updateSelectionUi();
     }
 
-    function escapeAttr(value) {
-        return escapeHtml(value).replace(/'/g, '&#39;');
+    function selectAllFiltered() {
+        const filtered = getFilteredLeads();
+        for (const item of filtered) {
+            state.selectedKeys.add(item.key);
+        }
+        renderLeads();
+    }
+
+    function deselectAll() {
+        state.selectedKeys.clear();
+        renderLeads();
+    }
+
+    // CSV & JSON Export Utilities
+    function downloadBlob(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportToCsv(leadsList, filename = 'leads-export.csv') {
+        if (!leadsList.length) {
+            showToast('No leads to export.', true);
+            return;
+        }
+
+        const headers = [
+            'Business Name',
+            'Address',
+            'Email(s)',
+            'Phone',
+            'Website',
+            'Category',
+            'Rating',
+            'Reviews',
+            'Google Maps URL',
+            'Source',
+        ];
+
+        const rows = [headers];
+        for (const lead of leadsList) {
+            const emails = Array.isArray(lead.emails) ? lead.emails.join('; ') : '';
+            rows.push([
+                lead.business_name || '',
+                lead.address || '',
+                emails,
+                lead.phone || '',
+                lead.website || '',
+                lead.category || '',
+                lead.rating != null ? String(lead.rating) : '',
+                lead.review_count != null ? String(lead.review_count) : '',
+                lead.google_maps_url || '',
+                lead.source || 'Google Maps',
+            ]);
+        }
+
+        const csvContent = '\uFEFF' + rows.map((row) =>
+            row.map((val) => {
+                const escaped = String(val).replace(/"/g, '""');
+                return `"${escaped}"`;
+            }).join(',')
+        ).join('\r\n');
+
+        downloadBlob(csvContent, filename, 'text/csv;charset=utf-8;');
+        showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} as CSV.`);
+    }
+
+    function exportToJson(leadsList, filename = 'leads-export.json') {
+        if (!leadsList.length) {
+            showToast('No leads to export.', true);
+            return;
+        }
+
+        const cleanList = leadsList.map((lead) => ({
+            business_name: lead.business_name || null,
+            address: lead.address || null,
+            emails: Array.isArray(lead.emails) ? lead.emails : [],
+            phone: lead.phone || null,
+            website: lead.website || null,
+            category: lead.category || null,
+            rating: lead.rating != null ? Number(lead.rating) : null,
+            review_count: lead.review_count != null ? Number(lead.review_count) : null,
+            google_maps_url: lead.google_maps_url || null,
+            source: lead.source || 'Google Maps',
+        }));
+
+        const jsonContent = JSON.stringify(cleanList, null, 2);
+        downloadBlob(jsonContent, filename, 'application/json;charset=utf-8;');
+        showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} as JSON.`);
+    }
+
+    function copyToClipboard(text, successMessage) {
+        if (!text) {
+            showToast('No information found to copy.', true);
+            return;
+        }
+        navigator.clipboard.writeText(text).then(
+            () => showToast(successMessage),
+            () => {
+                // Fallback
+                const input = document.createElement('textarea');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast(successMessage);
+            }
+        );
+    }
+
+    function getSelectedLeadsList() {
+        const out = [];
+        for (const key of state.selectedKeys) {
+            if (state.leads.has(key)) {
+                out.push(state.leads.get(key));
+            }
+        }
+        return out;
+    }
+
+    function getAllLeadsList() {
+        return Array.from(state.leads.values());
     }
 
     function updateCounts(event) {
@@ -246,8 +633,8 @@
             <div class="col-6 col-md-3"><div class="text-muted small">Websites Found</div><div class="fw-bold fs-5">${websites}</div></div>
         `;
         if (state.jobId) {
-            els.export.classList.remove('disabled');
-            els.export.href = jobUrl(cfg.exportUrl);
+            els.exportSummary.classList.remove('disabled');
+            els.exportSummary.href = jobUrl(cfg.exportUrl);
         }
     }
 
@@ -411,14 +798,11 @@
         closeStream();
         state.jobId = null;
         state.leads.clear();
-        els.leadsGrid.innerHTML = `
-            <div id="leadsEmpty" class="extractor-leads-empty">
-                <i class="icon-base ti tabler-building-store display-4 mb-2 text-muted"></i>
-                <p class="mb-0 text-muted">No leads yet. Start an extraction to stream results here.</p>
-            </div>
-        `;
-        els.leadsEmpty = document.getElementById('leadsEmpty');
-        els.leadCount.textContent = '0';
+        state.selectedKeys.clear();
+        state.leadCounter = 0;
+        resetFilterValues();
+        renderLeads();
+
         els.kpiLeads.textContent = '0';
         els.kpiSeen.textContent = '0';
         els.kpiEmails.textContent = '0';
@@ -428,11 +812,196 @@
         setAlert('info', '', false);
         setStatus('ready', 'Waiting for a search.');
         els.searchLabel.textContent = 'Search: —';
-        els.export.classList.add('disabled');
-        els.export.href = '#';
+        if (els.exportSummary) {
+            els.exportSummary.classList.add('disabled');
+            els.exportSummary.href = '#';
+        }
         setRunning(false);
     }
 
+    function resetFilterValues() {
+        state.filters = {
+            query: '',
+            email: 'all',
+            website: 'all',
+            phone: 'all',
+            rating: 'all',
+            sort: 'newest',
+            quick: new Set(),
+        };
+
+        if (els.searchInput) els.searchInput.value = '';
+        if (els.searchClear) els.searchClear.classList.add('d-none');
+        if (els.filterEmail) els.filterEmail.value = 'all';
+        if (els.filterWebsite) els.filterWebsite.value = 'all';
+        if (els.filterPhone) els.filterPhone.value = 'all';
+        if (els.filterRating) els.filterRating.value = 'all';
+        if (els.sortLeads) els.sortLeads.value = 'newest';
+
+        els.filterChips.forEach((chip) => chip.classList.remove('active'));
+    }
+
+    // Grid event delegation for card checkbox & card clicks
+    els.leadsGrid.addEventListener('change', (event) => {
+        if (event.target.matches('.extractor-card-checkbox')) {
+            const key = event.target.dataset.key;
+            if (key) toggleLeadSelection(key, event.target.checked);
+        }
+    });
+
+    // Master checkbox click
+    els.masterCheckbox.addEventListener('change', () => {
+        if (els.masterCheckbox.checked) {
+            selectAllFiltered();
+        } else {
+            deselectAll();
+        }
+    });
+
+    // Bulk bar events
+    els.selectAllCheckbox.addEventListener('change', () => {
+        if (els.selectAllCheckbox.checked) {
+            selectAllFiltered();
+        } else {
+            deselectAll();
+        }
+    });
+
+    els.selectAllFilteredBtn.addEventListener('click', selectAllFiltered);
+    els.bulkDeselectBtn.addEventListener('click', deselectAll);
+
+    els.bulkExportCsvBtn.addEventListener('click', () => {
+        const selected = getSelectedLeadsList();
+        exportToCsv(selected, `selected-leads-${Date.now()}.csv`);
+    });
+
+    els.bulkExportJsonBtn.addEventListener('click', () => {
+        const selected = getSelectedLeadsList();
+        exportToJson(selected, `selected-leads-${Date.now()}.json`);
+    });
+
+    els.bulkCopyEmailsBtn.addEventListener('click', () => {
+        const selected = getSelectedLeadsList();
+        const emails = new Set();
+        for (const lead of selected) {
+            if (Array.isArray(lead.emails)) {
+                for (const em of lead.emails) {
+                    if (em && em.trim()) emails.add(em.trim());
+                }
+            }
+        }
+        if (emails.size === 0) {
+            showToast('No emails found in selected leads.', true);
+            return;
+        }
+        copyToClipboard(Array.from(emails).join(', '), `Copied ${emails.size} email${emails.size === 1 ? '' : 's'} to clipboard.`);
+    });
+
+    els.bulkCopyPhonesBtn.addEventListener('click', () => {
+        const selected = getSelectedLeadsList();
+        const phones = new Set();
+        for (const lead of selected) {
+            if (lead.phone && lead.phone.trim()) {
+                phones.add(lead.phone.trim());
+            }
+        }
+        if (phones.size === 0) {
+            showToast('No phone numbers found in selected leads.', true);
+            return;
+        }
+        copyToClipboard(Array.from(phones).join(', '), `Copied ${phones.size} phone number${phones.size === 1 ? '' : 's'} to clipboard.`);
+    });
+
+    // Export Dropdown Events
+    els.exportAllCsvBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportToCsv(getAllLeadsList(), `all-leads-${Date.now()}.csv`);
+    });
+
+    els.exportAllJsonBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportToJson(getAllLeadsList(), `all-leads-${Date.now()}.json`);
+    });
+
+    els.exportFilteredCsvBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const filtered = getFilteredLeads().map((item) => item.lead);
+        exportToCsv(filtered, `filtered-leads-${Date.now()}.csv`);
+    });
+
+    els.exportFilteredJsonBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const filtered = getFilteredLeads().map((item) => item.lead);
+        exportToJson(filtered, `filtered-leads-${Date.now()}.json`);
+    });
+
+    // Filter Listeners
+    let searchDebounceTimer = null;
+    els.searchInput.addEventListener('input', () => {
+        const query = els.searchInput.value;
+        els.searchClear.classList.toggle('d-none', !query);
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            state.filters.query = query;
+            renderLeads();
+        }, 150);
+    });
+
+    els.searchClear.addEventListener('click', () => {
+        els.searchInput.value = '';
+        els.searchClear.classList.add('d-none');
+        state.filters.query = '';
+        renderLeads();
+    });
+
+    els.filterEmail.addEventListener('change', (e) => {
+        state.filters.email = e.target.value;
+        renderLeads();
+    });
+
+    els.filterWebsite.addEventListener('change', (e) => {
+        state.filters.website = e.target.value;
+        renderLeads();
+    });
+
+    els.filterPhone.addEventListener('change', (e) => {
+        state.filters.phone = e.target.value;
+        renderLeads();
+    });
+
+    els.filterRating.addEventListener('change', (e) => {
+        state.filters.rating = e.target.value;
+        renderLeads();
+    });
+
+    els.sortLeads.addEventListener('change', (e) => {
+        state.filters.sort = e.target.value;
+        renderLeads();
+    });
+
+    // Quick filter chips
+    els.filterChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+            const filterType = chip.dataset.filter;
+            const isActive = chip.classList.toggle('active');
+            if (isActive) {
+                state.filters.quick.add(filterType);
+            } else {
+                state.filters.quick.delete(filterType);
+            }
+            renderLeads();
+        });
+    });
+
+    const resetFiltersHandler = () => {
+        resetFilterValues();
+        renderLeads();
+    };
+
+    els.resetFiltersBtn.addEventListener('click', resetFiltersHandler);
+    els.noFilterResetBtn.addEventListener('click', resetFiltersHandler);
+
+    // Standard Buttons
     els.start.addEventListener('click', startExtraction);
     els.prompt.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') startExtraction();

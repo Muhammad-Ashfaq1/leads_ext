@@ -7,12 +7,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadCsvExporter
 {
-    public function download(ExtractionJob $job): StreamedResponse
+    public function download(ExtractionJob $job, ?array $ids = null): StreamedResponse
     {
         $filename = 'awt-phone-leads-'.$job->uuid.'.csv';
 
-        return response()->streamDownload(function () use ($job): void {
+        return response()->streamDownload(function () use ($job, $ids): void {
             $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
             fputcsv($handle, [
                 'Business Name',
                 'Address',
@@ -26,7 +29,12 @@ class LeadCsvExporter
                 'Source',
             ]);
 
-            foreach ($job->leads()->orderBy('id')->cursor() as $lead) {
+            $query = $job->leads()->orderBy('id');
+            if (! empty($ids)) {
+                $query->whereIn('id', $ids);
+            }
+
+            foreach ($query->cursor() as $lead) {
                 fputcsv($handle, [
                     $lead->business_name,
                     $lead->address,
