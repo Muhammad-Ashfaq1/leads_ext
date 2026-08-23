@@ -1,0 +1,102 @@
+name: Deploy Leads Engine Application
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Laravel Dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Deploy to Hostinger
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          echo "Deploying files to Hostinger (leads.obtainsolutions.com)..."
+          sshpass -e rsync -avz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='.env.backup' \
+            --exclude='.env.production' \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='storage/app/public/users/**' \
+            --exclude='storage/app/public/tenants/**' \
+            -e "ssh -o StrictHostKeyChecking=no -p 65002" \
+            ./ u407529782@145.79.26.191:/home/u407529782/domains/obtainsolutions.com/public_html/leads
+
+      - name: Run Laravel Commands
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no -p 65002 u407529782@145.79.26.191 << 'EOF'
+          set -e
+          cd /home/u407529782/domains/obtainsolutions.com/public_html/leads
+
+          echo "Ensuring writable dirs..."
+          mkdir -p \
+            storage/framework/{cache,sessions,views} \
+            storage/logs \
+            storage/app/public \
+            bootstrap/cache
+          chmod -R ug+rwx storage bootstrap/cache
+
+          echo "Running migrations..."
+          php artisan migrate --force
+
+          echo "Rebuilding caches..."
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+          echo "Creating storage symlink..."
+          if [ -L public/storage ] || [ -d public/storage ]; then
+            rm -rf public/storage
+          fi
+          ln -sfn /home/u407529782/domains/obtainsolutions.com/public_html/leads/storage/app/public \
+            /home/u407529782/domains/obtainsolutions.com/public_html/leads/public/storage
+
+          if [ -L public/storage ]; then
+            echo "Storage symlink created successfully"
+            ls -la public/storage
+          else
+            echo "ERROR: Storage symlink creation failed!"
+            exit 1
+          fi
+
+          chmod -R 755 storage
+          chmod -R 775 storage/app/public
+
+          echo "Deployment commands completed."
+          EOF
+
+      - name: Completion Message
+        run: echo "Leads Engine deployed successfully to leads.obtainsolutions.com!"
