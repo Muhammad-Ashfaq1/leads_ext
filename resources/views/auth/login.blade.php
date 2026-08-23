@@ -11,7 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>Login | Leads Engine SaaS</title>
+    <title>Login | Leads Engine</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,7 +31,7 @@
         }
         .auth-card {
             width: 100%;
-            max-width: 460px;
+            max-width: 440px;
             border-radius: 0.75rem;
             border: 1px solid rgba(105, 108, 255, 0.15);
             box-shadow: 0 10px 30px rgba(47, 43, 61, 0.08);
@@ -49,15 +49,6 @@
             font-size: 1.6rem;
             box-shadow: 0 4px 12px rgba(105, 108, 255, 0.35);
         }
-        .demo-account-btn {
-            text-align: left;
-            padding: 0.6rem 0.85rem;
-            border-radius: 0.5rem;
-            transition: all 0.15s ease;
-        }
-        .demo-account-btn:hover {
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 <body>
@@ -69,7 +60,7 @@
                         <i class="icon-base ti tabler-radar"></i>
                     </div>
                     <h4 class="mb-1 fw-bold">Leads Engine</h4>
-                    <p class="text-muted small mb-0">SaaS Lead Generation &amp; Enrichment Platform</p>
+                    <p class="text-muted small mb-0">Please sign in to your account</p>
                 </div>
 
                 @if ($errors->any())
@@ -87,7 +78,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('login.post') }}" class="mb-4">
+                <form method="POST" action="{{ route('login.post') }}">
                     @csrf
                     <div class="mb-3">
                         <label for="email" class="form-label fw-medium">Email Address</label>
@@ -96,13 +87,14 @@
                             class="form-control @error('email') is-invalid @enderror"
                             id="email"
                             name="email"
-                            value="{{ old('email', 'admin@acme.com') }}"
-                            placeholder="admin@yourcompany.com"
+                            value="{{ old('email') }}"
+                            placeholder="Enter your email"
+                            autocomplete="email"
                             autofocus
                             required>
                     </div>
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-medium mb-0" for="password">Password</label>
                         </div>
                         <div class="input-group input-group-merge">
@@ -111,14 +103,14 @@
                                 id="password"
                                 class="form-control"
                                 name="password"
-                                value="password"
                                 placeholder="············"
+                                autocomplete="current-password"
                                 required>
                         </div>
                     </div>
                     <div class="mb-3 d-flex justify-content-between align-items-center">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="remember" name="remember" checked>
+                            <input class="form-check-input" type="checkbox" id="remember" name="remember">
                             <label class="form-check-label small" for="remember">Remember Me</label>
                         </div>
                     </div>
@@ -127,39 +119,8 @@
                     </button>
                 </form>
 
-                <!-- 1-Click Demo Logins -->
-                <div class="border-top pt-3">
-                    <p class="text-muted small text-uppercase fw-semibold mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">
-                        Quick Demo Logins:
-                    </p>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('login.demo', 'superadmin') }}" class="btn btn-outline-danger btn-sm demo-account-btn d-flex align-items-center justify-content-between">
-                            <div>
-                                <span class="fw-semibold d-block">Super Admin Console</span>
-                                <small class="text-muted">superadmin@leads.test</small>
-                            </div>
-                            <span class="badge bg-label-danger">Super Admin</span>
-                        </a>
-                        <a href="{{ route('login.demo', 'acme') }}" class="btn btn-outline-primary btn-sm demo-account-btn d-flex align-items-center justify-content-between">
-                            <div>
-                                <span class="fw-semibold d-block">Acme Corp (Tenant Admin)</span>
-                                <small class="text-muted">admin@acme.com</small>
-                            </div>
-                            <span class="badge bg-label-primary">Enterprise</span>
-                        </a>
-                        <a href="{{ route('login.demo', 'nexus') }}" class="btn btn-outline-info btn-sm demo-account-btn d-flex align-items-center justify-content-between">
-                            <div>
-                                <span class="fw-semibold d-block">Nexus Marketing (Tenant Admin)</span>
-                                <small class="text-muted">admin@nexus.com</small>
-                            </div>
-                            <span class="badge bg-label-info">Pro</span>
-                        </a>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
 </body>
 </html>
-

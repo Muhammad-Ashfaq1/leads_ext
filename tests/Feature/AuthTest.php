@@ -92,5 +92,79 @@ class AuthTest extends TestCase
             ->assertOk()
             ->assertSee('SaaS Tenants & Organizations');
     }
+
+    public function test_user_can_view_and_update_profile(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Acme Corporation',
+            'slug' => 'acme',
+            'plan' => 'pro',
+        ]);
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'name' => 'John Doe',
+            'email' => 'john@acme.com',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/profile')
+            ->assertOk()
+            ->assertSee('Personal Information')
+            ->assertSee('Change Password');
+
+        $this->actingAs($user)
+            ->put('/profile', [
+                'name' => 'John Updated',
+                'email' => 'john.updated@acme.com',
+                'phone' => '+1 555-9999',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'John Updated',
+            'email' => 'john.updated@acme.com',
+        ]);
+    }
+
+    public function test_tenant_admin_can_update_extractor_settings(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Acme Corporation',
+            'slug' => 'acme',
+            'plan' => 'pro',
+        ]);
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/settings')
+            ->assertOk()
+            ->assertSee('Lead Extractor Settings')
+            ->assertSee('Google Maps Places API Key');
+
+        $this->actingAs($user)
+            ->put('/settings', [
+                'name' => 'Acme Global Inc',
+                'google_maps_api_key' => 'AIzaSyNewKey123',
+                'default_engine' => 'google_api',
+                'default_limit' => 50,
+                'auto_email_enrichment' => 1,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tenants', [
+            'id' => $tenant->id,
+            'name' => 'Acme Global Inc',
+            'google_maps_api_key' => 'AIzaSyNewKey123',
+        ]);
+    }
 }
 

@@ -121,10 +121,17 @@
                         </a>
                     </li>
 
+                    <li class="menu-item {{ request()->routeIs('profile.index') ? 'active' : '' }}">
+                        <a href="{{ route('profile.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base ti tabler-user"></i>
+                            <div data-i18n="My Profile">My Profile</div>
+                        </a>
+                    </li>
+
                     <li class="menu-item {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <a href="{{ route('settings.index') }}" class="menu-link">
                             <i class="menu-icon icon-base ti tabler-settings"></i>
-                            <div data-i18n="Settings">Settings &amp; Keys</div>
+                            <div data-i18n="Extractor Settings">Extractor Settings</div>
                         </a>
                     </li>
 
@@ -204,9 +211,15 @@
                                     </li>
                                     <li><div class="dropdown-divider"></div></li>
                                     <li>
+                                        <a class="dropdown-item" href="{{ route('profile.index') }}">
+                                            <i class="icon-base ti tabler-user me-2"></i>
+                                            <span class="align-middle">My Profile</span>
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="{{ route('settings.index') }}">
-                                            <i class="icon-base ti tabler-user-cog me-2"></i>
-                                            <span class="align-middle">My Profile &amp; Settings</span>
+                                            <i class="icon-base ti tabler-settings me-2"></i>
+                                            <span class="align-middle">Extractor Settings</span>
                                         </a>
                                     </li>
                                     @if (Auth::user()?->isSuperAdmin())

@@ -57,25 +57,6 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-    public function demoLogin(Request $request, string $account): RedirectResponse
-    {
-        $email = match ($account) {
-            'superadmin' => 'superadmin@leads.test',
-            'nexus' => 'admin@nexus.com',
-            default => 'admin@acme.com',
-        };
-
-        $user = User::where('email', $email)->first();
-        if ($user) {
-            Auth::login($user, true);
-            $request->session()->regenerate();
-
-            return redirect()->route('dashboard')->with('success', "Logged in as {$user->name} ({$user->getRoleLabel()})");
-        }
-
-        return redirect()->route('login')->withErrors(['email' => 'Demo account not found. Please run seeders.']);
-    }
-
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();

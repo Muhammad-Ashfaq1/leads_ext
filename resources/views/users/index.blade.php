@@ -178,7 +178,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" value="password" required>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone (Optional)</label>

@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExtractorPageController;
 use App\Http\Controllers\JobsController;
 use App\Http\Controllers\LeadsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TenantsController;
 use App\Http\Controllers\UsersController;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-    Route::get('/demo-login/{account}', [AuthController::class, 'demoLogin'])->name('login.demo');
 });
 
 // Authenticated SaaS App Routes
@@ -43,11 +43,14 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::post('/users', [UsersController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
 
-    // Settings & Profile
+    // Profile Settings
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // Organization & Extractor Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
-    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
-    Route::put('/settings/tenant', [SettingsController::class, 'updateTenantSettings'])->name('settings.tenant');
+    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // Super Admin Only
     Route::middleware(RoleMiddleware::class.':super_admin')->group(function (): void {
