@@ -3,16 +3,18 @@
 @section('title', 'Team Members')
 
 @section('content')
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header border-bottom py-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h5 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-user-cog me-1 text-primary"></i> Team &amp; User Accounts
-                </h5>
-                <small class="text-muted">Manage access permissions, team roles, and lead extraction access.</small>
-            </div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+<div class="pos-glass-card pos-tone-primary mb-4">
+    <div class="pos-glass-intro border-bottom">
+        <div class="pos-glass-intro-copy">
+            <h4 class="pos-glass-intro-title">
+                <i class="icon-base ti tabler-user-cog me-1 text-primary"></i> Team &amp; User Accounts
+            </h4>
+            <p class="pos-glass-intro-subtitle">
+                Manage access permissions, team roles, and lead extraction access.
+            </p>
+        </div>
+        <div class="pos-glass-intro-actions">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                 <i class="icon-base ti tabler-plus me-1"></i> Add Member
             </button>
         </div>
@@ -38,7 +40,7 @@
                         <td class="ps-3">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="user-avatar-badge" style="width: 32px; height: 32px; font-size: 0.8rem;">
-                                    {{ substr($u->name, 0, 1) }}
+                                    {{ strtoupper(substr($u->name, 0, 1)) }}
                                 </div>
                                 <div>
                                     <div class="fw-semibold text-heading small">{{ $u->name }}</div>
@@ -108,12 +110,12 @@
                                                     </select>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label class="form-label">Reset Password (leave blank to keep current)</label>
+                                                    <label class="form-label">Change Password (leave blank to keep current)</label>
                                                     <input type="password" name="password" class="form-control" placeholder="••••••••">
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="is_active" id="userActive{{ $u->id }}" value="1" @checked($u->is_active)>
-                                                    <label class="form-check-label" for="userActive{{ $u->id }}">Active User</label>
+                                                    <label class="form-check-label" for="userActive{{ $u->id }}">Account Active</label>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -128,7 +130,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $isSuperAdmin ? 6 : 5 }}" class="text-center py-4 text-muted">No users found.</td>
+                        <td colspan="{{ $isSuperAdmin ? 7 : 6 }}" class="text-center py-4 text-muted">
+                            No team members found.
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
@@ -136,35 +140,35 @@
     </div>
 </div>
 
-<!-- Add User Modal -->
+<!-- Create User Modal -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ route('users.store') }}">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Team Member</h5>
+                    <h5 class="modal-title">Add Team Member</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     @if ($isSuperAdmin)
                         <div class="mb-3">
-                            <label class="form-label">Tenant / Organization</label>
+                            <label class="form-label">Assign to Tenant</label>
                             <select name="tenant_id" class="form-select">
-                                <option value="">Global / Super Admin (No Tenant)</option>
-                                @foreach ($tenants as $ten)
-                                    <option value="{{ $ten->id }}">{{ $ten->name }} ({{ ucfirst($ten->plan) }})</option>
+                                <option value="">Global Super Admin (No Tenant)</option>
+                                @foreach ($tenants as $t)
+                                    <option value="{{ $t->id }}">{{ $t->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                     @endif
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="John Doe" required>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Jane Smith" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-control" placeholder="john@company.com" required>
+                        <input type="email" name="email" class="form-control" placeholder="jane@company.com" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
@@ -194,4 +198,3 @@
     </div>
 </div>
 @endsection
-

@@ -3,15 +3,20 @@
 @section('title', 'Extraction History')
 
 @section('content')
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header border-bottom py-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-2">
-                <h5 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-history me-1 text-primary"></i> Extraction History
-                </h5>
-                <span class="badge bg-label-primary">{{ $jobs->total() }} tasks</span>
-            </div>
+<div class="pos-glass-card pos-tone-info mb-4">
+    <div class="pos-glass-intro border-bottom">
+        <div class="pos-glass-intro-copy">
+            <h4 class="pos-glass-intro-title">
+                <i class="icon-base ti tabler-history me-1 text-info"></i> Extraction History
+            </h4>
+            <p class="pos-glass-intro-subtitle">
+                Audit log of all extraction tasks, real-time status, and instant Excel re-exports.
+            </p>
+        </div>
+        <div class="pos-glass-intro-actions d-flex align-items-center gap-2">
+            <span class="pos-glass-pill pos-tone-info">
+                <i class="icon-base ti tabler-list-check me-1"></i> {{ $jobs->total() }} tasks
+            </span>
             <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
                 <i class="icon-base ti tabler-plus me-1"></i> New Extraction
             </a>
@@ -22,13 +27,13 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-3">Job ID &amp; Query</th>
+                    <th class="ps-3">Search Prompt &amp; Task ID</th>
                     <th>Engine</th>
                     <th>Leads Extracted</th>
                     <th>Emails &amp; Websites</th>
                     <th>Status</th>
-                    <th>Started</th>
-                    <th class="pe-3 text-end">Export &amp; Leads</th>
+                    <th>Date</th>
+                    <th class="pe-3 text-end">Export &amp; Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,7 +52,7 @@
                         </td>
                         <td>
                             <span class="fw-bold text-heading">{{ $job->leads_extracted }}</span>
-                            <span class="text-muted small">/ {{ $job->limit }} max</span>
+                            <span class="text-muted small">/ {{ $job->limit }}</span>
                         </td>
                         <td>
                             <div class="small">
@@ -98,15 +103,10 @@
     @if ($jobs->hasPages())
         <div class="card-footer border-top py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="small text-muted">
-                    Showing {{ $jobs->firstItem() ?? 0 }} to {{ $jobs->lastItem() ?? 0 }} of {{ $jobs->total() }} extraction jobs
-                </div>
-                <div>
-                    {{ $jobs->links('pagination::bootstrap-5') }}
-                </div>
+                <small class="text-muted">Showing {{ $jobs->firstItem() }} to {{ $jobs->lastItem() }} of {{ $jobs->total() }} extraction tasks</small>
+                <div>{{ $jobs->links('pagination::bootstrap-5') }}</div>
             </div>
         </div>
     @endif
 </div>
 @endsection
-

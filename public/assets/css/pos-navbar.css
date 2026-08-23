@@ -1,0 +1,70 @@
+/*
+ * pos-navbar.css — Glass detached navbar matching POS application.
+ */
+
+.layout-navbar.navbar-detached.pos-navbar {
+    --pos-tone-rgb: var(--bs-primary-rgb);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: var(--pos-glass-radius, 1rem);
+    background-color: rgba(255, 255, 255, 0.62);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--pos-tone-rgb), 0.12) 0%,
+        rgba(var(--pos-tone-rgb), 0.03) 45%,
+        rgba(255, 255, 255, 0.2) 80%
+    );
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    backdrop-filter: blur(20px) saturate(170%);
+    box-shadow:
+        0 12px 32px -12px rgba(var(--pos-tone-rgb), 0.32),
+        0 2px 4px rgba(47, 43, 61, 0.04),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    color: var(--bs-heading-color);
+}
+
+.pos-navbar-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.15;
+}
+
+.pos-navbar-org-name {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--bs-heading-color, var(--bs-body-color, #2f3349));
+    max-width: 30ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pos-navbar-subtitle {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.pos-navbar-dropdown-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+}
+
+.pos-navbar-dropdown-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--bs-heading-color);
+}
+
+.pos-navbar-dropdown-email {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+}
+

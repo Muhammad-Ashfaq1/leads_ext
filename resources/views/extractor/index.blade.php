@@ -17,10 +17,8 @@
             </span>
         </div>
     @endif
-</div>
-
-<div class="card border-0 shadow-sm mb-4" id="promptCard">
-    <div class="card-body">
+<div class="pos-glass-card pos-tone-primary mb-4" id="promptCard">
+    <div class="card-body p-4">
         <!-- Vuexy Custom Option Engine Mode Cards -->
         <div class="row g-3 mb-4">
             <div class="col-12 col-md-6">
@@ -209,8 +207,8 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
+<div class="pos-glass-card pos-tone-info mb-4">
+    <div class="card-body p-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
                 <h5 class="mb-1">Extraction Status</h5>
@@ -256,8 +254,8 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4 d-none" id="summaryCard">
-    <div class="card-body">
+<div class="pos-glass-card pos-tone-success mb-4 d-none" id="summaryCard">
+    <div class="card-body p-4">
         <h5 class="mb-3">Extraction Completed</h5>
         <div class="row g-3 mb-3" id="summaryStats"></div>
         <div class="d-flex flex-wrap gap-2">
@@ -271,7 +269,7 @@
     </div>
 </div>
 
-<div class="card mb-4" id="leadsSection">
+<div class="pos-glass-card pos-tone-primary mb-4" id="leadsSection">
     <div class="card-header border-bottom py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">

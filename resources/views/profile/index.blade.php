@@ -1,117 +1,129 @@
 @extends('layouts.app')
 
-@section('title', 'My Profile')
+@section('title', 'Profile')
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/account-settings.css') }}" />
+@endpush
 
 @section('content')
 <div class="row g-4">
-    <!-- User Overview Card -->
-    <div class="col-12 col-lg-4">
-        <div class="card border-0 shadow-sm text-center p-4">
-            <div class="card-body">
-                <div class="user-avatar-badge mx-auto mb-3" style="width: 4.5rem; height: 4.5rem; font-size: 1.75rem;">
-                    {{ substr($user->name, 0, 1) }}
-                </div>
-                <h5 class="mb-1 fw-bold text-heading">{{ $user->name }}</h5>
-                <p class="text-muted small mb-2">{{ $user->email }}</p>
-                <div class="d-flex justify-content-center gap-2 mb-3">
-                    <span class="badge {{ $user->getRoleBadgeClass() }} px-3 py-1">
-                        {{ $user->getRoleLabel() }}
-                    </span>
-                    @if ($user->tenant)
-                        <span class="badge bg-label-primary px-3 py-1">
-                            {{ $user->tenant->name }}
-                        </span>
-                    @endif
+    <div class="col-12 col-xl-9 mx-auto">
+        <div class="account-settings-card pos-glass-card pos-tone-primary" id="account-settings">
+            <!-- Tabs (Matching POS) -->
+            <ul class="account-settings-tabs nav nav-tabs border-0" role="tablist">
+                <li class="nav-item">
+                    <a href="#profile-tab" class="active" data-bs-toggle="tab" role="tab">Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#password-tab" class="" data-bs-toggle="tab" role="tab">Change Password</a>
+                </li>
+            </ul>
+
+            <div class="tab-content p-0">
+                <!-- Profile Panel -->
+                <div class="tab-pane fade show active" id="profile-tab" role="tabpanel">
+                    <div class="account-settings-header">
+                        <div class="account-settings-avatar">
+                            {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                        </div>
+                        <div class="account-settings-header-text">
+                            <h4 class="account-settings-title">{{ $user->name }}</h4>
+                            <p class="account-settings-subtitle">
+                                {{ $user->getRoleLabel() }}
+                                @if ($user->tenant)
+                                    · {{ $user->tenant->name }} ({{ ucfirst($user->tenant->plan) }})
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('profile.update') }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="name">
+                                    Full Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" id="name" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="email">
+                                    Email Address <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" id="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="phone">Phone Number</label>
+                                <input type="text" id="phone" name="phone" class="form-control" value="{{ old('phone', $user->phone) }}" placeholder="+1 (555) 000-0000">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold">Role</label>
+                                <input type="text" class="form-control" value="{{ $user->getRoleLabel() }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end pt-3 border-top">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="icon-base ti tabler-device-floppy me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="border-top pt-3 text-start small">
-                    <div class="d-flex justify-content-between py-1">
-                        <span class="text-muted">Account Status:</span>
-                        <span class="text-success fw-semibold">Active</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1">
-                        <span class="text-muted">Joined:</span>
-                        <span>{{ $user->created_at?->format('M d, Y') ?? '—' }}</span>
-                    </div>
-                    @if ($user->tenant)
-                        <div class="d-flex justify-content-between py-1">
-                            <span class="text-muted">Plan:</span>
-                            <span class="fw-semibold text-primary">{{ ucfirst($user->tenant->plan) }}</span>
+                <!-- Password Panel -->
+                <div class="tab-pane fade" id="password-tab" role="tabpanel">
+                    <div class="account-settings-header">
+                        <div class="account-settings-avatar bg-label-warning text-warning">
+                            <i class="icon-base ti tabler-lock"></i>
                         </div>
-                    @endif
+                        <div class="account-settings-header-text">
+                            <h4 class="account-settings-title">Security &amp; Password</h4>
+                            <p class="account-settings-subtitle">Ensure your account is using a long, random password to stay secure.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('profile.password') }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-semibold" for="current_password">
+                                    Current Password <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" id="current_password" name="current_password" class="form-control" placeholder="••••••••" required>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-semibold" for="password">
+                                    New Password <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-semibold" for="password_confirmation">
+                                    Confirm Password <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end pt-3 border-top">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="icon-base ti tabler-key me-1"></i> Update Password
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Profile & Security Forms -->
-    <div class="col-12 col-lg-8">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header border-bottom py-3">
-                <h6 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-user me-1 text-primary"></i> Personal Information
-                </h6>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST" action="{{ route('profile.update') }}">
-                    @csrf
-                    @method('PUT')
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Full Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Email Address</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Phone Number</label>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone', $user->phone) }}" placeholder="+1 (555) 000-0000">
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="icon-base ti tabler-device-floppy me-1"></i> Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm">
-            <div class="card-header border-bottom py-3">
-                <h6 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-lock me-1 text-primary"></i> Change Password
-                </h6>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST" action="{{ route('profile.password') }}">
-                    @csrf
-                    @method('PUT')
-                    <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Current Password</label>
-                            <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">New Password</label>
-                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Confirm Password</label>
-                            <input type="password" name="password_confirmation" class="form-control" placeholder="••••••••" required>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-outline-primary">
-                            <i class="icon-base ti tabler-key me-1"></i> Update Password
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 </div>
 @endsection
-

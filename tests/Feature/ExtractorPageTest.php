@@ -61,8 +61,8 @@ class ExtractorPageTest extends TestCase
         $this->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Total Leads Extracted')
-            ->assertSee('Email Discovery Rate')
+            ->assertSee('Total Leads')
+            ->assertSee('Email Discovery')
             ->assertSee('Phone Coverage')
             ->assertSee('Leads Engine');
     }

@@ -1,0 +1,126 @@
+/* ==========================================================================
+   Account Settings — Profile & Password Card UI (matching POS)
+   ========================================================================== */
+
+:root {
+    --as-card-bg: #ffffff;
+    --as-card-border: #e5e7eb;
+    --as-card-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    --as-tab-border: #e5e7eb;
+    --as-tab-color: #6b7280;
+    --as-tab-active-color: #696cff;
+    --as-avatar-bg: #eef2ff;
+    --as-avatar-initial: #696cff;
+    --as-title-color: #1f2937;
+    --as-subtitle-color: #9ca3af;
+    --as-label-color: #374151;
+    --as-control-bg: #ffffff;
+    --as-control-border: #e5e7eb;
+    --as-control-color: #111827;
+    --as-control-placeholder: #9ca3af;
+    --as-control-focus-border: #696cff;
+    --as-control-focus-ring: rgba(105, 108, 255, 0.12);
+    --as-control-disabled-bg: #f9fafb;
+    --as-control-disabled-color: #6b7280;
+    --as-btn-bg: #696cff;
+    --as-btn-hover-bg: #5f61e6;
+}
+
+[data-bs-theme="dark"] {
+    --as-card-bg: #2f3349;
+    --as-card-border: #434968;
+    --as-card-shadow: 0 8px 24px rgba(15, 20, 34, 0.35);
+    --as-tab-border: #434968;
+    --as-tab-color: #a1acb8;
+    --as-tab-active-color: #7367f0;
+    --as-avatar-bg: #25293c;
+    --as-avatar-initial: #7367f0;
+    --as-title-color: #cfd3ec;
+    --as-subtitle-color: #7983a5;
+    --as-label-color: #b6bee3;
+    --as-control-bg: #25293c;
+    --as-control-border: #434968;
+    --as-control-color: #cfd3ec;
+    --as-control-placeholder: #7983a5;
+    --as-control-focus-border: #7367f0;
+    --as-control-focus-ring: rgba(115, 103, 240, 0.2);
+    --as-control-disabled-bg: #2f3349;
+    --as-control-disabled-color: #7983a5;
+    --as-btn-bg: #7367f0;
+    --as-btn-hover-bg: #675dd8;
+}
+
+.account-settings-card {
+    background: var(--as-card-bg);
+    border: 1px solid var(--as-card-border);
+    border-radius: 16px;
+    box-shadow: var(--as-card-shadow);
+    padding: 1.75rem 2rem 2rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.account-settings-tabs {
+    display: flex;
+    gap: 1.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.75rem;
+    border-bottom: 1px solid var(--as-tab-border);
+}
+
+.account-settings-tabs a {
+    display: inline-block;
+    padding: 0 0 0.9rem;
+    color: var(--as-tab-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.account-settings-tabs a:hover {
+    color: var(--as-title-color);
+}
+
+.account-settings-tabs a.active {
+    color: var(--as-tab-active-color);
+    border-bottom-color: var(--as-tab-active-color);
+    font-weight: 600;
+}
+
+.account-settings-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.account-settings-avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+    min-width: 4.5rem;
+    border-radius: 50%;
+    background: var(--as-avatar-bg);
+    color: var(--as-avatar-initial);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.account-settings-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--as-title-color);
+}
+
+.account-settings-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--as-subtitle-color);
+}
+

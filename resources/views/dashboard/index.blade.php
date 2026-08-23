@@ -4,149 +4,139 @@
 
 @section('content')
 <div class="row g-4 mb-4">
-    <!-- Header Welcome Banner -->
+    <!-- Top Glass Intro Banner -->
     <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, rgba(105, 108, 255, 0.08) 0%, rgba(37, 185, 214, 0.06) 100%);">
-            <div class="card-body p-4">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <div>
-                        <h4 class="mb-1 fw-bold text-heading">
-                            Welcome back, {{ $user->name }}! 👋
-                        </h4>
-                        <p class="text-muted mb-0">
-                            @if ($isSuperAdmin)
-                                You are logged in as <span class="badge bg-label-danger">Super Admin</span> with full platform visibility across all client tenants.
-                            @elseif ($tenant)
-                                Managing lead extractions for <strong class="text-primary">{{ $tenant->name }}</strong> ({{ ucfirst($tenant->plan) }} Plan).
-                            @endif
-                        </p>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <a href="{{ route('extractor.index') }}" class="btn btn-primary">
-                            <i class="icon-base ti tabler-player-play me-1"></i> Start Lead Extraction
-                        </a>
-                        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
-                            <i class="icon-base ti tabler-users-group me-1"></i> View All Leads
-                        </a>
-                    </div>
+        <div class="pos-glass-card pos-tone-primary">
+            <div class="pos-glass-intro">
+                <div class="pos-glass-intro-copy">
+                    <h4 class="pos-glass-intro-title">
+                        Welcome back, {{ $user->name }}
+                    </h4>
+                    <p class="pos-glass-intro-subtitle">
+                        @if ($isSuperAdmin)
+                            Central administrator workspace · Full platform visibility across {{ $platformStats['total_tenants'] ?? 0 }} organizations · {{ number_format($platformStats['global_leads'] ?? 0) }} total leads in platform
+                        @elseif ($tenant)
+                            {{ $tenant->name }} ({{ ucfirst($tenant->plan) }} Plan) ·
+                            {{ number_format($totalLeads) }} leads extracted across {{ number_format($totalJobs) }} search tasks ·
+                            {{ number_format($totalEmails) }} verified emails discovered
+                        @endif
+                    </p>
+                </div>
+                <div class="pos-glass-intro-actions d-flex flex-wrap gap-2 align-items-center">
+                    <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
+                        <i class="icon-base ti tabler-plus me-1" aria-hidden="true"></i> Start Extraction
+                    </a>
+                    <a href="{{ route('leads.index') }}" class="btn btn-sm btn-label-secondary">
+                        <i class="icon-base ti tabler-users-group me-1" aria-hidden="true"></i> View Leads
+                    </a>
+                    @if ($tenant && $tenant->lead_quota > 0)
+                        <span class="pos-glass-pill pos-tone-info">
+                            <i class="icon-base ti tabler-chart-pie" aria-hidden="true"></i>
+                            Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }} ({{ round(($tenant->leads_extracted_count / $tenant->lead_quota) * 100) }}%)
+                        </span>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
     @if ($isSuperAdmin && $platformStats)
-        <!-- Super Admin Global Stats Row -->
+        <!-- Super Admin Operations Banner -->
         <div class="col-12">
-            <div class="card border-0 shadow-sm bg-label-danger-subtle">
-                <div class="card-body py-3 px-4">
-                    <div class="row g-3 text-center text-sm-start align-items-center">
-                        <div class="col-6 col-sm-3 col-lg-2">
-                            <span class="text-muted small text-uppercase fw-semibold">Active Tenants</span>
-                            <h5 class="mb-0 fw-bold text-danger">{{ $platformStats['active_tenants'] }} / {{ $platformStats['total_tenants'] }}</h5>
-                        </div>
-                        <div class="col-6 col-sm-3 col-lg-2">
-                            <span class="text-muted small text-uppercase fw-semibold">Platform Users</span>
-                            <h5 class="mb-0 fw-bold text-danger">{{ $platformStats['total_users'] }}</h5>
-                        </div>
-                        <div class="col-6 col-sm-3 col-lg-3">
-                            <span class="text-muted small text-uppercase fw-semibold">Global Leads Database</span>
-                            <h5 class="mb-0 fw-bold text-danger">{{ number_format($platformStats['global_leads']) }}</h5>
-                        </div>
-                        <div class="col-6 col-sm-3 col-lg-2">
-                            <span class="text-muted small text-uppercase fw-semibold">Global Extractions</span>
-                            <h5 class="mb-0 fw-bold text-danger">{{ number_format($platformStats['global_jobs']) }}</h5>
-                        </div>
-                        <div class="col-12 col-lg-3 text-lg-end mt-2 mt-lg-0">
-                            <a href="{{ route('tenants.index') }}" class="btn btn-sm btn-danger">
-                                <i class="icon-base ti tabler-building me-1"></i> Manage SaaS Tenants
-                            </a>
-                        </div>
+            <div class="pos-glass-card pos-tone-danger">
+                <div class="pos-glass-intro">
+                    <div class="pos-glass-intro-copy">
+                        <h5 class="pos-glass-intro-title text-danger">Platform Operations</h5>
+                        <p class="pos-glass-intro-subtitle">
+                            {{ $platformStats['active_tenants'] }} active organizations · {{ $platformStats['total_users'] }} registered team members · Global quota utilization active
+                        </p>
+                    </div>
+                    <div class="pos-glass-intro-actions">
+                        <a href="{{ route('tenants.index') }}" class="btn btn-sm btn-danger">
+                            <i class="icon-base ti tabler-building me-1"></i> Manage SaaS Tenants
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     @endif
 
-    <!-- 4 Main KPI Cards -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold small text-uppercase">Total Leads Extracted</span>
-                    <div class="avatar avatar-sm flex-shrink-0">
-                        <span class="avatar-initial rounded bg-label-primary">
-                            <i class="icon-base ti tabler-users"></i>
-                        </span>
-                    </div>
+    <!-- 5 Glass Stat Cards (Matching POS) -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="pos-glass-card pos-tone-primary h-100">
+            <div class="pos-stat-body">
+                <div class="pos-stat-head">
+                    <span class="pos-stat-icon"><i class="icon-base ti tabler-users" aria-hidden="true"></i></span>
+                    <h6 class="pos-stat-label">Total Leads</h6>
                 </div>
-                <h3 class="mb-1 fw-bold text-heading">{{ number_format($totalLeads) }}</h3>
-                @if ($tenant && $tenant->lead_quota > 0)
-                    <div class="d-flex align-items-center justify-content-between text-muted small mt-2">
-                        <span>Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}</span>
-                        <span>{{ round(($tenant->leads_extracted_count / $tenant->lead_quota) * 100) }}%</span>
-                    </div>
-                    <div class="progress mt-1" style="height: 4px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100, round(($tenant->leads_extracted_count / $tenant->lead_quota) * 100)) }}%"></div>
-                    </div>
-                @else
-                    <span class="text-muted small">From {{ $totalJobs }} extraction tasks</span>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold small text-uppercase">Email Discovery Rate</span>
-                    <div class="avatar avatar-sm flex-shrink-0">
-                        <span class="avatar-initial rounded bg-label-success">
-                            <i class="icon-base ti tabler-mail"></i>
-                        </span>
-                    </div>
-                </div>
-                <h3 class="mb-1 fw-bold text-heading">{{ $emailRate }}%</h3>
-                <div class="text-muted small mt-2">
-                    <span class="text-success fw-semibold">{{ number_format($totalEmails) }}</span> leads with verified email
+                <p class="pos-stat-value">{{ number_format($totalLeads) }}</p>
+                <p class="pos-stat-desc mb-0">From {{ $totalJobs }} extraction tasks</p>
+                <div class="pos-stat-note">
+                    <a href="{{ route('leads.index') }}">Browse database →</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold small text-uppercase">Phone Coverage</span>
-                    <div class="avatar avatar-sm flex-shrink-0">
-                        <span class="avatar-initial rounded bg-label-info">
-                            <i class="icon-base ti tabler-phone"></i>
-                        </span>
-                    </div>
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="pos-glass-card pos-tone-success h-100">
+            <div class="pos-stat-body">
+                <div class="pos-stat-head">
+                    <span class="pos-stat-icon"><i class="icon-base ti tabler-mail" aria-hidden="true"></i></span>
+                    <h6 class="pos-stat-label">Email Discovery</h6>
                 </div>
-                <h3 class="mb-1 fw-bold text-heading">{{ $phoneRate }}%</h3>
-                <div class="text-muted small mt-2">
-                    <span class="text-info fw-semibold">{{ number_format($totalPhones) }}</span> leads with direct phone
+                <p class="pos-stat-value">{{ $emailRate }}%</p>
+                <p class="pos-stat-desc mb-0">{{ number_format($totalEmails) }} verified emails</p>
+                <div class="pos-stat-note">
+                    <span class="text-success fw-medium">Direct contact ready</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold small text-uppercase">Website Coverage</span>
-                    <div class="avatar avatar-sm flex-shrink-0">
-                        <span class="avatar-initial rounded bg-label-warning">
-                            <i class="icon-base ti tabler-world-www"></i>
-                        </span>
-                    </div>
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="pos-glass-card pos-tone-info h-100">
+            <div class="pos-stat-body">
+                <div class="pos-stat-head">
+                    <span class="pos-stat-icon"><i class="icon-base ti tabler-phone" aria-hidden="true"></i></span>
+                    <h6 class="pos-stat-label">Phone Coverage</h6>
                 </div>
-                <h3 class="mb-1 fw-bold text-heading">{{ $websiteRate }}%</h3>
-                <div class="text-muted small mt-2">
-                    <span class="text-warning fw-semibold">{{ number_format($totalWebsites) }}</span> business websites found
+                <p class="pos-stat-value">{{ $phoneRate }}%</p>
+                <p class="pos-stat-desc mb-0">{{ number_format($totalPhones) }} direct numbers</p>
+                <div class="pos-stat-note">
+                    <span class="text-info fw-medium">Phone verified</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="pos-glass-card pos-tone-warning h-100">
+            <div class="pos-stat-body">
+                <div class="pos-stat-head">
+                    <span class="pos-stat-icon"><i class="icon-base ti tabler-world-www" aria-hidden="true"></i></span>
+                    <h6 class="pos-stat-label">Websites</h6>
+                </div>
+                <p class="pos-stat-value">{{ $websiteRate }}%</p>
+                <p class="pos-stat-desc mb-0">{{ number_format($totalWebsites) }} domains found</p>
+                <div class="pos-stat-note">
+                    <span class="text-warning fw-medium">Online presence</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="pos-glass-card pos-tone-secondary h-100">
+            <div class="pos-stat-body">
+                <div class="pos-stat-head">
+                    <span class="pos-stat-icon"><i class="icon-base ti tabler-building-store" aria-hidden="true"></i></span>
+                    <h6 class="pos-stat-label">Scanned</h6>
+                </div>
+                <p class="pos-stat-value">{{ number_format($totalBusinessesSeen) }}</p>
+                <p class="pos-stat-desc mb-0">Total places processed</p>
+                <div class="pos-stat-note">
+                    <span>{{ $totalBusinessesSeen > 0 ? round(($totalLeads / max(1, $totalBusinessesSeen)) * 100) : 100 }}% match rate</span>
                 </div>
             </div>
         </div>
@@ -154,16 +144,19 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Top Categories Widget -->
+    <!-- Top Business Niches -->
     <div class="col-12 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-category me-1 text-primary"></i> Top Business Niches
-                </h6>
-                <a href="{{ route('leads.index') }}" class="btn btn-xs btn-link text-decoration-none">View All</a>
+        <div class="pos-glass-card pos-tone-primary h-100">
+            <div class="pos-glass-intro border-bottom">
+                <div class="pos-glass-intro-copy">
+                    <h5 class="pos-glass-intro-title">
+                        <i class="icon-base ti tabler-category me-1 text-primary"></i> Top Business Niches
+                    </h5>
+                    <p class="pos-glass-intro-subtitle">Most discovered categories</p>
+                </div>
+                <a href="{{ route('leads.index') }}" class="btn btn-xs btn-outline-primary">View All</a>
             </div>
-            <div class="card-body p-3">
+            <div class="p-3">
                 @if ($topCategories->isEmpty())
                     <div class="text-center py-4 text-muted">
                         <i class="icon-base ti tabler-folder-off display-6 mb-2"></i>
@@ -188,14 +181,17 @@
         </div>
     </div>
 
-    <!-- Recent Extractions Table -->
+    <!-- Recent Extraction Tasks Table -->
     <div class="col-12 col-lg-8">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-history me-1 text-primary"></i> Recent Extraction Jobs
-                </h6>
-                <a href="{{ route('jobs.index') }}" class="btn btn-sm btn-outline-primary">View All Jobs</a>
+        <div class="pos-glass-card pos-tone-info h-100">
+            <div class="pos-glass-intro border-bottom">
+                <div class="pos-glass-intro-copy">
+                    <h5 class="pos-glass-intro-title">
+                        <i class="icon-base ti tabler-history me-1 text-info"></i> Recent Extraction Jobs
+                    </h5>
+                    <p class="pos-glass-intro-subtitle">Live status &amp; lead export</p>
+                </div>
+                <a href="{{ route('jobs.index') }}" class="btn btn-sm btn-outline-primary">All Tasks</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -266,4 +262,3 @@
     </div>
 </div>
 @endsection
-

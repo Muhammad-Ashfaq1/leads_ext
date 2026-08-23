@@ -3,28 +3,31 @@
 @section('title', 'All Extracted Leads')
 
 @section('content')
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header border-bottom py-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-2">
-                <h5 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-users-group me-1 text-primary"></i> Extracted Leads Database
-                </h5>
-                <span class="badge bg-label-primary">{{ $leads->total() }} leads</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('leads.export.excel') }}" class="btn btn-sm btn-success text-white">
-                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Export All (Excel .xlsx)
-                </a>
-                <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                    <i class="icon-base ti tabler-plus me-1"></i> Extract More Leads
-                </a>
-            </div>
+<div class="pos-glass-card pos-tone-primary mb-4">
+    <div class="pos-glass-intro border-bottom">
+        <div class="pos-glass-intro-copy">
+            <h4 class="pos-glass-intro-title">
+                <i class="icon-base ti tabler-users-group me-1 text-primary"></i> Extracted Leads Database
+            </h4>
+            <p class="pos-glass-intro-subtitle">
+                Comprehensive directory of all verified business leads discovered across your campaigns.
+            </p>
+        </div>
+        <div class="pos-glass-intro-actions d-flex align-items-center gap-2">
+            <span class="pos-glass-pill pos-tone-primary">
+                <i class="icon-base ti tabler-database me-1"></i> {{ $leads->total() }} leads
+            </span>
+            <a href="{{ route('leads.export.excel') }}" class="btn btn-sm btn-success text-white">
+                <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Export Excel (.xlsx)
+            </a>
+            <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
+                <i class="icon-base ti tabler-plus me-1"></i> Extract Leads
+            </a>
         </div>
     </div>
 
     <!-- Filters Row -->
-    <div class="card-body border-bottom bg-light-subtle py-3 px-3 px-md-4">
+    <div class="p-3 border-bottom bg-light-subtle">
         <form method="GET" action="{{ route('leads.index') }}">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md-3">
@@ -98,35 +101,48 @@
                 @forelse ($leads as $lead)
                     <tr>
                         <td class="ps-3">
-                            <input class="form-check-input lead-row-checkbox" type="checkbox" value="{{ $lead->id }}">
+                            <input class="form-check-input row-select-checkbox" type="checkbox" value="{{ $lead->id }}">
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 @if ($lead->avatar_url)
-                                    <img src="{{ $lead->avatar_url }}" alt="" class="rounded" style="width: 32px; height: 32px; object-fit: cover;" onerror="this.style.display='none'">
+                                    <img src="{{ $lead->avatar_url }}" alt="{{ $lead->name }}" class="rounded" style="width: 34px; height: 34px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="lead-avatar-fallback rounded align-items-center justify-content-center bg-primary text-white fw-bold" style="display: none; width: 34px; height: 34px; font-size: 0.8rem;">
+                                        {{ strtoupper(substr($lead->name, 0, 1)) }}
+                                    </div>
+                                @else
+                                    <div class="rounded d-flex align-items-center justify-content-center bg-label-primary text-primary fw-bold" style="width: 34px; height: 34px; font-size: 0.8rem;">
+                                        {{ strtoupper(substr($lead->name, 0, 1)) }}
+                                    </div>
                                 @endif
                                 <div>
-                                    <div class="fw-semibold text-heading small">{{ $lead->business_name }}</div>
-                                    <small class="text-muted">{{ $lead->source }}</small>
+                                    <div class="fw-semibold text-heading small">{{ $lead->name }}</div>
+                                    @if ($lead->verified)
+                                        <span class="badge bg-label-success" style="font-size: 0.65rem;"><i class="icon-base ti tabler-check me-1"></i>Verified</span>
+                                    @endif
                                 </div>
                             </div>
                         </td>
                         <td>
-                            @if ($lead->category)
-                                <span class="badge bg-label-secondary small" style="font-size: 0.72rem;">{{ $lead->category }}</span>
-                            @else
-                                <span class="text-muted small">—</span>
-                            @endif
+                            <span class="badge bg-label-secondary small">{{ $lead->category ?: 'Business' }}</span>
                         </td>
                         <td>
                             <div class="small">
+                                @if ($lead->email)
+                                    <div class="text-truncate" style="max-width: 180px;">
+                                        <a href="mailto:{{ $lead->email }}" class="text-success text-decoration-none">
+                                            <i class="icon-base ti tabler-mail me-1"></i>{{ $lead->email }}
+                                        </a>
+                                    </div>
+                                @endif
                                 @if ($lead->phone)
-                                    <div><i class="icon-base ti tabler-phone me-1 text-success"></i><a href="tel:{{ $lead->phone }}" class="text-body">{{ $lead->phone }}</a></div>
+                                    <div class="text-truncate" style="max-width: 180px;">
+                                        <a href="tel:{{ $lead->phone }}" class="text-info text-decoration-none">
+                                            <i class="icon-base ti tabler-phone me-1"></i>{{ $lead->phone }}
+                                        </a>
+                                    </div>
                                 @endif
-                                @if (!empty($lead->emails))
-                                    <div><i class="icon-base ti tabler-mail me-1 text-primary"></i><a href="mailto:{{ $lead->emails[0] }}" class="text-body">{{ $lead->emails[0] }}</a></div>
-                                @endif
-                                @if (!$lead->phone && empty($lead->emails))
+                                @if (! $lead->email && ! $lead->phone)
                                     <span class="text-muted">—</span>
                                 @endif
                             </div>
@@ -134,30 +150,28 @@
                         <td>
                             @if ($lead->rating)
                                 <div class="d-flex align-items-center gap-1">
-                                    <span class="text-warning fw-bold small">★ {{ number_format($lead->rating, 1) }}</span>
-                                    @if ($lead->review_count)
-                                        <small class="text-muted">({{ number_format($lead->review_count) }})</small>
-                                    @endif
+                                    <span class="badge bg-label-warning text-dark fw-bold">★ {{ number_format($lead->rating, 1) }}</span>
+                                    <small class="text-muted">({{ $lead->reviews_count }})</small>
                                 </div>
                             @else
                                 <span class="text-muted small">—</span>
                             @endif
                         </td>
                         <td>
-                            <span class="small text-muted text-truncate d-inline-block" style="max-width: 200px;" title="{{ $lead->address }}">
+                            <div class="small text-muted text-truncate" style="max-width: 200px;" title="{{ $lead->address }}">
                                 {{ $lead->address ?: '—' }}
-                            </span>
+                            </div>
                         </td>
                         <td class="pe-3 text-end">
                             <div class="d-flex justify-content-end gap-1">
-                                @if ($lead->google_maps_url)
-                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-secondary" title="Google Maps">
-                                        <i class="icon-base ti tabler-map-pin"></i>
+                                @if ($lead->website)
+                                    <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-info" title="Visit Website">
+                                        <i class="icon-base ti tabler-world"></i>
                                     </a>
                                 @endif
-                                @if ($lead->website)
-                                    <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-primary" title="Website">
-                                        <i class="icon-base ti tabler-world-www"></i>
+                                @if ($lead->google_maps_url)
+                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-danger" title="Open Google Maps">
+                                        <i class="icon-base ti tabler-map-pin"></i>
                                     </a>
                                 @endif
                             </div>
@@ -166,10 +180,10 @@
                 @empty
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="icon-base ti tabler-database-off display-6 mb-2"></i>
-                            <h6>No extracted leads found</h6>
-                            <p class="small mb-3">Adjust your search filters or start a new extraction.</p>
-                            <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">Start New Extraction</a>
+                            <i class="icon-base ti tabler-users-minus display-6 mb-2"></i>
+                            <h6>No leads matched your criteria</h6>
+                            <p class="small mb-3">Try adjusting your search filters or start a new extraction job.</p>
+                            <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">Start Extraction</a>
                         </td>
                     </tr>
                 @endforelse
@@ -180,15 +194,10 @@
     @if ($leads->hasPages())
         <div class="card-footer border-top py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="small text-muted">
-                    Showing {{ $leads->firstItem() ?? 0 }} to {{ $leads->lastItem() ?? 0 }} of {{ $leads->total() }} leads
-                </div>
-                <div>
-                    {{ $leads->links('pagination::bootstrap-5') }}
-                </div>
+                <small class="text-muted">Showing {{ $leads->firstItem() }} to {{ $leads->lastItem() }} of {{ $leads->total() }} leads</small>
+                <div>{{ $leads->links('pagination::bootstrap-5') }}</div>
             </div>
         </div>
     @endif
 </div>
 @endsection
-

@@ -112,7 +112,7 @@ class AuthTest extends TestCase
         $this->actingAs($user)
             ->get('/profile')
             ->assertOk()
-            ->assertSee('Personal Information')
+            ->assertSee('Profile')
             ->assertSee('Change Password');
 
         $this->actingAs($user)
@@ -147,8 +147,8 @@ class AuthTest extends TestCase
         $this->actingAs($user)
             ->get('/settings')
             ->assertOk()
-            ->assertSee('Lead Extractor Settings')
-            ->assertSee('Google Maps Places API Key');
+            ->assertSee('Extraction Preferences')
+            ->assertSee('Google Places Platform API Key');
 
         $this->actingAs($user)
             ->put('/settings', [

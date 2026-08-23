@@ -19,6 +19,10 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/iconify-icons.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-glass.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-navbar.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-menu.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-table.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/extractor.css') }}" />
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
@@ -56,6 +60,28 @@
         .layout-menu .menu-item.active > .menu-link i {
             color: #ffffff !important;
         }
+        #layout-menu .menu-inner.menu-layout-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #layout-menu .menu-item-settings-bottom {
+            margin-top: auto;
+        }
+        #layout-menu .menu-copyright {
+            pointer-events: none;
+        }
+        #layout-menu .menu-copyright .menu-link {
+            cursor: default;
+            padding-top: 0.25rem;
+            padding-bottom: 0.85rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.8125rem;
+        }
+        #layout-menu .menu-copyright .menu-link:hover {
+            background: transparent !important;
+            color: var(--bs-secondary-color) !important;
+        }
     </style>
     @stack('styles')
 </head>
@@ -75,7 +101,7 @@
 
                 <div class="menu-inner-shadow"></div>
 
-                <ul class="menu-inner py-1">
+                <ul class="menu-inner py-1 menu-layout-column">
                     <!-- Main Apps Section -->
                     <li class="menu-header small text-uppercase">
                         <span class="menu-header-text">Lead Generation</span>
@@ -128,13 +154,6 @@
                         </a>
                     </li>
 
-                    <li class="menu-item {{ request()->routeIs('settings.index') ? 'active' : '' }}">
-                        <a href="{{ route('settings.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-settings"></i>
-                            <div data-i18n="Extractor Settings">Extractor Settings</div>
-                        </a>
-                    </li>
-
                     @if (Auth::user()?->isSuperAdmin())
                         <!-- Super Admin Section -->
                         <li class="menu-header small text-uppercase mt-3">
@@ -148,14 +167,34 @@
                             </a>
                         </li>
                     @endif
+
+                    <!-- Bottom Settings & Copyright (Matching POS) -->
+                    <li class="menu-item menu-item-settings-bottom {{ request()->routeIs('settings.index') ? 'active' : '' }}">
+                        <a href="{{ route('settings.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base ti tabler-settings-cog"></i>
+                            <div data-i18n="Settings">Settings</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item menu-copyright">
+                        <div class="menu-link">
+                            <div>&copy; {{ date('Y') }} Leads Engine</div>
+                        </div>
+                    </li>
                 </ul>
             </aside>
             <!-- / Sidebar -->
 
             <!-- Layout Page -->
             <div class="layout-page">
-                <!-- Top Navbar -->
-                <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme shadow-sm" id="layout-navbar">
+                <!-- Top Navbar matching POS structure -->
+                @php
+                    $authUser = Auth::user();
+                    $isSuperAdmin = $authUser?->isSuperAdmin();
+                    $contextLabel = $isSuperAdmin ? 'Super Admin Console' : ($authUser?->tenant?->name ?? 'Leads Engine');
+                    $contextSub = $isSuperAdmin ? 'Global SaaS Management' : (strtoupper($authUser?->tenant?->plan ?? 'STARTER').' Workspace');
+                @endphp
+                <nav class="layout-navbar container-xxl navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme pos-navbar pos-tone-primary" id="layout-navbar">
                     <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
                         <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
                             <i class="icon-base ti tabler-menu-2"></i>
@@ -163,53 +202,44 @@
                     </div>
 
                     <div class="navbar-nav-right d-flex align-items-center justify-content-between w-100" id="navbar-collapse">
-                        <!-- Left: Tenant Indicator & Quick Actions -->
-                        <div class="d-flex align-items-center gap-2">
-                            @if (Auth::user()?->tenant)
-                                <span class="badge bg-label-primary px-3 py-2 d-flex align-items-center gap-1">
-                                    <i class="icon-base ti tabler-building me-1"></i>
-                                    <span class="fw-semibold">{{ Auth::user()->tenant->name }}</span>
-                                    <span class="badge bg-primary text-white ms-1" style="font-size: 0.65rem;">{{ strtoupper(Auth::user()->tenant->plan) }}</span>
-                                </span>
-                            @elseif (Auth::user()?->isSuperAdmin())
-                                <span class="badge bg-label-danger px-3 py-2 d-flex align-items-center gap-1">
-                                    <i class="icon-base ti tabler-shield-check me-1"></i>
-                                    <span class="fw-semibold">Super Admin Console</span>
-                                </span>
-                            @endif
-
-                            <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary d-none d-md-inline-flex align-items-center ms-2">
-                                <i class="icon-base ti tabler-plus me-1"></i> New Extraction
-                            </a>
+                        <!-- Left: Brand / Org Name Treatment -->
+                        <div class="pos-navbar-brand">
+                            <span class="pos-navbar-org-name" title="{{ $contextLabel }}">{{ $contextLabel }}</span>
+                            <small class="pos-navbar-subtitle text-muted">{{ $contextSub }}</small>
                         </div>
 
-                        <!-- Right: User Profile Dropdown -->
-                        <ul class="navbar-nav flex-row align-items-center ms-auto gap-2">
+                        <!-- Right: Actions & User Dropdown -->
+                        <ul class="navbar-nav flex-row align-items-center ms-auto gap-3">
+                            <li class="nav-item d-none d-md-block">
+                                <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
+                                    <i class="icon-base ti tabler-plus me-1"></i> New Extraction
+                                </a>
+                            </li>
+
                             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="user-avatar-badge">
-                                        {{ substr(Auth::user()->name ?? 'U', 0, 1) }}
+                                        {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
                                     </div>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 14rem;">
                                     <li>
-                                        <div class="dropdown-item py-2">
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-shrink-0 me-3">
-                                                    <div class="user-avatar-badge">
-                                                        {{ substr(Auth::user()->name ?? 'U', 0, 1) }}
-                                                    </div>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-0 fw-semibold">{{ Auth::user()->name }}</h6>
-                                                    <small class="badge {{ Auth::user()->getRoleBadgeClass() }} mt-1" style="font-size: 0.65rem;">
-                                                        {{ Auth::user()->getRoleLabel() }}
-                                                    </small>
+                                        <div class="pos-navbar-dropdown-head">
+                                            <div class="user-avatar-badge" style="width: 2.75rem; height: 2.75rem; font-size: 1.1rem;">
+                                                {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="pos-navbar-dropdown-name text-truncate">{{ $authUser->name }}</div>
+                                                <small class="pos-navbar-dropdown-email text-truncate">{{ $authUser->email }}</small>
+                                                <div class="mt-1">
+                                                    <span class="badge {{ $authUser->getRoleBadgeClass() }}" style="font-size: 0.65rem;">
+                                                        {{ $authUser->getRoleLabel() }}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </li>
-                                    <li><div class="dropdown-divider"></div></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('profile.index') }}">
                                             <i class="icon-base ti tabler-user me-2"></i>
@@ -218,11 +248,11 @@
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('settings.index') }}">
-                                            <i class="icon-base ti tabler-settings me-2"></i>
+                                            <i class="icon-base ti tabler-settings-cog me-2"></i>
                                             <span class="align-middle">Extractor Settings</span>
                                         </a>
                                     </li>
-                                    @if (Auth::user()?->isSuperAdmin())
+                                    @if ($isSuperAdmin)
                                         <li>
                                             <a class="dropdown-item" href="{{ route('tenants.index') }}">
                                                 <i class="icon-base ti tabler-building me-2"></i>
@@ -230,7 +260,7 @@
                                             </a>
                                         </li>
                                     @endif
-                                    <li><div class="dropdown-divider"></div></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form method="POST" action="{{ route('logout') }}">
                                             @csrf

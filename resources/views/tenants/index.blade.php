@@ -3,16 +3,18 @@
 @section('title', 'SaaS Tenants & Clients')
 
 @section('content')
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header border-bottom py-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h5 class="mb-0 fw-semibold text-heading">
-                    <i class="icon-base ti tabler-building me-1 text-danger"></i> SaaS Tenants &amp; Organizations
-                </h5>
-                <small class="text-muted">Manage multi-tenant client accounts, plan tiers, and lead extraction quotas.</small>
-            </div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTenantModal">
+<div class="pos-glass-card pos-tone-danger mb-4">
+    <div class="pos-glass-intro border-bottom">
+        <div class="pos-glass-intro-copy">
+            <h4 class="pos-glass-intro-title">
+                <i class="icon-base ti tabler-building me-1 text-danger"></i> SaaS Tenants &amp; Organizations
+            </h4>
+            <p class="pos-glass-intro-subtitle">
+                Manage multi-tenant client accounts, plan tiers, and lead extraction quotas.
+            </p>
+        </div>
+        <div class="pos-glass-intro-actions">
+            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#createTenantModal">
                 <i class="icon-base ti tabler-plus me-1"></i> Add Tenant
             </button>
         </div>
@@ -47,7 +49,7 @@
                             <div class="small fw-semibold text-heading mb-1">
                                 {{ number_format($t->leads_extracted_count) }} / {{ number_format($t->lead_quota) }}
                             </div>
-                            <div class="progress" style="height: 4px; width: 140px;">
+                            <div class="progress" style="height: 5px; width: 140px;">
                                 <div class="progress-bar bg-primary" style="width: {{ min(100, round(($t->leads_extracted_count / max(1, $t->lead_quota)) * 100)) }}%"></div>
                             </div>
                         </td>
@@ -167,4 +169,3 @@
     </div>
 </div>
 @endsection
-
