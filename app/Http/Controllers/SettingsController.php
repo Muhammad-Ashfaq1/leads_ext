@@ -73,3 +73,4 @@ class SettingsController extends Controller
         return back()->with('success', 'Organization settings updated successfully.');
     }
 }
+

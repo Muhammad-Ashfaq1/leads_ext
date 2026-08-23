@@ -27,3 +27,4 @@ class JobsController extends Controller
         ]);
     }
 }
+

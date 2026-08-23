@@ -93,3 +93,4 @@ class AuthTest extends TestCase
             ->assertSee('SaaS Tenants & Organizations');
     }
 }
+

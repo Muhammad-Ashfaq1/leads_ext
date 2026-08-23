@@ -58,3 +58,4 @@ class TenantsController extends Controller
         return redirect()->route('tenants.index')->with('success', "Tenant '{$tenant->name}' updated.");
     }
 }
+

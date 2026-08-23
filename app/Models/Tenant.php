@@ -61,3 +61,4 @@ class Tenant extends Model
         $this->increment('leads_extracted_count', $amount);
     }
 }
+
