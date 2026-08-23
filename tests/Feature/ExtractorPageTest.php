@@ -16,7 +16,7 @@ class ExtractorPageTest extends TestCase
             ->assertSee('Start Extraction')
             ->assertSee('Extraction Status')
             ->assertSee('Leads Found')
-            ->assertSee('id="leadsGrid"')
+            ->assertSee('extractor-leads-grid')
             ->assertDontSee('Login');
     }
 }
