@@ -21,8 +21,13 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Prepare Local Directories
+        run: |
+          mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public
+          chmod -R 775 storage bootstrap/cache
+
       - name: Install Laravel Dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-reqs
 
       - name: Install sshpass
         run: |
@@ -62,11 +67,13 @@ jobs:
 
           echo "Ensuring writable dirs..."
           mkdir -p \
-            storage/framework/{cache,sessions,views} \
+            storage/framework/cache/data \
+            storage/framework/sessions \
+            storage/framework/views \
             storage/logs \
             storage/app/public \
             bootstrap/cache
-          chmod -R ug+rwx storage bootstrap/cache
+          chmod -R 775 storage bootstrap/cache
 
           echo "Running migrations..."
           php artisan migrate --force
