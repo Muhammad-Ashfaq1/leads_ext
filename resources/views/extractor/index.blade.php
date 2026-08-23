@@ -17,14 +17,89 @@
 
 <div class="card awt-glass-card awt-tone-primary mb-4" id="promptCard">
     <div class="card-body">
-        <label class="form-label fw-semibold" for="promptInput">What leads do you want to find?</label>
-        <input
-            type="text"
-            id="promptInput"
-            class="form-control form-control-lg"
-            placeholder="Find dentists in Lahore"
-            autocomplete="off"
-            maxlength="500">
+        <!-- Vuexy Custom Option Engine Mode Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+                <div class="form-check custom-option custom-option-basic checked" id="customOptionGoogleApi">
+                    <label class="form-check-label custom-option-content" for="engineGoogleApi">
+                        <input name="engineMode" class="form-check-input" type="radio" value="google_api" id="engineGoogleApi" checked />
+                        <span class="custom-option-header">
+                            <span class="h6 mb-0 d-flex align-items-center">
+                                <i class="icon-base ti tabler-api me-2 text-primary fs-4"></i>Google Places API
+                            </span>
+                            <span class="badge bg-label-success">Recommended</span>
+                        </span>
+                        <span class="custom-option-body">
+                            <small class="text-muted d-block mb-2">Instant extraction from Google Maps API. Target by Zip Code, City, Area, or State with zero CAPTCHAs.</small>
+                            <span class="d-flex align-items-center gap-2">
+                                @if ($hasGoogleApiKey)
+                                    <span class="badge bg-label-success" id="apiKeyStatusBadge" title="Google Maps API Key is active in .env">
+                                        <i class="icon-base ti tabler-check me-1"></i>API Key Active (.env)
+                                    </span>
+                                @else
+                                    <button type="button" class="btn btn-xs btn-outline-secondary" id="toggleApiKeyBtn">
+                                        <i class="icon-base ti tabler-key me-1"></i>Enter API Key
+                                    </button>
+                                @endif
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-check custom-option custom-option-basic" id="customOptionBrowser">
+                    <label class="form-check-label custom-option-content" for="engineBrowser">
+                        <input name="engineMode" class="form-check-input" type="radio" value="live" id="engineBrowser" />
+                        <span class="custom-option-header">
+                            <span class="h6 mb-0 d-flex align-items-center">
+                                <i class="icon-base ti tabler-brand-chrome me-2 text-info fs-4"></i>Browser Extractor (Chromium)
+                            </span>
+                            <span class="badge bg-label-info">Local / Free</span>
+                        </span>
+                        <span class="custom-option-body">
+                            <small class="text-muted d-block">Automated Playwright Chromium desktop browser scrolling and scraping live Google Maps pages locally without an API key.</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-7" id="promptInputCol">
+                <label class="form-label fw-semibold" for="promptInput" id="promptLabel">What leads do you want to find?</label>
+                <input
+                    type="text"
+                    id="promptInput"
+                    class="form-control form-control-lg"
+                    placeholder="e.g. Dentists, Real Estate, Plumbers, Law Firms"
+                    autocomplete="off"
+                    maxlength="500">
+            </div>
+            <div class="col-12 col-lg-5" id="locationInputCol">
+                <label class="form-label fw-semibold" for="locationInput">
+                    <i class="icon-base ti tabler-map-pin me-1 text-primary"></i>Zip code, City, State, or Area
+                </label>
+                <input
+                    type="text"
+                    id="locationInput"
+                    class="form-control form-control-lg"
+                    placeholder="e.g. 90210, Miami FL, Lahore, Texas"
+                    autocomplete="off"
+                    maxlength="200">
+            </div>
+        </div>
+
+        <!-- Custom API Key input (shown when toggled or if key missing) -->
+        <div class="mt-3 d-none" id="apiKeyRow">
+            <label class="form-label small fw-semibold" for="customApiKeyInput">Google Maps Places API Key</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
+                <input type="password" id="customApiKeyInput" class="form-control" placeholder="AIzaSy...">
+                <button class="btn btn-outline-secondary" type="button" id="toggleKeyVisibilityBtn"><i class="icon-base ti tabler-eye"></i></button>
+            </div>
+            <div class="form-text small text-muted">Enter a Google Maps Platform API key with Places API enabled, or configure `GOOGLE_MAPS_API_KEY` in `.env`.</div>
+        </div>
+
         <div class="d-flex flex-wrap align-items-end gap-3 mt-4">
             <div>
                 <label class="form-label mb-1" for="limitInput">Maximum Leads</label>
@@ -47,9 +122,9 @@
             <div class="extractor-dev mt-4">
                 <div class="form-check form-switch mb-2">
                     <input class="form-check-input" type="checkbox" id="mockToggle">
-                    <label class="form-check-label" for="mockToggle">Development mock stream (no Google Maps)</label>
+                    <label class="form-check-label" for="mockToggle">Development mock stream (simulated data)</label>
                 </div>
-                <div class="form-check form-switch">
+                <div class="form-check form-switch" id="verifyToggleWrap">
                     <input class="form-check-input" type="checkbox" id="verifyToggle">
                     <label class="form-check-label" for="verifyToggle">Simulate human verification</label>
                 </div>
@@ -327,6 +402,7 @@
         exportUrl: @json(url('/api/extractor/__JOB__/export')),
         verifyCompleteUrl: @json(url('/api/extractor/__JOB__/verify-complete')),
         allowMock: @json((bool) $allowMock),
+        hasGoogleApiKey: @json((bool) $hasGoogleApiKey),
         csrf: @json(csrf_token()),
     };
 </script>

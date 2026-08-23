@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
 use App\Services\ExtractorClient;
+use App\Services\GooglePlacesService;
 use App\Services\LeadCsvExporter;
 use App\Support\PromptNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,14 +23,17 @@ class ExtractorController extends Controller
     public function __construct(
         private readonly ExtractorClient $client,
         private readonly LeadCsvExporter $csvExporter,
+        private readonly GooglePlacesService $googlePlacesService,
     ) {}
 
     public function start(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'min:2', 'max:500'],
+            'location' => ['nullable', 'string', 'max:200'],
+            'api_key' => ['nullable', 'string', 'max:200'],
             'limit' => ['nullable', 'integer', 'min:'.config('extractor.min_limit'), 'max:'.config('extractor.max_limit')],
-            'mode' => ['nullable', Rule::in(['live', 'mock'])],
+            'mode' => ['nullable', Rule::in(['live', 'mock', 'google_api'])],
             'simulate_verification' => ['sometimes', 'boolean'],
         ]);
 
@@ -42,8 +47,47 @@ class ExtractorController extends Controller
         }
 
         $prompt = trim($validated['prompt']);
+        $location = trim($validated['location'] ?? '');
+        $apiKey = trim($validated['api_key'] ?? '');
         $limit = (int) ($validated['limit'] ?? config('extractor.default_limit'));
-        $query = PromptNormalizer::toSearchQuery($prompt);
+
+        if ($location !== '') {
+            $query = PromptNormalizer::toSearchQuery($prompt)." in {$location}";
+        } else {
+            $query = PromptNormalizer::toSearchQuery($prompt);
+        }
+
+        if ($mode === 'google_api') {
+            $configuredKey = $apiKey ?: config('services.google.maps_api_key');
+            if (empty($configuredKey)) {
+                return response()->json([
+                    'message' => 'Google Maps API key is required. Please provide an API key or configure GOOGLE_MAPS_API_KEY in .env.',
+                ], 422);
+            }
+
+            $jobUuid = (string) Str::uuid();
+            if (! empty($apiKey)) {
+                session(['google_maps_api_key_'.$jobUuid => $apiKey]);
+            }
+
+            $job = ExtractionJob::create([
+                'uuid' => $jobUuid,
+                'prompt' => $prompt.($location ? " ({$location})" : ''),
+                'query' => $query,
+                'status' => ExtractionJob::STATUS_STARTING,
+                'limit' => $limit,
+                'mode' => $mode,
+                'started_at' => now(),
+            ]);
+
+            Log::info('Google API job created', ['job_id' => $job->uuid, 'query' => $job->query, 'limit' => $limit]);
+
+            return response()->json([
+                'job_id' => $job->uuid,
+                'query' => $job->query,
+                'status' => $job->status,
+            ]);
+        }
 
         try {
             $started = $this->client->start($prompt, $limit, $mode, $simulate);
@@ -146,8 +190,14 @@ class ExtractorController extends Controller
         return $this->csvExporter->download($job, $ids);
     }
 
-    public function stream(ExtractionJob $job): StreamedResponse
+    public function stream(Request $request, ExtractionJob $job): StreamedResponse
     {
+        if ($job->mode === 'google_api') {
+            $apiKey = $request->query('api_key') ?: session('google_maps_api_key_'.$job->uuid);
+
+            return $this->googlePlacesService->stream($job, $apiKey);
+        }
+
         $url = $this->client->streamUrl($job->uuid);
 
         return response()->stream(function () use ($job, $url): void {

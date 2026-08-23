@@ -206,4 +206,86 @@ class ExtractorApiTest extends TestCase
             'mode' => 'mock',
         ])->assertForbidden();
     }
+
+    public function test_google_api_mode_validates_api_key(): void
+    {
+        config(['services.google.maps_api_key' => null]);
+
+        $this->postJson('/api/extractor/start', [
+            'prompt' => 'Dentists',
+            'location' => '90210',
+            'mode' => 'google_api',
+        ])->assertStatus(422)->assertJsonFragment([
+            'message' => 'Google Maps API key is required. Please provide an API key or configure GOOGLE_MAPS_API_KEY in .env.',
+        ]);
+    }
+
+    public function test_google_api_mode_creates_job_with_location(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        $response = $this->postJson('/api/extractor/start', [
+            'prompt' => 'Dentists',
+            'location' => '90210',
+            'mode' => 'google_api',
+            'limit' => 50,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('query', 'Dentists in 90210')
+            ->assertJsonPath('status', 'starting');
+
+        $this->assertDatabaseHas('extraction_jobs', [
+            'query' => 'Dentists in 90210',
+            'mode' => 'google_api',
+            'limit' => 50,
+        ]);
+    }
+
+    public function test_google_api_stream_extracts_and_saves_leads(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'places' => [
+                    [
+                        'id' => 'place_123',
+                        'displayName' => ['text' => 'Beverly Hills Dental'],
+                        'formattedAddress' => '90210 Beverly Hills, CA',
+                        'nationalPhoneNumber' => '(310) 555-0199',
+                        'websiteUri' => 'https://beverlydental.example',
+                        'rating' => 4.9,
+                        'userRatingCount' => 88,
+                        'googleMapsUri' => 'https://maps.google.com/?cid=123',
+                        'primaryTypeDisplayName' => ['text' => 'Dentist'],
+                    ],
+                ],
+            ], 200),
+            'https://beverlydental.example' => Http::response('<html>Contact us at info@beverlydental.example</html>', 200),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => '66666666-6666-6666-6666-666666666666',
+            'prompt' => 'Dentists (90210)',
+            'query' => 'Dentists in 90210',
+            'status' => 'starting',
+            'limit' => 10,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('Beverly Hills Dental', $streamContent);
+        $this->assertStringContainsString('info@beverlydental.example', $streamContent);
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Beverly Hills Dental',
+            'phone' => '(310) 555-0199',
+            'source' => 'Google Places API',
+        ]);
+    }
 }

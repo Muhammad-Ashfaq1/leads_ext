@@ -3,7 +3,7 @@
     const state = {
         jobId: null,
         source: null,
-        leads: new Map(), // key -> lead object with _index
+        leads: new Map(),
         selectedKeys: new Set(),
         running: false,
         leadCounter: 0,
@@ -19,6 +19,22 @@
     };
 
     const els = {
+        // Engine Mode controls
+        engineGoogleApi: document.getElementById('engineGoogleApi'),
+        engineBrowser: document.getElementById('engineBrowser'),
+        customOptionGoogleApi: document.getElementById('customOptionGoogleApi'),
+        customOptionBrowser: document.getElementById('customOptionBrowser'),
+        promptLabel: document.getElementById('promptLabel'),
+        promptInputCol: document.getElementById('promptInputCol'),
+        locationInputCol: document.getElementById('locationInputCol'),
+        locationInput: document.getElementById('locationInput'),
+        apiKeyRow: document.getElementById('apiKeyRow'),
+        toggleApiKeyBtn: document.getElementById('toggleApiKeyBtn'),
+        customApiKeyInput: document.getElementById('customApiKeyInput'),
+        toggleKeyVisibilityBtn: document.getElementById('toggleKeyVisibilityBtn'),
+        verifyToggleWrap: document.getElementById('verifyToggleWrap'),
+
+        // Extraction inputs & controls
         prompt: document.getElementById('promptInput'),
         limit: document.getElementById('limitInput'),
         start: document.getElementById('startBtn'),
@@ -150,7 +166,10 @@
         state.running = running;
         els.start.disabled = running;
         els.prompt.disabled = running;
+        if (els.locationInput) els.locationInput.disabled = running;
         els.limit.disabled = running;
+        if (els.engineGoogleApi) els.engineGoogleApi.disabled = running;
+        if (els.engineBrowser) els.engineBrowser.disabled = running;
         els.stop.classList.toggle('d-none', !running);
         els.newExtraction.classList.toggle('d-none', running);
     }
@@ -586,7 +605,6 @@
         navigator.clipboard.writeText(text).then(
             () => showToast(successMessage),
             () => {
-                // Fallback
                 const input = document.createElement('textarea');
                 input.value = text;
                 document.body.appendChild(input);
@@ -731,12 +749,57 @@
         };
     }
 
+    function updateEngineModeUi() {
+        const isGoogleApi = els.engineGoogleApi?.checked ?? true;
+
+        if (els.customOptionGoogleApi) els.customOptionGoogleApi.classList.toggle('checked', isGoogleApi);
+        if (els.customOptionBrowser) els.customOptionBrowser.classList.toggle('checked', !isGoogleApi);
+
+        if (isGoogleApi) {
+            if (els.locationInputCol) els.locationInputCol.classList.remove('d-none');
+            if (els.promptInputCol) {
+                els.promptInputCol.classList.remove('col-12');
+                els.promptInputCol.classList.add('col-lg-7');
+            }
+            if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
+            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Law Firms';
+            if (els.verifyToggleWrap) els.verifyToggleWrap.classList.add('d-none');
+        } else {
+            if (els.locationInputCol) els.locationInputCol.classList.add('d-none');
+            if (els.promptInputCol) {
+                els.promptInputCol.classList.remove('col-lg-7');
+                els.promptInputCol.classList.add('col-12');
+            }
+            if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
+            if (els.prompt) els.prompt.placeholder = 'e.g. Find dentists in Lahore';
+            if (els.verifyToggleWrap) els.verifyToggleWrap.classList.remove('d-none');
+            if (els.apiKeyRow) els.apiKeyRow.classList.add('d-none');
+        }
+    }
+
     async function startExtraction() {
         const prompt = (els.prompt.value || '').trim();
+        const location = (els.locationInput?.value || '').trim();
+        const isGoogleApi = els.engineGoogleApi?.checked ?? false;
+        const customApiKey = (els.customApiKeyInput?.value || '').trim();
+
         if (prompt.length < 2) {
-            setAlert('warning', 'Enter a search prompt such as “Find dentists in Lahore”.', true);
+            setAlert('warning', 'Please enter a search prompt or business category (e.g. “Dentists”).', true);
             els.prompt.focus();
             return;
+        }
+
+        let mode = 'live';
+        if (els.mock?.checked) {
+            mode = 'mock';
+        } else if (isGoogleApi) {
+            mode = 'google_api';
+            if (!cfg.hasGoogleApiKey && !customApiKey) {
+                if (els.apiKeyRow) els.apiKeyRow.classList.remove('d-none');
+                setAlert('warning', 'Google Maps API key is required. Enter your API key below or switch to Browser Extractor mode.', true);
+                if (els.customApiKeyInput) els.customApiKeyInput.focus();
+                return;
+            }
         }
 
         setAlert('info', '', false);
@@ -746,15 +809,23 @@
         setRunning(true);
 
         try {
+            const payloadData = {
+                prompt,
+                limit: Number(els.limit.value || 100),
+                mode,
+                simulate_verification: Boolean(els.verify?.checked),
+            };
+            if (location) {
+                payloadData.location = location;
+            }
+            if (customApiKey) {
+                payloadData.api_key = customApiKey;
+            }
+
             const response = await fetch(cfg.startUrl, {
                 method: 'POST',
                 headers: headers(),
-                body: JSON.stringify({
-                    prompt,
-                    limit: Number(els.limit.value || 100),
-                    mode: els.mock?.checked ? 'mock' : 'live',
-                    simulate_verification: Boolean(els.verify?.checked),
-                }),
+                body: JSON.stringify(payloadData),
             });
             const payload = await response.json();
             if (!response.ok) {
@@ -766,7 +837,7 @@
         } catch (error) {
             setRunning(false);
             setStatus('error', error.message);
-            setAlert('danger', error.message || 'Extractor service is unavailable. Please start the Python extractor service.', true);
+            setAlert('danger', error.message || 'Extractor service is unavailable.', true);
         }
     }
 
@@ -784,7 +855,7 @@
         try {
             await fetch(jobUrl(cfg.focusUrl), { method: 'POST', headers: headers() });
         } catch (_) {
-            /* The Playwright window is already open locally. */
+            /* Handled */
         }
         els.verificationHint.textContent = 'Complete the verification in the Google Maps browser window, then extraction will resume automatically.';
     }
@@ -841,7 +912,22 @@
         els.filterChips.forEach((chip) => chip.classList.remove('active'));
     }
 
-    // Grid event delegation for card checkbox & card clicks
+    // Engine Mode Listeners
+    if (els.engineGoogleApi) els.engineGoogleApi.addEventListener('change', updateEngineModeUi);
+    if (els.engineBrowser) els.engineBrowser.addEventListener('change', updateEngineModeUi);
+    if (els.toggleApiKeyBtn) {
+        els.toggleApiKeyBtn.addEventListener('click', () => {
+            if (els.apiKeyRow) els.apiKeyRow.classList.toggle('d-none');
+        });
+    }
+    if (els.toggleKeyVisibilityBtn && els.customApiKeyInput) {
+        els.toggleKeyVisibilityBtn.addEventListener('click', () => {
+            const isPassword = els.customApiKeyInput.type === 'password';
+            els.customApiKeyInput.type = isPassword ? 'text' : 'password';
+        });
+    }
+
+    // Grid event delegation for card checkbox
     els.leadsGrid.addEventListener('change', (event) => {
         if (event.target.matches('.extractor-card-checkbox')) {
             const key = event.target.dataset.key;
@@ -1006,6 +1092,11 @@
     els.prompt.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') startExtraction();
     });
+    if (els.locationInput) {
+        els.locationInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') startExtraction();
+        });
+    }
     els.stop.addEventListener('click', stopExtraction);
     els.stopVerify.addEventListener('click', stopExtraction);
     els.openVerification.addEventListener('click', openVerification);
@@ -1021,4 +1112,7 @@
     if (els.completeMock) {
         els.completeMock.addEventListener('click', completeMockVerification);
     }
+
+    // Init UI state
+    updateEngineModeUi();
 })();

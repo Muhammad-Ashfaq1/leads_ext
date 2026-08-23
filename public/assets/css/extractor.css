@@ -395,6 +395,17 @@
     animation: extractor-card-in 0.2s ease;
 }
 
+/* Engine Toggle */
+.extractor-engine-toggle .btn {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+}
+
+.extractor-engine-toggle .btn-check:checked + .btn {
+    box-shadow: 0 2px 6px rgba(105, 108, 255, 0.25);
+}
+
 @media (max-width: 768px) {
     .extractor-navbar .app-brand-text { font-size: 0.95rem; }
     
