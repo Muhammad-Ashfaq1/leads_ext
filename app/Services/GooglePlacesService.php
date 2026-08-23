@@ -197,7 +197,13 @@ class GooglePlacesService
                             'rating' => $rating,
                             'review_count' => $reviews,
                             'source' => 'Google Places API',
+                            'metadata' => [
+                                'place_id' => $place['id'] ?? null,
+                                'business_status' => $place['businessStatus'] ?? null,
+                            ],
                             'extracted_at' => now(),
+                            'tenant_id' => $job->tenant_id,
+                            'user_id' => $job->user_id,
                         ];
 
                         $exists = $job->leads()
@@ -249,6 +255,10 @@ class GooglePlacesService
                     'current_activity' => 'Extraction completed.',
                     'completed_at' => now(),
                 ])->save();
+
+                if ($job->tenant_id && $extractedCount > 0) {
+                    $job->tenant?->incrementLeadsCount($extractedCount);
+                }
 
                 $this->sendSseEvent('completed', [
                     'type' => 'completed',

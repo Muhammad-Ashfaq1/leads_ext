@@ -31,6 +31,8 @@ class ExtractionJob extends Model
     public const STATUS_BLOCKED = 'blocked';
 
     protected $fillable = [
+        'tenant_id',
+        'user_id',
         'uuid',
         'prompt',
         'query',
@@ -70,6 +72,16 @@ class ExtractionJob extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function leads(): HasMany

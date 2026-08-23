@@ -11,6 +11,7 @@ use App\Services\LeadCsvExporter;
 use App\Support\PromptNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -64,8 +65,13 @@ class ExtractorController extends Controller
             $query = PromptNormalizer::toSearchQuery($prompt);
         }
 
+        $user = Auth::user();
+        $tenantId = $user?->tenant_id;
+        $userId = $user?->id;
+        $tenantKey = $user?->tenant?->google_maps_api_key;
+
         if ($mode === 'google_api') {
-            $configuredKey = $apiKey ?: config('services.google.maps_api_key');
+            $configuredKey = $apiKey ?: ($tenantKey ?: config('services.google.maps_api_key'));
             if (empty($configuredKey)) {
                 return response()->json([
                     'message' => 'Google Maps API key is required. Please provide an API key or configure GOOGLE_MAPS_API_KEY in .env.',
@@ -81,6 +87,8 @@ class ExtractorController extends Controller
             }
 
             $job = ExtractionJob::create([
+                'tenant_id' => $tenantId,
+                'user_id' => $userId,
                 'uuid' => $jobUuid,
                 'prompt' => $prompt.($location ? " ({$location})" : ''),
                 'query' => $query,
@@ -106,6 +114,8 @@ class ExtractorController extends Controller
         }
 
         $job = ExtractionJob::create([
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
             'uuid' => $started['job_id'],
             'prompt' => $prompt,
             'query' => $started['query'] ?? $query,
@@ -342,7 +352,7 @@ class ExtractorController extends Controller
             ->exists();
 
         if (! $exists) {
-            $job->leads()->create(ExtractedLead::fromPayload($lead));
+            $job->leads()->create(ExtractedLead::fromPayload($lead, $job->tenant_id, $job->user_id));
         }
 
         $job->forceFill([

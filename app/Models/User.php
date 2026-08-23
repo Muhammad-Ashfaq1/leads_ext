@@ -19,9 +19,14 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'password',
+        'role',
+        'avatar_url',
+        'phone',
+        'is_active',
     ];
 
     /**
@@ -44,6 +49,45 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['super_admin', 'admin'], true);
+    }
+
+    public function isTenantAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function getRoleBadgeClass(): string
+    {
+        return match ($this->role) {
+            'super_admin' => 'bg-label-danger',
+            'admin' => 'bg-label-primary',
+            default => 'bg-label-info',
+        };
+    }
+
+    public function getRoleLabel(): string
+    {
+        return match ($this->role) {
+            'super_admin' => 'Super Admin',
+            'admin' => 'Tenant Admin',
+            default => 'Team Member',
+        };
     }
 }

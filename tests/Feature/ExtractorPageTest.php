@@ -2,21 +2,68 @@
 
 namespace Tests\Feature;
 
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExtractorPageTest extends TestCase
 {
-    public function test_page_renders_awt_phone_extractor(): void
+    use RefreshDatabase;
+
+    public function test_guest_is_redirected_to_login(): void
     {
-        $this->get('/')
+        $this->get('/extractor')
+            ->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_can_access_extractor_page(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Acme Corporation',
+            'slug' => 'acme',
+            'plan' => 'enterprise',
+            'lead_quota' => 10000,
+        ]);
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/extractor')
             ->assertOk()
-            ->assertSee('AWT Phone')
+            ->assertSee('Leads Engine')
             ->assertSee('Lead Extractor')
             ->assertSee('What leads do you want to find?')
             ->assertSee('Start Extraction')
             ->assertSee('Extraction Status')
-            ->assertSee('Leads Found')
-            ->assertSee('extractor-leads-grid')
-            ->assertDontSee('Login');
+            ->assertDontSee('AWT Phone');
+    }
+
+    public function test_dashboard_renders_metrics(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Acme Corporation',
+            'slug' => 'acme',
+            'plan' => 'enterprise',
+            'lead_quota' => 10000,
+        ]);
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Total Leads Extracted')
+            ->assertSee('Email Discovery Rate')
+            ->assertSee('Phone Coverage')
+            ->assertSee('Leads Engine');
     }
 }

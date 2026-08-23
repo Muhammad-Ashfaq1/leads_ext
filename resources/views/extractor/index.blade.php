@@ -3,19 +3,23 @@
 @section('title', 'Lead Extractor')
 
 @section('content')
-<div class="awt-dash-header mb-4">
-    <div class="awt-dash-header-body">
-        <div class="awt-dash-header-identity">
-            <span class="awt-dash-header-accent" aria-hidden="true"></span>
-            <div>
-                <h1 class="awt-dash-header-title">Lead Extractor</h1>
-                <p class="awt-dash-header-subtitle mb-0">Search Google Maps and stream publicly listed businesses as they are found.</p>
-            </div>
-        </div>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold text-heading">
+            <i class="icon-base ti tabler-map-pin-search me-1 text-primary"></i> Lead Extractor
+        </h4>
+        <p class="text-muted mb-0">Search Google Maps by category, city, area, or zip code and stream verified leads in real-time.</p>
     </div>
+    @if ($tenant && $tenant->lead_quota > 0)
+        <div class="text-end">
+            <span class="badge bg-label-primary px-3 py-2">
+                <i class="icon-base ti tabler-chart-pie me-1"></i> Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}
+            </span>
+        </div>
+    @endif
 </div>
 
-<div class="card awt-glass-card awt-tone-primary mb-4" id="promptCard">
+<div class="card border-0 shadow-sm mb-4" id="promptCard">
     <div class="card-body">
         <!-- Vuexy Custom Option Engine Mode Cards -->
         <div class="row g-3 mb-4">
@@ -180,7 +184,7 @@
     </div>
 </div>
 
-<div class="card awt-glass-card awt-tone-warning mb-4 d-none" id="verificationCard">
+<div class="card border-0 shadow-sm mb-4 d-none" id="verificationCard">
     <div class="card-body">
         <div class="d-flex align-items-start gap-3">
             <span class="avatar avatar-md bg-label-warning">
@@ -205,7 +209,7 @@
     </div>
 </div>
 
-<div class="card awt-glass-card awt-tone-info mb-4">
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
@@ -225,34 +229,34 @@
         <div class="alert d-none" id="statusAlert" role="alert"></div>
         <div class="row g-3 extractor-kpis">
             <div class="col-6 col-lg-3">
-                <div class="awt-glass-card awt-tone-primary awt-stat-card">
-                    <div class="awt-stat-label">Leads Found</div>
-                    <div class="awt-stat-value" id="kpiLeads">0</div>
+                <div class="card border bg-light-subtle py-2 px-3">
+                    <div class="text-muted small">Leads Found</div>
+                    <div class="fw-bold fs-4 text-primary" id="kpiLeads">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="awt-glass-card awt-tone-info awt-stat-card">
-                    <div class="awt-stat-label">Businesses Processed</div>
-                    <div class="awt-stat-value" id="kpiSeen">0</div>
+                <div class="card border bg-light-subtle py-2 px-3">
+                    <div class="text-muted small">Businesses Processed</div>
+                    <div class="fw-bold fs-4 text-info" id="kpiSeen">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="awt-glass-card awt-tone-success awt-stat-card">
-                    <div class="awt-stat-label">Emails Found</div>
-                    <div class="awt-stat-value" id="kpiEmails">0</div>
+                <div class="card border bg-light-subtle py-2 px-3">
+                    <div class="text-muted small">Emails Found</div>
+                    <div class="fw-bold fs-4 text-success" id="kpiEmails">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="awt-glass-card awt-tone-secondary awt-stat-card">
-                    <div class="awt-stat-label">Websites Found</div>
-                    <div class="awt-stat-value" id="kpiWebsites">0</div>
+                <div class="card border bg-light-subtle py-2 px-3">
+                    <div class="text-muted small">Websites Found</div>
+                    <div class="fw-bold fs-4 text-warning" id="kpiWebsites">0</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card awt-glass-card awt-tone-success mb-4 d-none" id="summaryCard">
+<div class="card border-0 shadow-sm mb-4 d-none" id="summaryCard">
     <div class="card-body">
         <h5 class="mb-3">Extraction Completed</h5>
         <div class="row g-3 mb-3" id="summaryStats"></div>

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ExtractedLead extends Model
 {
     protected $fillable = [
+        'tenant_id',
+        'user_id',
         'extraction_job_id',
         'business_name',
         'address',
@@ -48,9 +50,21 @@ class ExtractedLead extends Model
         return $this->belongsTo(ExtractionJob::class, 'extraction_job_id');
     }
 
-    public static function fromPayload(array $lead): array
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public static function fromPayload(array $lead, ?int $tenantId = null, ?int $userId = null): array
     {
         return [
+            'tenant_id' => $tenantId ?? ($lead['tenant_id'] ?? null),
+            'user_id' => $userId ?? ($lead['user_id'] ?? null),
             'business_name' => $lead['business_name'] ?? null,
             'address' => $lead['address'] ?? null,
             'phone' => $lead['phone'] ?? null,
