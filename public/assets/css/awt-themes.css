@@ -1,0 +1,3128 @@
+/*
+ * AWT Phone — theme variants
+ *
+ * Light variants (sky / lake / eggplant) tweak --bs-primary so accent colors
+ * (buttons, active sidebar item, highlighted links) match the picked palette.
+ *
+ * Dark + high-contrast variants pair with [data-bs-theme="dark"] on <html>
+ * and override surface colors. high-contrast pushes contrast even further.
+ */
+
+/* ------- Global text contrast (light mode) -------
+ * Vuexy core.css defaults to very light body/muted text (#6d6b77 / #acaab1)
+ * which fails AA contrast on white surfaces. Darken across the app while
+ * leaving dark theme alone.
+ */
+:root:not([data-bs-theme="dark"]) {
+    --bs-body-color: #2f2b3d;
+    --bs-body-color-rgb: 47, 43, 61;
+    --bs-secondary-color: #5d5a6f;
+    --bs-secondary-color-rgb: 93, 90, 111;
+    --bs-tertiary-color: rgba(47, 43, 61, 0.55);
+    --bs-tertiary-color-rgb: 47, 43, 61;
+    --bs-heading-color: #1f1c2c;
+}
+
+/* Bootstrap's .text-muted resolves to --bs-secondary-color above; also
+   cover utility classes & small.text-muted used in tenant settings rows. */
+:root:not([data-bs-theme="dark"]) .text-muted,
+:root:not([data-bs-theme="dark"]) small.text-muted {
+    color: var(--bs-secondary-color) !important;
+}
+
+/* ------- Light variants ------- */
+
+html.awt-theme-sky {
+    --bs-primary: #25b9d6;
+    --bs-primary-rgb: 37, 185, 214;
+    --tal-sidebar-active-fg: #1f9bb4;
+    --tal-sidebar-active-bg: rgba(37, 185, 214, 0.18);
+    --tal-sidebar-hover-bg: rgba(37, 185, 214, 0.10);
+}
+
+html.awt-theme-lake {
+    --bs-primary: #696cff;
+    --bs-primary-rgb: 105, 108, 255;
+    --tal-sidebar-active-fg: #696cff;
+    --tal-sidebar-active-bg: rgba(105, 108, 255, 0.18);
+    --tal-sidebar-hover-bg: rgba(105, 108, 255, 0.12);
+}
+
+html.awt-theme-eggplant {
+    --bs-primary: #6f4ea8;
+    --bs-primary-rgb: 111, 78, 168;
+    --tal-sidebar-active-fg: #6f4ea8;
+    --tal-sidebar-active-bg: rgba(111, 78, 168, 0.18);
+    --tal-sidebar-hover-bg: rgba(111, 78, 168, 0.12);
+}
+
+/* ------- Dark variant ------- */
+/*
+ * Modern slate dark. Targets every concrete surface used by the agent
+ * shell + settings tabs because a generic body/card override doesn't
+ * reach `tal-content`, `awt-settings-content`, `awt-settings-rail`,
+ * `tal-page-header`, etc. — those have hard-coded backgrounds in
+ * tenant-agent-layout.css and tenant-settings.css.
+ */
+
+html.awt-theme-dark,
+html[data-bs-theme="dark"][data-awt-theme="dark"] {
+    --bs-body-bg: #0b1220;
+    --bs-body-color: #e2e8f0;
+    --bs-secondary-bg: #1e293b;
+    --bs-tertiary-bg: #111827;
+    --bs-border-color: rgba(148, 163, 184, 0.18);
+    --bs-primary: #60a5fa;
+    --bs-primary-rgb: 96, 165, 250;
+    --bs-secondary-color: #94a3b8;
+}
+
+/* Agent shell vars are scoped to .tenant-agent-layout in tenant-agent-layout.css.
+   Re-define them at the same scope so the cascade actually picks them up. */
+html.awt-theme-dark .tenant-agent-layout,
+html[data-bs-theme="dark"][data-awt-theme="dark"] .tenant-agent-layout {
+    --tal-navbar-bg: #050b18;
+    --tal-navbar-fg: #e2e8f0;
+    --tal-content-bg: #0b1220;
+    --tal-sidebar-bg: #050b18;
+    --tal-sidebar-fg: #cbd5e1;
+    --tal-sidebar-fg-muted: rgba(203, 213, 225, 0.55);
+    --tal-sidebar-border: rgba(148, 163, 184, 0.14);
+    --tal-sidebar-hover-bg: rgba(96, 165, 250, 0.14);
+    --tal-sidebar-active-bg: rgba(96, 165, 250, 0.22);
+    --tal-sidebar-active-fg: #93c5fd;
+}
+
+/* Top navbar: dark surface + light text for the search input + icons */
+html.awt-theme-dark .tenant-agent-layout .tal-navbar {
+    background-color: #050b18 !important;
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar input,
+html.awt-theme-dark .tenant-agent-layout .tal-navbar .form-control {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar input::placeholder {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar .btn,
+html.awt-theme-dark .tenant-agent-layout .tal-navbar a,
+html.awt-theme-dark .tenant-agent-layout .tal-navbar i {
+    color: #e2e8f0;
+}
+/* Search-icon and any white-on-primary chips inside navbar */
+html.awt-theme-dark .tenant-agent-layout .tal-navbar [class*="bg-white"] {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e2e8f0 !important;
+}
+
+/* Navbar action buttons (bell, phone, plus, avatar):
+ * the light theme uses solid white circles on the primary navbar; in dark mode
+ * those look out of place — switch them to a subtle elevated dark surface with
+ * light icons that match the rest of the navbar.
+ */
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-circle {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-circle:hover:not(:disabled):not([aria-disabled="true"]) {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-circle:disabled,
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-circle[aria-disabled="true"] {
+    color: rgba(226, 232, 240, 0.55) !important;
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-bell {
+    color: #e2e8f0 !important;
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-bell:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff !important;
+}
+html.awt-theme-dark .tenant-agent-layout .tal-navbar-avatar {
+    background: rgba(255, 255, 255, 0.10);
+    color: #e2e8f0;
+}
+
+html.awt-theme-dark body,
+html.awt-theme-dark .tenant-agent-layout {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* Agent shell surfaces */
+html.awt-theme-dark .tal-content,
+html.awt-theme-dark .tal-content-inner,
+html.awt-theme-dark .tal-page,
+html.awt-theme-dark .tal-page-body {
+    background-color: transparent !important;
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-dark .tal-page-header,
+html.awt-theme-dark.tal-page-settings .tal-page-header {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+html.awt-theme-dark .tal-page-title,
+html.awt-theme-dark .tal-page-title h2,
+html.awt-theme-dark h1,
+html.awt-theme-dark h2,
+html.awt-theme-dark h3,
+html.awt-theme-dark h4,
+html.awt-theme-dark h5,
+html.awt-theme-dark h6 {
+    color: var(--bs-body-color);
+}
+
+/* Settings rail (left "Settings" sidebar inside the page) */
+html.awt-theme-dark .awt-settings-rail {
+    background: var(--bs-secondary-bg);
+    border-right: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .awt-settings-rail .nav-link,
+html.awt-theme-dark .awt-settings-rail .admin-toggle {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-settings-rail .nav-link:hover,
+html.awt-theme-dark .awt-settings-rail .admin-toggle:hover {
+    background: rgba(96, 165, 250, 0.10);
+    color: #93c5fd;
+}
+html.awt-theme-dark .awt-settings-rail .nav-link.active {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+}
+html.awt-theme-dark .awt-settings-header-rail,
+html.awt-theme-dark .awt-settings-header-content {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .awt-settings-header-content .tal-page-title,
+html.awt-theme-dark .awt-settings-header-content h1,
+html.awt-theme-dark .awt-settings-header-content h2 {
+    color: var(--bs-body-color);
+}
+
+/* Settings content panel + section cards */
+html.awt-theme-dark .awt-settings-content,
+html.awt-theme-dark .awt-settings-section,
+html.awt-theme-dark .awt-settings-section .card-body,
+html.awt-theme-dark .awt-settings-card {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-settings-card .row-divider {
+    border-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .awt-settings-card .text-body,
+html.awt-theme-dark .awt-settings-nav-row .text-body {
+    color: var(--bs-body-color) !important;
+}
+
+/* Generic Bootstrap surfaces */
+html.awt-theme-dark .card,
+html.awt-theme-dark .modal-content,
+html.awt-theme-dark .dropdown-menu,
+html.awt-theme-dark .list-group-item,
+html.awt-theme-dark .accordion-item,
+html.awt-theme-dark .accordion-button {
+    background-color: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+html.awt-theme-dark .card-header,
+html.awt-theme-dark .card-footer {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-dark .bg-white,
+html.awt-theme-dark .bg-light,
+html.awt-theme-dark .bg-body,
+html.awt-theme-dark .bg-secondary-subtle,
+html.awt-theme-dark .bg-tertiary-bg {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+
+/* Dropdowns + items */
+html.awt-theme-dark .dropdown-item {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .dropdown-item:hover,
+html.awt-theme-dark .dropdown-item:focus {
+    background-color: rgba(96, 165, 250, 0.14);
+    color: #ffffff;
+}
+
+/* Form controls — covers both Bootstrap (.form-control) and bare textarea/input. */
+html.awt-theme-dark .form-control,
+html.awt-theme-dark .form-select,
+html.awt-theme-dark .input-group-text,
+html.awt-theme-dark textarea,
+html.awt-theme-dark input[type="text"]:not(.tal-search-input):not(.rc-form-input):not([class*="rc-"]):not(.awt-dialer-display input):not(.btn-close),
+html.awt-theme-dark input[type="email"],
+html.awt-theme-dark input[type="password"],
+html.awt-theme-dark input[type="search"]:not(.rc-contacts-search-input):not(.rc-call-search-input):not(.rc-fav-search-input):not(.tal-search-input):not(.rc-video-search-input),
+html.awt-theme-dark input[type="number"],
+html.awt-theme-dark input[type="tel"],
+html.awt-theme-dark input[type="url"] {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .form-control::placeholder,
+html.awt-theme-dark textarea::placeholder { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .form-control:focus,
+html.awt-theme-dark .form-select:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
+}
+html.awt-theme-dark .form-label,
+html.awt-theme-dark .form-check-label {
+    color: var(--bs-body-color);
+}
+
+/* Tables */
+html.awt-theme-dark .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--bs-body-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .table > :not(caption) > * > * {
+    background-color: transparent;
+    color: var(--bs-body-color);
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .table thead {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--bs-body-color);
+}
+
+/* Text helpers */
+html.awt-theme-dark .text-muted,
+html.awt-theme-dark .text-secondary,
+html.awt-theme-dark small.text-muted {
+    color: rgba(226, 232, 240, 0.62) !important;
+}
+html.awt-theme-dark .text-body,
+html.awt-theme-dark .text-dark {
+    color: var(--bs-body-color) !important;
+}
+
+/* Borders */
+html.awt-theme-dark .border,
+html.awt-theme-dark .border-bottom,
+html.awt-theme-dark .border-top,
+html.awt-theme-dark .border-end,
+html.awt-theme-dark .border-start {
+    border-color: var(--bs-border-color) !important;
+}
+
+/* Buttons */
+html.awt-theme-dark .btn-light {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .btn-outline-secondary {
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+/* Section eyebrow (settings panels) */
+html.awt-theme-dark .section-eyebrow,
+html.awt-theme-dark h6.section-eyebrow {
+    color: rgba(226, 232, 240, 0.7) !important;
+}
+
+/* Reorder list (customize-tabs page) */
+html.awt-theme-dark .awt-tab-reorder-item {
+    background: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-tab-reorder-item:hover {
+    background: rgba(96, 165, 250, 0.10) !important;
+}
+
+/* Modals + offcanvas */
+html.awt-theme-dark .modal-header,
+html.awt-theme-dark .modal-footer,
+html.awt-theme-dark .offcanvas-header,
+html.awt-theme-dark .offcanvas {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+/* Bootstrap's .btn-close uses a black SVG which is invisible on dark surfaces. */
+html.awt-theme-dark .btn-close {
+    filter: invert(1) grayscale(100%) brightness(2);
+}
+
+/* Form checkboxes/switches need a visible track + border on dark. */
+html.awt-theme-dark .form-check-input {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Text content / links readable on dark.
+   `.awt-chip` is exempt for the same reason `.btn` is: a status chip CARRIES
+   ITS STATE IN ITS COLOUR (green on, red off, red alert), and this rule out-
+   specifies the chip's own colour — so every chip that is a link rather than a
+   span turned the same light blue and the state was gone. That is not
+   hypothetical: the "active" chips are links, so on dark they were blue rather
+   than green. See _agent-status-chips.blade.php. */
+html.awt-theme-dark a:not(.btn):not(.nav-link):not(.dropdown-item):not(.tal-sidebar-link):not(.awt-chip):not(.rc-call-edit) {
+    color: #93c5fd;
+}
+
+/* ------- Operator phone tab (.rc-phone surfaces) -------
+ * operator-phone.css hard-codes #fff / #f1f3f5 / #495057 etc. across the
+ * dialer, keypad, HUD pane and lists. Override the concrete classes so the
+ * phone tab renders correctly in dark mode.
+ */
+html.awt-theme-dark .rc-phone,
+html.awt-theme-dark .rc-phone-left,
+html.awt-theme-dark .rc-phone-right,
+html.awt-theme-dark .rc-right-header,
+html.awt-theme-dark .rc-call-toolbar,
+html.awt-theme-dark .rc-call-searchbar,
+html.awt-theme-dark .rc-fav-search,
+html.awt-theme-dark .rc-call-editbar {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color) !important;
+}
+
+html.awt-theme-dark .rc-phone-left {
+    border-right: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .rc-phone-left-header h5 {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-icon-btn,
+html.awt-theme-dark .rc-right-actions .rc-icon-btn {
+    color: var(--bs-body-color);
+    background: transparent;
+}
+html.awt-theme-dark .rc-icon-btn:hover,
+html.awt-theme-dark .rc-right-actions .rc-icon-btn:hover,
+html.awt-theme-dark .rc-phone-left-header .rc-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* Tabs row: Keypad / Calls / Voicemail / Notes */
+html.awt-theme-dark .rc-phone-tabs.nav-tabs .nav-link {
+    color: rgba(226, 232, 240, 0.7);
+    background: transparent;
+}
+html.awt-theme-dark .rc-phone-tabs.nav-tabs .nav-link:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-phone-tabs.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+    background: transparent;
+}
+/* The More chevron sits BESIDE the strip rather than inside it (so its
+   dropdown isn't clipped by the strip's scroll container), so it no longer
+   matches the selectors above. Same colours, stated for its own class. */
+html.awt-theme-dark .rc-phone-tabs-more-toggle {
+    color: rgba(226, 232, 240, 0.7);
+    background: transparent;
+}
+html.awt-theme-dark .rc-phone-tabs-more-toggle:hover,
+html.awt-theme-dark .rc-phone-tabs-more-toggle:focus { color: var(--bs-primary); }
+
+/* Caller ID line + dial display */
+html.awt-theme-dark .rc-callerid-line {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-callerid-line .rc-callerid-select {
+    color: var(--bs-primary);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+html.awt-theme-dark .rc-dial-display {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-dial-display input {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-dial-display input::placeholder {
+    color: rgba(226, 232, 240, 0.4);
+}
+
+/* Keypad keys */
+html.awt-theme-dark .rc-keypad .rc-key {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-keypad .rc-key:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-keypad .rc-key:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+html.awt-theme-dark .rc-keypad .rc-key small {
+    color: rgba(226, 232, 240, 0.55);
+}
+
+/* Action row (Notes off / Clear side buttons) */
+html.awt-theme-dark .rc-action-row .rc-side-btn {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-action-row .rc-side-btn:hover:not([disabled]) {
+    background: rgba(255, 255, 255, 0.08);
+}
+html.awt-theme-dark .rc-action-row .rc-side-btn small {
+    color: rgba(226, 232, 240, 0.6);
+}
+
+/* Right pane: Team/Favorites pill tabs + empty state.
+   The strip itself is transparent in both themes — only the active pill is a
+   surface (see operator-phone.css); a track behind two small buttons reads as
+   a control bar that is mostly empty. */
+html.awt-theme-dark .rc-right-tabs.nav-tabs {
+    background: transparent;
+}
+html.awt-theme-dark .rc-right-tabs.nav-tabs .nav-link {
+    color: rgba(226, 232, 240, 0.7);
+    background: transparent;
+}
+html.awt-theme-dark .rc-right-tabs.nav-tabs .nav-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-right-tabs.nav-tabs .nav-link.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-right-empty,
+html.awt-theme-dark .rc-right-summary {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-right-empty p,
+html.awt-theme-dark .rc-right-summary p {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-right-empty .rc-illu {
+    background:
+      radial-gradient(circle at 22% 60%, rgba(96, 165, 250, 0.22) 0 32%, transparent 33%),
+      radial-gradient(circle at 50% 60%, rgba(96, 165, 250, 0.22) 0 28%, transparent 29%),
+      radial-gradient(circle at 78% 60%, rgba(96, 165, 250, 0.22) 0 30%, transparent 31%),
+      linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
+}
+
+/* Empty-state headings (Notes/Voicemail/Recordings/Video placeholders) */
+html.awt-theme-dark .rc-static-empty h6 { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-static-empty p { color: var(--bs-secondary-color); }
+
+/* AI notes + transcript shown in the call detail pane (Calls tab) */
+html.awt-theme-dark .rc-call-detail-ai {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-ai-tabs { background: var(--bs-tertiary-bg); }
+html.awt-theme-dark .rc-ai-tab { color: var(--bs-secondary-color); }
+html.awt-theme-dark .rc-ai-tab.active { background: var(--bs-secondary-bg); color: var(--bs-primary); }
+html.awt-theme-dark .rc-ai-panel { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-ai-empty,
+html.awt-theme-dark .rc-ai-section-title { color: var(--bs-secondary-color); }
+html.awt-theme-dark .rc-ai-tr-row { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .rc-ai-tr-row.is-caller .rc-ai-tr-who { color: var(--bs-secondary-color); }
+
+/* Calls / favorites lists separators */
+html.awt-theme-dark .rc-call-searchbar,
+html.awt-theme-dark .rc-fav-search,
+html.awt-theme-dark .rc-call-toolbar {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Calls list rows (Phone → Calls tab) */
+html.awt-theme-dark .rc-call-item {
+    border-bottom: none;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-call-item:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none;
+}
+html.awt-theme-dark .rc-call-item.active {
+    background: rgba(96, 165, 250, 0.18) !important;
+    box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+}
+html.awt-theme-dark .rc-call-action:hover {
+    box-shadow: 0 3px 8px rgba(96, 165, 250, 0.25);
+}
+html.awt-theme-dark .rc-call-num {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-call-sub {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-call-meta {
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Calls toolbar (search + ALL/MISSED/Edit) */
+html.awt-theme-dark .rc-call-filters .filter-pill {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-call-filters .filter-pill.active {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-call-filter-more-toggle {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-call-filter-more-toggle:hover {
+    color: var(--bs-primary);
+}
+/* Combined filter control (the active filter's name + chevron). Carries the
+   accent, like the .filter-pill.active it replaced. */
+html.awt-theme-dark .rc-call-filter-pick,
+html.awt-theme-dark .rc-call-filter-pick:hover {
+    color: var(--bs-primary);
+}
+/* Neutral pill, matching the light theme's intent: an ACTION, not the accent
+   that marks the currently-selected filter beside it. */
+html.awt-theme-dark .rc-call-edit {
+    color: rgba(226, 232, 240, 0.75);
+    background-color: rgba(148, 163, 184, 0.14);
+    border-color: rgba(148, 163, 184, 0.28);
+}
+html.awt-theme-dark .rc-call-edit:hover {
+    color: #e2e8f0;
+    background-color: rgba(148, 163, 184, 0.24);
+    border-color: rgba(148, 163, 184, 0.45);
+}
+html.awt-theme-dark .rc-call-edit-disabled,
+html.awt-theme-dark .rc-call-edit-disabled:hover {
+    color: rgba(226, 232, 240, 0.35);
+    background-color: transparent;
+    border-color: rgba(148, 163, 184, 0.18);
+}
+
+/* Edit-mode bar (master checkbox + actions) */
+html.awt-theme-dark .rc-call-editbar {
+    background: var(--bs-secondary-bg);
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-call-editbar-count {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-call-editbar-btn,
+html.awt-theme-dark .rc-call-editbar-close {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-call-editbar-btn:not(:disabled):hover,
+html.awt-theme-dark .rc-call-editbar-close:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-call-editbar-close {
+    border-left-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-call-search-input,
+html.awt-theme-dark .rc-fav-search-input {
+    color: var(--bs-body-color);
+    background: transparent;
+}
+html.awt-theme-dark .rc-call-search-input::placeholder,
+html.awt-theme-dark .rc-fav-search-input::placeholder,
+html.awt-theme-dark .rc-call-searchbar .rc-call-search-icon,
+html.awt-theme-dark .rc-fav-search-icon {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-fav-item {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-fav-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* HUD settings modal (Bootstrap modal already handled, but custom inner) */
+html.awt-theme-dark .rc-hud-content,
+html.awt-theme-dark .rc-hud-modal .modal-content-inner {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
+/* ------- Operator contacts tab (.rc-contacts surfaces) -------
+ * tenant-contacts.css hard-codes #fff / #f8f9fa / #f1f3f5 / #212529 etc.
+ * Override concrete classes so the contacts tab renders correctly in dark.
+ */
+html.awt-theme-dark .rc-contacts,
+html.awt-theme-dark .rc-contacts-list-pane,
+html.awt-theme-dark .rc-contacts-detail-pane,
+html.awt-theme-dark .rc-contacts-searchbar,
+html.awt-theme-dark .rc-teams-toolbar {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-dark .rc-contacts-list-pane {
+    border-right: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contacts-searchbar,
+html.awt-theme-dark .rc-teams-toolbar {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+html.awt-theme-dark .rc-contacts-search-input,
+html.awt-theme-dark .rc-teams-searchbar input {
+    color: var(--bs-body-color);
+    background: transparent;
+}
+html.awt-theme-dark .rc-contacts-search-input::placeholder,
+html.awt-theme-dark .rc-teams-searchbar input::placeholder,
+html.awt-theme-dark .rc-contacts-searchbar .rc-contacts-search-icon {
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Tabs row: All / Company / Guests / Personal / Blocked */
+html.awt-theme-dark .rc-contacts-tabs.nav-tabs .nav-link {
+    color: rgba(226, 232, 240, 0.7);
+    background: transparent;
+}
+html.awt-theme-dark .rc-contacts-tabs.nav-tabs .nav-link:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-contacts-tabs.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+    background: transparent;
+}
+html.awt-theme-dark .rc-contacts-tabs-arrow {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-contacts-tabs-arrow:hover {
+    color: var(--bs-primary);
+}
+
+/* Favorites + section labels + list separators */
+html.awt-theme-dark .rc-contacts-favorites {
+    border-top: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contacts-favorites .rc-contacts-fav-empty,
+html.awt-theme-dark .rc-contacts-section-label {
+    color: rgba(226, 232, 240, 0.55);
+}
+
+/* Contact list rows */
+html.awt-theme-dark .rc-contact-item {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contact-item:hover,
+html.awt-theme-dark .rc-contacts-fav-row:hover,
+html.awt-theme-dark .rc-team-item:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+html.awt-theme-dark .rc-contact-item.active {
+    background: rgba(96, 165, 250, 0.18) !important;
+}
+html.awt-theme-dark .rc-contact-name,
+html.awt-theme-dark .rc-contacts-fav-row .rc-fav-name,
+html.awt-theme-dark .rc-team-name {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-contact-sub,
+html.awt-theme-dark .rc-contacts-fav-row .rc-fav-meta,
+html.awt-theme-dark .rc-contacts-fav-row .rc-fav-sub,
+html.awt-theme-dark .rc-team-sub,
+html.awt-theme-dark .rc-team-lock {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-contacts-fav-row:hover {
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contact-meta {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-team-item {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Teams pills/toolbar */
+html.awt-theme-dark .rc-teams-pill {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-teams-pill.active {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-teams-more-toggle {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-teams-more-toggle:hover {
+    color: var(--bs-primary);
+}
+
+/* Add (+) dropdown + invite submenu — already covered by generic
+ * .dropdown-menu rule but those use #f1f3f5 hover from this file. */
+html.awt-theme-dark .rc-contacts-add-menu,
+html.awt-theme-dark .rc-contacts-add-submenu-menu {
+    background: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-contacts-add-menu .dropdown-item:hover,
+html.awt-theme-dark .rc-contacts-add-submenu-menu .dropdown-item:hover,
+html.awt-theme-dark .rc-contacts-add-submenu-wrap:hover > .rc-contacts-add-submenu {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+/* Right detail pane */
+html.awt-theme-dark .rc-detail-fav {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-detail-action-btn {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-detail-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+/* Only the new label needs a dark colour; the button above is unchanged. */
+html.awt-theme-dark .rc-detail-action-label {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-info-card {
+    border-color: var(--bs-border-color);
+    background: rgba(255, 255, 255, 0.02);
+}
+html.awt-theme-dark .rc-info-card .rc-info-label {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-empty-state {
+    color: rgba(226, 232, 240, 0.55);
+}
+
+/* ------- "Create team" + "Invite by email" modals (rc-create-team-*, rc-form-*) -------
+ * tenant-contacts.css hard-codes #212529, #f1f3f5, #1f7fb3 etc.
+ */
+html.awt-theme-dark .rc-create-team-content,
+html.awt-theme-dark .rc-invite-email-content {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-create-team-header .modal-title,
+html.awt-theme-dark .rc-invite-email-header .modal-title {
+    color: var(--bs-body-color);
+}
+
+/* Form fields (used in Create team + Invite by email + reused elsewhere) */
+html.awt-theme-dark .rc-form-label {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-form-floating:focus-within .rc-form-label {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-form-input {
+    color: var(--bs-body-color);
+    background: transparent !important;
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-form-input::placeholder {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-form-input:focus {
+    border-bottom-color: var(--bs-primary) !important;
+    box-shadow: inset 0 -1px 0 0 var(--bs-primary) !important;
+}
+html.awt-theme-dark .rc-form-textarea {
+    background: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border: 1px solid var(--bs-border-color);
+}
+html.awt-theme-dark .rc-form-textarea:focus {
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+}
+html.awt-theme-dark .rc-form-help {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-form-row {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-form-row-label {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-form-row-label i {
+    color: rgba(226, 232, 240, 0.5);
+}
+html.awt-theme-dark .rc-form-select {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+/* Team toggle rows (one per "Allow members to ..." switch) */
+html.awt-theme-dark .rc-team-toggle {
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+/* iOS-style switch */
+html.awt-theme-dark .rc-switch-slider {
+    background: rgba(255, 255, 255, 0.18);
+}
+html.awt-theme-dark .rc-switch input:checked + .rc-switch-slider {
+    background: var(--bs-primary);
+}
+
+/* Footer buttons */
+html.awt-theme-dark .rc-team-cancel {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-team-cancel:hover {
+    color: #93c5fd;
+}
+html.awt-theme-dark .rc-team-create {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-team-create:hover:not(:disabled) {
+    background: #93c5fd;
+}
+html.awt-theme-dark .rc-team-create:disabled {
+    background: rgba(255, 255, 255, 0.10);
+    color: rgba(226, 232, 240, 0.4);
+}
+
+/* Invite-email modal body description */
+html.awt-theme-dark .rc-invite-email-desc {
+    color: rgba(226, 232, 240, 0.75);
+}
+
+/* ------- Global dialer modal (awt-dialer-*) -------
+ * Inline <style> block in _global-dialer-modal.blade.php hard-codes #fff,
+ * #f1f3f5, #212529 etc. Override the concrete classes for dark mode.
+ */
+html.awt-theme-dark .awt-dialer-content {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-header {
+    border-bottom: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-status-pill {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-status-pill[data-state="connected"] {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+}
+html.awt-theme-dark .awt-dialer-status-pill[data-state="connecting"] {
+    background: rgba(234, 179, 8, 0.18);
+    color: #fde047;
+}
+html.awt-theme-dark .awt-dialer-status-pill[data-state="error"] {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+html.awt-theme-dark .awt-dialer-close {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .awt-dialer-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .awt-dialer-close:active {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* Number input + placeholder */
+html.awt-theme-dark .awt-dialer-display input {
+    color: var(--bs-body-color);
+    background: transparent !important;
+    border-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .awt-dialer-display input::placeholder {
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Caller ID pill */
+html.awt-theme-dark .awt-dialer-callerid {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .awt-dialer-callerid .form-select {
+    color: var(--bs-body-color);
+    background-color: transparent !important;
+}
+
+/* Keypad */
+html.awt-theme-dark .awt-dialer-key {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-key:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+html.awt-theme-dark .awt-dialer-key:active {
+    background: rgba(255, 255, 255, 0.14);
+}
+html.awt-theme-dark .awt-dialer-key .awt-key-digit {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-key small {
+    color: rgba(226, 232, 240, 0.55);
+}
+
+/* Action-row side buttons (Notes off / clear X) */
+html.awt-theme-dark .awt-dialer-side-btn {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-dialer-side-btn:hover:not([disabled]) {
+    background: rgba(255, 255, 255, 0.08);
+}
+html.awt-theme-dark .awt-dialer-side-btn small {
+    color: rgba(226, 232, 240, 0.6);
+}
+
+/* Error / info banner inside dialer body — use generic alert-like styling */
+html.awt-theme-dark .awt-dialer-banner {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* In-call surface (active call view) */
+html.awt-theme-dark .awt-incall-info-name {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-incall-info-from {
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .awt-incall-info-to,
+html.awt-theme-dark .awt-incall-sub,
+html.awt-theme-dark .awt-incall-timer {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .awt-incall-info-to span {
+    color: rgba(226, 232, 240, 0.85);
+}
+html.awt-theme-dark .awt-incall-name {
+    color: var(--bs-body-color);
+}
+
+/* In-call pad buttons (mute, keypad, hold, etc.) */
+html.awt-theme-dark .awt-incall-pad-btn {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-incall-pad-btn .awt-incall-pad-icon {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-incall-pad-btn:hover:not([disabled]) .awt-incall-pad-icon {
+    background: rgba(255, 255, 255, 0.14);
+}
+html.awt-theme-dark .awt-incall-pad-btn small {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .awt-incall-pad-btn.active .awt-incall-pad-icon {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+/* "Open call window for incoming calls" footer link — already inherits */
+
+/* Idle tabs (Keypad / Colleagues) inside the dialer modal */
+html.awt-theme-dark .awt-idle-tabs.nav-tabs {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .awt-idle-tabs.nav-tabs .nav-link {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .awt-idle-tabs.nav-tabs .nav-link:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .awt-idle-tabs.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+    background: transparent;
+}
+
+/* Colleagues list rows */
+html.awt-theme-dark .awt-idle-agents-list li {
+    background: transparent;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-idle-agents-list li:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+html.awt-theme-dark .awt-idle-agents-name {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .awt-idle-agents-sub,
+html.awt-theme-dark .awt-idle-agents-empty {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .awt-idle-agents-avatar {
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
+}
+html.awt-theme-dark .awt-idle-agents-presence {
+    background: rgba(226, 232, 240, 0.3);
+}
+html.awt-theme-dark .rc-hud-title,
+html.awt-theme-dark .rc-hud-option-label {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-hud-option-help {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-hud-cancel {
+    background: transparent;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-hud-cancel:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+/* ------- High contrast variant ------- */
+/*
+ * Accessibility-focused dark — near-black surfaces, off-white text,
+ * electric-blue accent. Targets the same concrete classes as the dark
+ * theme, plus thicker focus rings.
+ */
+
+html.awt-theme-high-contrast,
+html[data-bs-theme="dark"][data-awt-theme="high-contrast"] {
+    --bs-body-bg: #050505;
+    --bs-body-color: #f5f5f5;
+    --bs-secondary-bg: #111111;
+    --bs-tertiary-bg: #1a1a1a;
+    --bs-border-color: rgba(255, 255, 255, 0.32);
+    --bs-primary: #3b82f6;
+    --bs-primary-rgb: 59, 130, 246;
+    --bs-secondary-color: #cccccc;
+}
+
+html.awt-theme-high-contrast .tenant-agent-layout,
+html[data-bs-theme="dark"][data-awt-theme="high-contrast"] .tenant-agent-layout {
+    --tal-navbar-bg: #000000;
+    --tal-navbar-fg: #ffffff;
+    --tal-content-bg: #050505;
+    --tal-sidebar-bg: #000000;
+    --tal-sidebar-fg: #f5f5f5;
+    --tal-sidebar-fg-muted: rgba(245, 245, 245, 0.65);
+    --tal-sidebar-border: rgba(255, 255, 255, 0.32);
+    --tal-sidebar-active-fg: #ffffff;
+    --tal-sidebar-active-bg: rgba(59, 130, 246, 0.28);
+    --tal-sidebar-hover-bg: rgba(59, 130, 246, 0.18);
+}
+
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar {
+    background-color: #000000 !important;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+}
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar input,
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar .form-control {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+}
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar .btn,
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar a,
+html.awt-theme-high-contrast .tenant-agent-layout .tal-navbar i {
+    color: #ffffff;
+}
+
+html.awt-theme-high-contrast body,
+html.awt-theme-high-contrast .tenant-agent-layout {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-high-contrast .tal-content,
+html.awt-theme-high-contrast .tal-content-inner,
+html.awt-theme-high-contrast .tal-page,
+html.awt-theme-high-contrast .tal-page-body {
+    background-color: transparent !important;
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-high-contrast .tal-page-header,
+html.awt-theme-high-contrast.tal-page-settings .tal-page-header {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+html.awt-theme-high-contrast .awt-settings-rail {
+    background: var(--bs-secondary-bg);
+    border-right: 1px solid var(--bs-border-color);
+}
+html.awt-theme-high-contrast .awt-settings-rail .nav-link,
+html.awt-theme-high-contrast .awt-settings-rail .admin-toggle {
+    color: var(--bs-body-color);
+}
+html.awt-theme-high-contrast .awt-settings-rail .nav-link:hover,
+html.awt-theme-high-contrast .awt-settings-rail .admin-toggle:hover {
+    background: rgba(59, 130, 246, 0.18);
+    color: #ffffff;
+}
+html.awt-theme-high-contrast .awt-settings-rail .nav-link.active {
+    background: rgba(59, 130, 246, 0.28);
+    color: #ffffff;
+}
+html.awt-theme-high-contrast .awt-settings-header-rail,
+html.awt-theme-high-contrast .awt-settings-header-content {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-high-contrast .awt-settings-header-content .tal-page-title,
+html.awt-theme-high-contrast .awt-settings-header-content h1,
+html.awt-theme-high-contrast .awt-settings-header-content h2 {
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-high-contrast .awt-settings-content,
+html.awt-theme-high-contrast .awt-settings-section,
+html.awt-theme-high-contrast .awt-settings-section .card-body,
+html.awt-theme-high-contrast .awt-settings-card {
+    background: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-high-contrast .awt-settings-card .row-divider {
+    border-color: var(--bs-border-color) !important;
+}
+
+html.awt-theme-high-contrast .card,
+html.awt-theme-high-contrast .modal-content,
+html.awt-theme-high-contrast .dropdown-menu,
+html.awt-theme-high-contrast .list-group-item {
+    background-color: var(--bs-secondary-bg) !important;
+    border: 1px solid var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+
+html.awt-theme-high-contrast .bg-white,
+html.awt-theme-high-contrast .bg-light,
+html.awt-theme-high-contrast .bg-body {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+
+html.awt-theme-high-contrast .form-control,
+html.awt-theme-high-contrast .form-select,
+html.awt-theme-high-contrast .input-group-text {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border: 1px solid var(--bs-border-color) !important;
+}
+html.awt-theme-high-contrast .form-control::placeholder { color: rgba(245, 245, 245, 0.55); }
+
+html.awt-theme-high-contrast .text-muted,
+html.awt-theme-high-contrast .text-secondary,
+html.awt-theme-high-contrast small.text-muted {
+    color: rgba(245, 245, 245, 0.78) !important;
+}
+
+html.awt-theme-high-contrast .border,
+html.awt-theme-high-contrast .border-bottom,
+html.awt-theme-high-contrast .border-top,
+html.awt-theme-high-contrast .border-end,
+html.awt-theme-high-contrast .border-start {
+    border-color: var(--bs-border-color) !important;
+}
+
+html.awt-theme-high-contrast .awt-tab-reorder-item {
+    background: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color);
+}
+
+html.awt-theme-high-contrast :focus-visible {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+html.awt-theme-high-contrast a:not(.btn):not(.nav-link):not(.dropdown-item):not(.tal-sidebar-link) {
+    color: #93c5fd;
+}
+
+
+/* ------- High contrast: the Vuexy shell (tenant admin + super admin) -------
+ *
+ * The block above dressed the operator shell (.tenant-agent-layout) and the
+ * settings screens. Tenant admin and super admin run on the Vuexy shell — menu,
+ * navbar, cards, tables, dropdowns — which had nothing, which is why the variant
+ * sat behind a "coming soon" chip.
+ *
+ * It no longer needs a second copy of the dark theme: <html> now carries
+ * `awt-theme-dark awt-theme-high-contrast` together (AppTheme::classesFor), so
+ * every dark rule already applies and what follows only has to push contrast
+ * past it — pure black surfaces, white borders, no translucency.
+ *
+ * !important throughout, deliberately: these override the theme's own compiled
+ * rules, several of which are themselves !important, and an accessibility
+ * variant that loses a specificity race is worse than no variant at all.
+ */
+
+html.awt-theme-high-contrast {
+    --bs-card-bg: #000000;
+    --bs-emphasis-color: #ffffff;
+    --bs-heading-color: #ffffff;
+    --bs-link-color: #93c5fd;
+    --bs-link-hover-color: #bfdbfe;
+}
+
+/* ── Shell surfaces ──────────────────────────────────────────────── */
+
+html.awt-theme-high-contrast .layout-menu,
+html.awt-theme-high-contrast .layout-navbar,
+html.awt-theme-high-contrast .layout-page,
+html.awt-theme-high-contrast .content-wrapper,
+html.awt-theme-high-contrast .content-footer {
+    background-color: #000000 !important;
+    color: #ffffff;
+}
+
+html.awt-theme-high-contrast .layout-menu,
+html.awt-theme-high-contrast .layout-navbar.navbar-detached {
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
+}
+
+/* Menu items: the active one is filled, the rest are plain white text. A
+   gradient "active" pill at 20% opacity is not a state you can see. */
+html.awt-theme-high-contrast .menu-item .menu-link {
+    color: #ffffff !important;
+}
+
+html.awt-theme-high-contrast .menu-item.active > .menu-link {
+    background: #1d4ed8 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+html.awt-theme-high-contrast .menu-item .menu-link:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+}
+
+html.awt-theme-high-contrast .menu-header,
+html.awt-theme-high-contrast .menu-header-text {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html.awt-theme-high-contrast .menu-divider,
+html.awt-theme-high-contrast .menu-inner > .menu-header::before {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* ── Cards, tables, dropdowns, inputs ────────────────────────────── */
+
+html.awt-theme-high-contrast .card,
+html.awt-theme-high-contrast .dropdown-menu,
+html.awt-theme-high-contrast .modal-content,
+html.awt-theme-high-contrast .offcanvas {
+    background-color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
+}
+
+html.awt-theme-high-contrast .card-header,
+html.awt-theme-high-contrast .card-footer {
+    background-color: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.awt-theme-high-contrast .table {
+    --bs-table-bg: #000000;
+    --bs-table-color: #ffffff;
+    --bs-table-border-color: rgba(255, 255, 255, 0.4);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.08);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.16);
+    --bs-table-hover-color: #ffffff;
+}
+
+html.awt-theme-high-contrast .dropdown-item {
+    color: #ffffff !important;
+}
+
+html.awt-theme-high-contrast .dropdown-item:hover,
+html.awt-theme-high-contrast .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+}
+
+html.awt-theme-high-contrast .form-control,
+html.awt-theme-high-contrast .form-select,
+html.awt-theme-high-contrast .input-group-text {
+    background-color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.55) !important;
+    color: #ffffff !important;
+}
+
+html.awt-theme-high-contrast .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Outline buttons at 40% border opacity are close to invisible on black. */
+html.awt-theme-high-contrast .btn-outline-primary,
+html.awt-theme-high-contrast .btn-outline-secondary,
+html.awt-theme-high-contrast .btn-outline-danger,
+html.awt-theme-high-contrast .btn-outline-warning,
+html.awt-theme-high-contrast .btn-outline-success {
+    border-width: 2px !important;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────── */
+
+/*
+ * The theme's `bg-label-*` badges are a tinted fill with text in the same hue —
+ * grey-on-grey once the fill is 16% of a colour on black. Outlined instead, with
+ * the text lifted to a shade that clears 7:1 against black.
+ */
+html.awt-theme-high-contrast .badge[class*="bg-label-"] {
+    background-color: transparent !important;
+    border: 1px solid currentColor !important;
+}
+
+html.awt-theme-high-contrast .badge.bg-label-secondary { color: #d4d4d4 !important; }
+html.awt-theme-high-contrast .badge.bg-label-primary   { color: #93c5fd !important; }
+html.awt-theme-high-contrast .badge.bg-label-info      { color: #7dd3fc !important; }
+html.awt-theme-high-contrast .badge.bg-label-success   { color: #86efac !important; }
+html.awt-theme-high-contrast .badge.bg-label-warning   { color: #fcd34d !important; }
+html.awt-theme-high-contrast .badge.bg-label-danger    { color: #fca5a5 !important; }
+
+/* ── Text that the theme dims ────────────────────────────────────── */
+
+/*
+ * Muted text is the single biggest contrast failure in a dark theme: at
+ * rgba(255,255,255,.5) on black it is about 5:1, under the 7:1 an
+ * accessibility variant should hold. Nothing here goes below #d4d4d4.
+ */
+html.awt-theme-high-contrast .text-muted,
+html.awt-theme-high-contrast .text-secondary,
+html.awt-theme-high-contrast small.text-muted,
+html.awt-theme-high-contrast .text-body-secondary {
+    color: #d4d4d4 !important;
+}
+
+/* ── Glass surfaces: solid, not frosted ──────────────────────────── */
+
+/*
+ * The dashboard's frosted cards, metric tiles, health chips and usage rows are
+ * built from low-alpha accent washes over a blurred backdrop. That is exactly
+ * the wrong thing here — translucency lowers contrast and blur destroys edges —
+ * so in this variant they become flat black with a white border, and the accent
+ * survives only where it carries meaning: the icon and the status marks.
+ */
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-card,
+html.awt-theme-high-contrast .awt-dashboard .awt-metric-tile,
+html.awt-theme-high-contrast .awt-dashboard .awt-health-chip,
+html.awt-theme-high-contrast .awt-dashboard .awt-insight,
+html.awt-theme-high-contrast .awt-dashboard .awt-usage-headline,
+html.awt-theme-high-contrast .awt-dashboard .awt-usage-tile {
+    background-color: #000000 !important;
+    background-image: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* The decorative orb is contrast noise with nothing to say. */
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-card::after,
+html.awt-theme-high-contrast .awt-dashboard .awt-metric-tile::after,
+html.awt-theme-high-contrast .awt-dashboard .awt-health-chip::after {
+    display: none !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-card:hover,
+html.awt-theme-high-contrast .awt-dashboard .awt-health-chip:hover,
+html.awt-theme-high-contrast .awt-dashboard .awt-metric-tile:hover {
+    border-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* The icon tile keeps its accent — it is the one place hue does work. */
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-icon {
+    box-shadow: none !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-label,
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-breakdown,
+html.awt-theme-high-contrast .awt-dashboard .awt-usage-tile-label {
+    color: #d4d4d4 !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-value,
+html.awt-theme-high-contrast .awt-dashboard .awt-usage-value,
+html.awt-theme-high-contrast .awt-dashboard .awt-usage-headline-value,
+html.awt-theme-high-contrast .awt-dashboard .awt-metric-value {
+    color: #ffffff !important;
+}
+
+/* Status rows and the Action Required strip: outline them so the tint is not
+   the only thing carrying the state. */
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-note,
+html.awt-theme-high-contrast .awt-dashboard .awt-dash-alerts,
+html.awt-theme-high-contrast .awt-dashboard .awt-dash-alerts-item {
+    border: 1px solid currentColor !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-note-warning,
+html.awt-theme-high-contrast .awt-dashboard .awt-dash-alerts,
+html.awt-theme-high-contrast .awt-dashboard .awt-dash-alerts-label {
+    color: #fcd34d !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-kpi-note-positive {
+    color: #86efac !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-dash-alerts-item {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+/* Recent activity: the left accent and the badge tint are the only colour, so
+   both need to survive on black. */
+html.awt-theme-high-contrast .awt-dashboard .awt-activity-badge {
+    background-color: transparent !important;
+    border: 1px solid currentColor !important;
+    color: var(--awt-act) !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-activity-item::before {
+    opacity: 1 !important;
+}
+
+html.awt-theme-high-contrast .awt-dashboard .awt-activity-item:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ── Focus ───────────────────────────────────────────────────────── */
+
+/* Amber rather than the accent blue: it stays visible against both the black
+   surface and the blue of an active menu item. */
+html.awt-theme-high-contrast :focus-visible {
+    outline: 3px solid #fbbf24 !important;
+    outline-offset: 2px !important;
+}
+
+/* ============================================================
+   Operator Help / Fax / Webinar / Video tab surfaces — dark mode
+   ============================================================
+   operator-help.css, operator-fax.css, operator-webinar.css and
+   operator-video.css hard-code light surface colors across many
+   page-specific classes. Override the concrete classes so these
+   four tabs render correctly under html.awt-theme-dark.
+*/
+
+/* ── Help center page ────────────────────────────────────────── */
+html.awt-theme-dark .help-page.rc-help {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-title,
+html.awt-theme-dark .rc-help-hero-title,
+html.awt-theme-dark .rc-help-eyebrow,
+html.awt-theme-dark .rc-help-topic-title,
+html.awt-theme-dark .rc-help-category-title,
+html.awt-theme-dark .rc-help-explore-title,
+html.awt-theme-dark .rc-help-explore-video-title,
+html.awt-theme-dark .rc-help-keys-row-title,
+html.awt-theme-dark .rc-help-pane-placeholder h3,
+html.awt-theme-dark .rc-help-gethelp-title,
+html.awt-theme-dark .rc-help-gethelp-sub {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-header-btn {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-help-header-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* Tabs row */
+html.awt-theme-dark .rc-help-tabs.nav-tabs {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-help-tabs.nav-tabs .nav-link {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-help-tabs.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+    background: transparent;
+}
+
+/* Placeholder, hero search, topic + feature + category cards */
+html.awt-theme-dark .rc-help-pane-placeholder { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-help-search {
+    background: var(--bs-tertiary-bg);
+}
+html.awt-theme-dark .rc-help-search i,
+html.awt-theme-dark .rc-help-search input::placeholder {
+    color: rgba(226, 232, 240, 0.5);
+}
+html.awt-theme-dark .rc-help-search input { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-help-topic-desc,
+html.awt-theme-dark .rc-help-video-desc,
+html.awt-theme-dark .rc-help-explore-video-desc { color: rgba(226, 232, 240, 0.75); }
+html.awt-theme-dark .rc-help-all-videos,
+html.awt-theme-dark .rc-help-need-more-btn,
+html.awt-theme-dark .rc-help-category-links a,
+html.awt-theme-dark .rc-help-explore-row-body a,
+html.awt-theme-dark .rc-help-keys-row-arrow,
+html.awt-theme-dark .rc-help-video-more {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-help-all-videos:hover,
+html.awt-theme-dark .rc-help-category-links a:hover,
+html.awt-theme-dark .rc-help-explore-row-body a:hover,
+html.awt-theme-dark .rc-help-video-more:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-help-feature-card,
+html.awt-theme-dark .rc-help-category-card,
+html.awt-theme-dark .rc-help-explore-accordion,
+html.awt-theme-dark .rc-help-keys-detail {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-feature-card:hover { border-color: var(--bs-primary); color: var(--bs-body-color); }
+html.awt-theme-dark .rc-help-feature-more,
+html.awt-theme-dark .rc-help-category-more,
+html.awt-theme-dark .rc-help-explore-desc,
+html.awt-theme-dark .rc-help-explore-caret,
+html.awt-theme-dark .rc-help-need-more-caret,
+html.awt-theme-dark .rc-help-hero-sub,
+html.awt-theme-dark .rc-help-keys-row-desc { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-help-need-more,
+html.awt-theme-dark .rc-help-explore-row {
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-help-need-more-btn:hover { background: rgba(255, 255, 255, 0.06); }
+html.awt-theme-dark .rc-help-explore-cta {
+    background: transparent;
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-explore-cta:hover {
+    background: var(--bs-body-color);
+    color: var(--bs-body-bg);
+}
+
+/* How-to videos filter pills */
+html.awt-theme-dark .rc-help-filter-pill {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: transparent;
+}
+html.awt-theme-dark .rc-help-filter-pill:hover { background: rgba(255, 255, 255, 0.08); }
+html.awt-theme-dark .rc-help-filter-pill.is-active {
+    background: transparent;
+    border-color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-video-thumb { background: var(--bs-tertiary-bg); }
+
+/* Key settings list */
+html.awt-theme-dark .rc-help-keys-item { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-help-keys-item:hover { background: rgba(255, 255, 255, 0.06); }
+html.awt-theme-dark .rc-help-keys-item.is-active { background: rgba(96, 165, 250, 0.14); }
+html.awt-theme-dark .rc-help-keys-row {
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-keys-row:hover { background: rgba(255, 255, 255, 0.04); }
+
+/* Onboarding banner */
+html.awt-theme-dark .rc-help-onboarding {
+    background: rgba(96, 165, 250, 0.14);
+}
+html.awt-theme-dark .rc-help-onboarding-text { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-help-onboarding-btn {
+    background: transparent;
+    border-color: var(--bs-body-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-help-onboarding-btn:hover {
+    background: var(--bs-body-color);
+    color: var(--bs-body-bg);
+}
+
+/* Get help modal */
+html.awt-theme-dark .rc-help-gethelp-card {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-help-gethelp-option:hover .rc-help-gethelp-card { border-color: var(--bs-primary); }
+html.awt-theme-dark .rc-help-gethelp-option input[type="radio"]:checked + .rc-help-gethelp-card {
+    border-color: var(--bs-primary);
+    background: rgba(96, 165, 250, 0.14);
+    box-shadow: 0 0 0 1px var(--bs-primary);
+}
+html.awt-theme-dark .rc-help-gethelp-desc { color: rgba(226, 232, 240, 0.65); }
+html.awt-theme-dark .rc-help-gethelp-radio {
+    background: transparent;
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-help-gethelp-option input[type="radio"]:checked + .rc-help-gethelp-card .rc-help-gethelp-radio { border-color: var(--bs-primary); }
+html.awt-theme-dark .rc-help-gethelp-option input[type="radio"]:checked + .rc-help-gethelp-card .rc-help-gethelp-radio::after { background: var(--bs-primary); }
+html.awt-theme-dark .rc-help-gethelp-cancel { color: var(--bs-primary); }
+html.awt-theme-dark .rc-help-gethelp-cancel:hover { color: #93c5fd; }
+
+/* ── Operator fax tab (.fax-page + .rc-fax-* surfaces) ───────── */
+html.awt-theme-dark .fax-page .rc-call-item.rc-fax-item:hover,
+html.awt-theme-dark .fax-page .rc-call-item.rc-fax-item.is-selected {
+    background: rgba(96, 165, 250, 0.14) !important;
+}
+html.awt-theme-dark .rc-fax-action-btn {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+html.awt-theme-dark .rc-fax-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-fax-contact-icon { color: var(--bs-primary); }
+
+/* Compose-fax modal */
+html.awt-theme-dark #composeFaxModal .form-label { color: rgba(226, 232, 240, 0.65); }
+html.awt-theme-dark #composeFaxModal .notes-area {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark #composeFaxModal .btn-attach {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark #composeFaxModal .fax-dropzone {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark #composeFaxModal .fax-dropzone.dragover {
+    background-color: rgba(96, 165, 250, 0.14);
+    border-color: var(--bs-primary);
+}
+html.awt-theme-dark #composeFaxModal .fax-file-chip {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark #composeFaxModal .fax-file-icon {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark #composeFaxModal .fax-file-remove { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark #composeFaxModal .fax-file-remove:hover { color: #fca5a5; }
+html.awt-theme-dark #composeFaxModal .fax-total-size { color: var(--bs-primary); }
+html.awt-theme-dark #composeFaxModal .btn-cancel { color: var(--bs-primary); }
+html.awt-theme-dark #composeFaxModal .btn-cancel:hover { color: #93c5fd; }
+html.awt-theme-dark #composeFaxModal .btn-send-later {
+    background: transparent;
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark #composeFaxModal .btn-send-now {
+    background-color: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Fax detail (right pane) */
+html.awt-theme-dark .rc-fax-detail { background: var(--bs-secondary-bg); }
+html.awt-theme-dark .rc-fax-detail-close { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-fax-detail-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-fax-detail-name { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-fax-detail-name .rc-fax-contact-icon { color: var(--bs-primary); }
+html.awt-theme-dark .rc-fax-detail-number,
+html.awt-theme-dark .rc-fax-detail-copy { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-fax-detail-copy:hover { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-fax-detail-quick-btn {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-fax-detail-quick-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-fax-detail-card {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-fax-detail-card-time,
+html.awt-theme-dark .rc-fax-detail-card-status,
+html.awt-theme-dark .rc-fax-detail-card-label { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-fax-detail-card-summary,
+html.awt-theme-dark .rc-fax-detail-card-text,
+html.awt-theme-dark .rc-fax-detail-card-value { color: rgba(226, 232, 240, 0.75); }
+html.awt-theme-dark .rc-fax-detail-delete {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: #f87171;
+}
+html.awt-theme-dark .rc-fax-detail-delete:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* ── Operator webinar tab (.rc-webinar surfaces) ─────────────── */
+html.awt-theme-dark .webinar-page.rc-webinar {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-help {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-webinar-help:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* Tabs + search */
+html.awt-theme-dark .rc-webinar-tabs.nav-tabs { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .rc-webinar-tabs.nav-tabs .nav-link { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-webinar-tabs.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+    background: transparent;
+}
+html.awt-theme-dark .rc-webinar-search { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .rc-webinar-search i,
+html.awt-theme-dark .rc-webinar-search input::placeholder { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .rc-webinar-search input { color: var(--bs-body-color); }
+
+/* Empty state */
+html.awt-theme-dark .rc-webinar-illustration {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+html.awt-theme-dark .rc-webinar-empty-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-empty-text { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-webinar-create-btn {
+    background: transparent;
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-webinar-create-btn:hover {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+
+/* Help drawer */
+html.awt-theme-dark .rc-webinar-help-drawer {
+    background: var(--bs-secondary-bg);
+    border-left-color: var(--bs-border-color);
+    box-shadow: -6px 0 18px rgba(0, 0, 0, 0.4);
+}
+html.awt-theme-dark .rc-webinar-help-drawer-title,
+html.awt-theme-dark .rc-webinar-help-drawer-eyebrow { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-help-drawer-feedback,
+html.awt-theme-dark .rc-webinar-help-drawer-close { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-webinar-help-drawer-feedback:hover,
+html.awt-theme-dark .rc-webinar-help-drawer-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-webinar-help-drawer-links a { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-help-drawer-links a:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-webinar-help-drawer-search {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-help-drawer-search i,
+html.awt-theme-dark .rc-webinar-help-drawer-search input::placeholder { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .rc-webinar-help-drawer-search input { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-help-drawer-more {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-help-drawer-more:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-help-drawer-more i { color: rgba(226, 232, 240, 0.6); }
+
+/* Report-an-issue modal */
+html.awt-theme-dark .rc-webinar-report-modal .modal-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-report-info {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.8);
+}
+html.awt-theme-dark .rc-webinar-report-link { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-report-link:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-webinar-report-label { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-report-input {
+    background-color: transparent !important;
+    color: var(--bs-body-color) !important;
+    border-bottom-color: var(--bs-border-color) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+html.awt-theme-dark .rc-webinar-report-input:focus { border-bottom-color: var(--bs-primary) !important; }
+html.awt-theme-dark .rc-webinar-report-attach { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-report-attach:hover { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-report-textarea,
+html.awt-theme-dark .rc-webinar-report-case {
+    background: var(--bs-tertiary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+html.awt-theme-dark .rc-webinar-report-textarea:focus,
+html.awt-theme-dark .rc-webinar-report-case:focus {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.2) !important;
+}
+html.awt-theme-dark .rc-webinar-report-textarea::placeholder,
+html.awt-theme-dark .rc-webinar-report-case::placeholder { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .rc-webinar-report-disclaimer { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-report-cancel { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-report-cancel:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-webinar-report-send {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Create-webinar full-screen wizard */
+html.awt-theme-dark .rc-webinar-create-modal .modal-content {
+    background: var(--bs-secondary-bg) !important;
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-create-close { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-webinar-create-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-webinar-step { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-step-bubble {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-step.is-active .rc-webinar-step-bubble { background: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-step.is-active .rc-webinar-step-label { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-step-line { background: var(--bs-border-color); }
+html.awt-theme-dark .rc-webinar-step-sub { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-create-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-create-subtitle { color: rgba(226, 232, 240, 0.75); }
+html.awt-theme-dark .rc-webinar-type-card {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-type-card:hover {
+    border-color: var(--bs-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+html.awt-theme-dark .rc-webinar-type-name { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-type-tag {
+    background: rgba(96, 165, 250, 0.14);
+    color: #93c5fd;
+}
+html.awt-theme-dark .rc-webinar-type-desc { color: rgba(226, 232, 240, 0.75); }
+html.awt-theme-dark .rc-webinar-divider-line { background: var(--bs-border-color); }
+html.awt-theme-dark .rc-webinar-divider-label { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-copy-btn {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.35);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-copy-btn:not(:disabled) {
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-webinar-copy-btn:not(:disabled):hover {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-webinar-create-back { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-create-back:hover { color: #93c5fd; }
+
+/* Create wizard form */
+html.awt-theme-dark .rc-webinar-form-card {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-field-label { color: rgba(226, 232, 240, 0.65); }
+html.awt-theme-dark .rc-webinar-field-label--active { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-field-input {
+    background-color: transparent !important;
+    color: var(--bs-body-color) !important;
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-webinar-field-input::placeholder { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .rc-webinar-field-input:focus { border-bottom-color: var(--bs-primary) !important; }
+html.awt-theme-dark .rc-webinar-field-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+html.awt-theme-dark .rc-webinar-input-icon i { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-webinar-input-icon input[type="date"],
+html.awt-theme-dark .rc-webinar-input-icon input[type="time"] { color-scheme: dark; }
+html.awt-theme-dark .rc-webinar-field-help { color: rgba(226, 232, 240, 0.6); }
+
+/* Rich-text editor */
+html.awt-theme-dark .rc-webinar-rte {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-rte-area { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-rte-area:empty::before { color: rgba(226, 232, 240, 0.45); }
+html.awt-theme-dark .rc-webinar-rte-toolbar {
+    background: var(--bs-tertiary-bg);
+    border-top-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-rte-btn { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-webinar-rte-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-rte-sep { background: var(--bs-border-color); }
+
+/* Advanced options */
+html.awt-theme-dark .rc-webinar-advanced {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-advanced > summary { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-advanced-body { border-top-color: var(--bs-border-color); }
+html.awt-theme-dark .rc-webinar-adv-label { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-webinar-adv-label i { color: rgba(226, 232, 240, 0.55); }
+html.awt-theme-dark .rc-webinar-adv-select.form-select {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-webinar-adv-switch .form-check-input {
+    background-color: var(--bs-border-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-webinar-adv-switch .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-webinar-form-cancel { color: var(--bs-primary); }
+html.awt-theme-dark .rc-webinar-form-cancel:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-webinar-form-create {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-webinar-form-create:not(:disabled) {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-webinar-form-create:not(:disabled):hover { background: #93c5fd; }
+
+/* ── Operator video tab (.video-page + .rc-video-* surfaces) ── */
+html.awt-theme-dark .video-page .rc-phone-left-header h5,
+html.awt-theme-dark .video-page .rc-video-action-label,
+html.awt-theme-dark .video-page .rc-video-past-detail-title,
+html.awt-theme-dark .video-page .rc-video-past-detail-date { color: var(--bs-body-color); }
+
+html.awt-theme-dark .video-page .rc-phone-tabs.nav-tabs { border-bottom-color: var(--bs-border-color); }
+
+html.awt-theme-dark .video-page .rc-video-action-icon.start {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .video-page .rc-video-action-icon.schedule {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+html.awt-theme-dark .rc-video-calendar-card {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-video-calendar-card .rc-video-calendar-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-calendar-card .rc-video-calendar-title i { color: var(--bs-primary); }
+html.awt-theme-dark .rc-video-calendar-card .rc-video-calendar-desc { color: rgba(226, 232, 240, 0.65); }
+html.awt-theme-dark .rc-video-calendar-connect {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-video-calendar-connect:hover {
+    color: #93c5fd;
+    border-color: var(--bs-primary);
+}
+
+html.awt-theme-dark .rc-video-calendar { border-top-color: var(--bs-border-color); }
+html.awt-theme-dark .rc-video-calendar-badge {
+    background: rgba(96, 165, 250, 0.16);
+    color: #93c5fd;
+}
+html.awt-theme-dark .rc-video-calendar.is-connected .rc-video-calendar-badge {
+    background: rgba(52, 211, 153, 0.16);
+    color: #6ee7b7;
+}
+html.awt-theme-dark .rc-video-calendar-chevron { color: rgba(226, 232, 240, 0.5); }
+html.awt-theme-dark .rc-video-calendar-status { color: #6ee7b7; }
+
+/* Upcoming rows + empty state */
+html.awt-theme-dark .video-page .rc-video-upcoming-item { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .video-page .rc-video-upcoming-item:hover { background: rgba(255, 255, 255, 0.04); }
+html.awt-theme-dark .video-page .rc-video-upcoming-date {
+    background: rgba(96, 165, 250, 0.16);
+    color: #93c5fd;
+}
+html.awt-theme-dark .video-page .rc-video-upcoming-title,
+html.awt-theme-dark .video-page .rc-video-draft-title,
+html.awt-theme-dark .video-page .rc-video-empty-title { color: var(--bs-body-color); }
+html.awt-theme-dark .video-page .rc-video-upcoming-when,
+html.awt-theme-dark .video-page .rc-video-empty-text,
+html.awt-theme-dark .video-page .rc-video-section-label { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .video-page .rc-video-upcoming-chip {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .video-page .rc-video-draft-row { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .video-page .rc-video-empty-hint {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .video-page .rc-video-empty-hint strong { color: var(--bs-body-color); }
+html.awt-theme-dark .video-page .rc-video-empty-hint i { color: #93c5fd; }
+
+/* ── Pre-join screen ─────────────────────────────────────────── */
+html.awt-theme-dark .video-prejoin-heading,
+html.awt-theme-dark .video-prejoin-title,
+html.awt-theme-dark .video-prejoin-fact dd { color: var(--bs-body-color); }
+html.awt-theme-dark .video-prejoin-subheading,
+html.awt-theme-dark .video-prejoin-hint,
+html.awt-theme-dark .video-prejoin-fact dt,
+html.awt-theme-dark .video-prejoin-join-reason { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .video-prejoin-back,
+html.awt-theme-dark .video-prejoin-toggle {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .video-prejoin-back:hover,
+html.awt-theme-dark .video-prejoin-toggle:hover { border-color: var(--bs-primary); }
+html.awt-theme-dark .video-prejoin-toggle.is-on .video-prejoin-toggle-icon {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+}
+html.awt-theme-dark .video-prejoin-toggle.is-off {
+    background: rgba(220, 53, 69, 0.16);
+    border-color: rgba(220, 53, 69, 0.4);
+    color: #fca5a5;
+}
+html.awt-theme-dark .video-prejoin-code,
+html.awt-theme-dark .video-prejoin-flag {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(226, 232, 240, 0.85);
+}
+html.awt-theme-dark .video-prejoin-card {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .video-prejoin-card-head { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .video-prejoin-field .form-label { color: rgba(226, 232, 240, 0.8); }
+html.awt-theme-dark .video-prejoin-notice {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    border-left-color: var(--bs-primary);
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .video-prejoin-notice strong { color: var(--bs-body-color); }
+html.awt-theme-dark .video-prejoin-notice i { color: #93c5fd; }
+html.awt-theme-dark .video-prejoin-notice.is-ready {
+    border-left-color: #34d399;
+}
+html.awt-theme-dark .video-prejoin-notice.is-ready i { color: #6ee7b7; }
+html.awt-theme-dark .video-prejoin-join:disabled {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: transparent;
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* The Past / Notes search line is flat and lives on its own header strip, so
+   only its border and its text need restating here. */
+html.awt-theme-dark .video-page .rc-video-list-tools { background: transparent; }
+html.awt-theme-dark .video-page .rc-video-list-tools-search { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .video-page .rc-video-past-search i,
+html.awt-theme-dark .video-page .rc-video-past-search input::placeholder { color: rgba(226, 232, 240, 0.55); }
+/* The generic dark `input[type=search]` rule above would draw a form-control
+   box around a search line that is meant to be borderless, the way the other
+   panes' search inputs opt out via their own classes. */
+html.awt-theme-dark .video-page .rc-video-past-search input {
+    color: var(--bs-body-color);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+/* ── Meeting rows (Upcoming AND Past — one row, one set of overrides) ── */
+html.awt-theme-dark .video-page .rc-vm-group-label {
+    background: var(--bs-tertiary-bg);
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .video-page .rc-vm-row { border-bottom-color: var(--bs-border-color); }
+html.awt-theme-dark .video-page .rc-vm-row:hover { background: rgba(255, 255, 255, 0.06); }
+html.awt-theme-dark .video-page .rc-vm-row.is-active {
+    background: rgba(96, 165, 250, 0.18);
+    box-shadow: inset 3px 0 0 var(--bs-primary);
+}
+html.awt-theme-dark .video-page .rc-vm-row-main { border-left-color: var(--bs-border-color); }
+html.awt-theme-dark .video-page .rc-vm-row-title { color: var(--bs-body-color); }
+html.awt-theme-dark .video-page .rc-vm-row-start { color: var(--bs-body-color); }
+html.awt-theme-dark .video-page .rc-vm-row-time,
+html.awt-theme-dark .video-page .rc-vm-row-desc,
+html.awt-theme-dark .video-page .rc-vm-row-facts,
+html.awt-theme-dark .video-page .rc-vm-fact i { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .video-page .rc-vm-avatar.is-more {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .video-page .rc-vm-menu-toggle { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .video-page .rc-vm-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .video-page .rc-vm-row-icon {
+    background: rgba(96, 165, 250, 0.16);
+    color: #93c5fd;
+}
+html.awt-theme-dark .video-page .rc-vm-row-past.is-cancelled .rc-vm-row-icon {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .video-page .rc-vm-row-past.is-cancelled .rc-vm-row-title { color: rgba(226, 232, 240, 0.72); }
+html.awt-theme-dark .video-page .rc-vm-status.is-ended {
+    color: #6ee7b7;
+    background: rgba(52, 211, 153, 0.16);
+}
+html.awt-theme-dark .video-page .rc-vm-status.is-cancelled {
+    color: #fca5a5;
+    background: rgba(220, 53, 69, 0.16);
+}
+html.awt-theme-dark .video-page .rc-vm-row-chevron { color: rgba(226, 232, 240, 0.4); }
+html.awt-theme-dark .video-page .rc-vm-row:hover .rc-vm-row-chevron { color: rgba(226, 232, 240, 0.7); }
+
+html.awt-theme-dark .video-page .rc-video-past-empty-icon {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .video-page .rc-video-past-empty h6 { color: var(--bs-body-color); }
+html.awt-theme-dark .video-page .rc-video-past-empty p { color: rgba(226, 232, 240, 0.6); }
+
+html.awt-theme-dark .video-page .rc-video-past-detail { background: var(--bs-secondary-bg); }
+html.awt-theme-dark .video-page .rc-video-past-detail-actions .rc-icon-btn { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .video-page .rc-video-past-detail-actions .rc-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .video-page .rc-video-past-detail-crown,
+html.awt-theme-dark .video-page .rc-video-past-detail-check {
+    border-color: var(--bs-secondary-bg);
+}
+
+html.awt-theme-dark .video-page .rc-video-help .rc-icon-btn {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .video-page .rc-video-help .rc-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* Video modals — body text */
+html.awt-theme-dark .rc-video-join-modal .modal-title,
+html.awt-theme-dark .rc-video-schedule-modal .modal-title,
+html.awt-theme-dark .rc-video-connect-modal .modal-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-connect-desc,
+html.awt-theme-dark .rc-video-schedule-desc { color: rgba(226, 232, 240, 0.75); }
+html.awt-theme-dark .rc-video-connect-option {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-video-connect-option:hover {
+    border-color: var(--bs-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+html.awt-theme-dark .rc-video-join-label { color: var(--bs-primary); }
+html.awt-theme-dark .rc-video-join-cancel { color: var(--bs-primary); }
+html.awt-theme-dark .rc-video-join-cancel:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-video-join-submit {
+    background: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-video-join-submit:hover:not(:disabled) {
+    background: #93c5fd;
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-video-join-submit:disabled {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.4);
+}
+html.awt-theme-dark .rc-video-schedule-settings-btn { color: rgba(226, 232, 240, 0.7); }
+html.awt-theme-dark .rc-video-schedule-settings-btn:hover { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-schedule-settings-toggle {
+    background: var(--bs-tertiary-bg);
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-video-schedule-option-box {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-video-schedule-option input[type="checkbox"]:checked + .rc-video-schedule-option-box {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #0f172a;
+}
+html.awt-theme-dark .rc-video-schedule-option-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-schedule-option-desc { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-video-schedule-pwd-input {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-video-schedule-pwd-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.2);
+}
+html.awt-theme-dark .rc-video-schedule-viewmore { color: var(--bs-primary); }
+html.awt-theme-dark .rc-video-schedule-viewmore:hover { color: #93c5fd; }
+html.awt-theme-dark .rc-video-schedule-actions {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+html.awt-theme-dark .rc-video-schedule-action { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-schedule-action:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-video-schedule-action i { color: rgba(226, 232, 240, 0.7); }
+
+/* ============================================================
+   Operator Message tab (.rc-msg-* surfaces) — dark mode
+   ============================================================ */
+
+/* Left Pane (Message Tabs & Folders) */
+html.awt-theme-dark .rc-msg-tabs {
+    background: var(--bs-secondary-bg) !important;
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-tab {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-tab:hover {
+    color: var(--bs-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-msg-tab.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+}
+
+html.awt-theme-dark .rc-msg-folder-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-folder-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+html.awt-theme-dark .rc-msg-more-menu {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-more-circle {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-more-circle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-more-row {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-more-submenu {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-more-value {
+    color: rgba(226, 232, 240, 0.6);
+}
+
+/* Groups and Conversation Items */
+html.awt-theme-dark .rc-msg-group-header {
+    background: var(--bs-secondary-bg) !important;
+}
+html.awt-theme-dark .rc-msg-group-left {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-msg-cat-icon {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-item {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-msg-item.active {
+    background: rgba(96, 165, 250, 0.18);
+}
+html.awt-theme-dark .rc-msg-name {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-preview {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-msg-time {
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Thread Pane (Middle) */
+html.awt-theme-dark .rc-msg-thread-pane {
+    background: var(--bs-secondary-bg) !important;
+    border-left-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-header-dropdown .dropdown-item:active {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+html.awt-theme-dark .rc-msg-thread-header {
+    background: var(--bs-secondary-bg) !important;
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-info-add-btn {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-info-add-btn:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-info-close,
+html.awt-theme-dark .rc-msg-back-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--bs-body-color) !important;
+}
+html.awt-theme-dark .rc-msg-info-close:hover,
+html.awt-theme-dark .rc-msg-back-btn:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    color: #ffffff !important;
+}
+html.awt-theme-dark .rc-msg-thread-title {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-thread-empty-hint {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-quick-btn {
+    background: transparent !important;
+    color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+}
+html.awt-theme-dark .rc-msg-quick-btn:hover {
+    background: var(--bs-primary) !important;
+    color: #0f172a !important;
+}
+
+/* Messages Bubbles */
+html.awt-theme-dark .rc-msg-bubble-meta strong {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-bubble-time {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-msg-bubble-text {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-bubble-row.is-me .rc-msg-bubble-text {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+}
+html.awt-theme-dark .rc-msg-react-chip {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-react-chip:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+html.awt-theme-dark .rc-msg-react-chip.is-mine {
+    background: rgba(96, 165, 250, 0.18);
+    border-color: rgba(96, 165, 250, 0.4);
+}
+html.awt-theme-dark .rc-msg-react-count {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-bubble-actions {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-bubble-reactions {
+    border-right-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-bubble-reaction:hover,
+html.awt-theme-dark .rc-msg-bubble-reaction-more:hover,
+html.awt-theme-dark .rc-msg-bubble-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+html.awt-theme-dark .rc-msg-bubble-reaction-more {
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .rc-msg-bubble-tool-danger:hover {
+    background: rgba(220, 53, 69, 0.18);
+    color: #f8d7da;
+}
+html.awt-theme-dark .rc-msg-bubble-more-menu.dropdown-menu {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+html.awt-theme-dark .rc-msg-bubble-more-menu .dropdown-item {
+    color: rgba(226, 232, 240, 0.92);
+}
+html.awt-theme-dark .rc-msg-bubble-more-menu .dropdown-item:hover,
+html.awt-theme-dark .rc-msg-bubble-more-menu .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: rgba(226, 232, 240, 1);
+}
+html.awt-theme-dark .rc-msg-bubble-more-menu .dropdown-item.text-danger {
+    color: #f8d7da !important;
+}
+html.awt-theme-dark .rc-msg-bubble-more-menu .dropdown-item.text-danger:hover {
+    background-color: rgba(220, 53, 69, 0.18);
+    color: #f8d7da !important;
+}
+html.awt-theme-dark .rc-msg-compose-reply {
+    background: rgba(255, 255, 255, 0.05);
+}
+html.awt-theme-dark .rc-msg-compose-reply-preview {
+    color: rgba(226, 232, 240, 0.9);
+}
+html.awt-theme-dark .rc-msg-bubble-quote {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-msg-bubble-quote-text {
+    color: rgba(226, 232, 240, 0.9);
+}
+html.awt-theme-dark .rc-msg-bubble-pin {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+}
+html.awt-theme-dark .rc-msg-pinned-banner {
+    background: var(--bs-body-bg);
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-pinned-name {
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .rc-msg-pinned-preview,
+html.awt-theme-dark .rc-msg-pinned-count {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-pinned-more {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-pinned-more:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .rc-msg-reaction-picker {
+    background: var(--bs-secondary-bg);
+}
+html.awt-theme-dark .rc-msg-bubble-action-btn {
+    color: rgba(226, 232, 240, 0.7);
+}
+
+/* Compose Area */
+html.awt-theme-dark .rc-msg-compose-area {
+    background: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-compose-area:focus-within {
+    border-color: rgba(96, 165, 250, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12) !important;
+}
+html.awt-theme-dark .rc-msg-compose-input-row {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-attach-chip {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-msg-attach-chip.is-file {
+    background: rgba(96, 165, 250, 0.10);
+    border-color: rgba(96, 165, 250, 0.24);
+}
+html.awt-theme-dark .rc-msg-attach-name {
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .rc-msg-attach-size {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-msg-compose-input-row:focus-within {
+    border-color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-compose-input {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-compose-input:focus {
+    background: var(--bs-secondary-bg);
+    border-color: rgba(96, 165, 250, 0.55);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+html.awt-theme-dark .rc-msg-compose-input[data-placeholder]:empty::before {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-msg-compose-icon {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-compose-icon:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-compose-send {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-compose-send[disabled] {
+    color: rgba(226, 232, 240, 0.35);
+}
+html.awt-theme-dark .rc-msg-compose-count {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-msg-compose-hint {
+    color: rgba(226, 232, 240, 0.45) !important;
+}
+
+/* RTE Toolbar & Voice bar */
+html.awt-theme-dark .rc-msg-rte-toolbar {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-voice-bar {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-msg-voice-label,
+html.awt-theme-dark .rc-msg-voice-time {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-msg-voice-cancel {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-voice-cancel:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fca5a5;
+}
+html.awt-theme-dark .rc-msg-voice-send {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-voice-send:hover {
+    background: rgba(96, 165, 250, 0.14);
+}
+
+/* Right Info Pane */
+html.awt-theme-dark .rc-msg-info-pane {
+    background: var(--bs-secondary-bg) !important;
+    border-left-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-info-header {
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-info-members-label {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-msg-info-tabs {
+    border-bottom-color: var(--bs-border-color) !important;
+}
+html.awt-theme-dark .rc-msg-info-tab {
+    color: rgba(226, 232, 240, 0.7);
+}
+html.awt-theme-dark .rc-msg-info-tab:hover {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-info-tab.active {
+    color: var(--bs-primary);
+    border-bottom-color: var(--bs-primary);
+}
+html.awt-theme-dark .rc-msg-info-empty {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-msg-info-empty-icon {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(226, 232, 240, 0.7);
+}
+
+/* ─── Tenant Text tab (/messaging) — dark theme ───────────────────────
+   tenant-messages.css ships hardcoded light backgrounds for the
+   conversation list, thread bubbles, and the compose surface. Without
+   these overrides the inbound message bubble renders as light-gray on
+   dark with near-invisible text. Each rule below pairs with a specific
+   light-mode value in tenant-messages.css; if you change those, mirror
+   the change here. */
+
+/* Panes / borders */
+html.awt-theme-dark .rc-conv-list-pane {
+    border-right-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-conv-list-header {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-thread-header {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-thread-compose {
+    border-top-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-thread-details-pane {
+    border-left-color: var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
+
+/* Conversation list rows */
+html.awt-theme-dark .rc-conv-item {
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-conv-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+html.awt-theme-dark .rc-conv-item.active {
+    background: rgba(96, 165, 250, 0.14);
+}
+html.awt-theme-dark .rc-conv-avatar {
+    background: rgba(96, 165, 250, 0.18);
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .rc-conv-time,
+html.awt-theme-dark .rc-conv-preview {
+    color: rgba(226, 232, 240, 0.6);
+}
+html.awt-theme-dark .rc-conv-via {
+    color: rgba(226, 232, 240, 0.45);
+}
+
+/* Multi-select bars — both the conversation-list bar ("0 selected"
+   with flag / trash / X) and the in-thread message-select footer
+   shipped with light pill backgrounds (#eef3ff / #f6f7fb) that read
+   as stark white chips on dark. */
+html.awt-theme-dark .rc-conv-selection-bar {
+    background: rgba(96, 165, 250, 0.10);
+    border-bottom-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-conv-selection-bar .sel-count,
+html.awt-theme-dark .rc-thread-selection-bar .sel-count {
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .rc-thread-selection-bar {
+    background: var(--bs-secondary-bg);
+    border-top-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-conv-list.selection-mode .rc-conv-item.is-selected {
+    background: rgba(96, 165, 250, 0.14);
+}
+
+/* Thread action buttons in the header */
+html.awt-theme-dark .rc-thread-action-btn {
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .rc-thread-action-btn:hover,
+html.awt-theme-dark .rc-thread-action-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(226, 232, 240, 0.95);
+}
+
+/* Message bubbles — the main bug. Inbound was #f0f2f5 / body-color,
+   which in dark mode becomes light-on-light. */
+html.awt-theme-dark .msg-bubble.msg-inbound {
+    background: var(--bs-tertiary-bg, #1f2937);
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .msg-bubble.msg-failed {
+    background: rgba(220, 53, 69, 0.18) !important;
+    color: #f8d7da !important;
+}
+html.awt-theme-dark .msg-time,
+html.awt-theme-dark .msg-status-pill {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .msg-sender-sep,
+html.awt-theme-dark .msg-sender-number {
+    color: rgba(226, 232, 240, 0.5);
+}
+html.awt-theme-dark .msg-day-divider::before,
+html.awt-theme-dark .msg-day-divider::after {
+    background: var(--bs-border-color);
+}
+html.awt-theme-dark .msg-day-divider span {
+    background: var(--bs-body-bg);
+    color: rgba(226, 232, 240, 0.6);
+}
+
+/* Inbound bubble media tiles — match darkened bubble surface */
+html.awt-theme-dark .msg-bubble.msg-inbound .msg-media-file-row {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.9);
+}
+html.awt-theme-dark .msg-bubble.msg-inbound .msg-media-file-icon {
+    background: rgba(255, 255, 255, 0.10);
+    color: rgba(226, 232, 240, 0.9);
+}
+
+/* Compose surface */
+html.awt-theme-dark .awt-compose {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .awt-compose:focus-within {
+    border-color: rgba(96, 165, 250, 0.55);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+html.awt-theme-dark .awt-compose-icon {
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .awt-compose-icon:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .awt-compose-input.form-control {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.95);
+}
+html.awt-theme-dark .awt-compose-input.form-control::placeholder {
+    color: rgba(226, 232, 240, 0.4);
+}
+html.awt-theme-dark .awt-compose-input.form-control:focus {
+    background: var(--bs-tertiary-bg);
+    border-color: rgba(96, 165, 250, 0.55);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+html.awt-theme-dark .awt-compose-hint {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .awt-compose-send {
+    color: var(--bs-primary);
+}
+html.awt-theme-dark .awt-compose-send:hover:not(:disabled) {
+    background: rgba(96, 165, 250, 0.16);
+}
+html.awt-theme-dark .awt-compose-send:disabled {
+    color: rgba(96, 165, 250, 0.35);
+}
+
+/* EmojiPicker.js floating panel — used by the compose 😀 buttons in both
+   the regular and operator messaging views.
+   Nothing to override here any more. The panel is an emoji-mart web component
+   behind a shadow root, which no stylesheet rule can cross; it is told which
+   theme to draw at construction time instead, from this same
+   html.awt-theme-dark class (see isDark() in EmojiPicker.js). The rules that
+   used to live here styled the hand-rolled panel that component replaced. */
+
+/* =============================================================
+   AI Receptionist sidebar link (gold "PRO" treatment)
+   Inactive: a normal sidebar row — only the PRO badge is golden.
+   Active:   the full premium golden highlighted card.
+   The route-based `.active` class (set in the sidebar blade) is
+   what flips the row from plain to premium — never permanent.
+   ============================================================= */
+.menu-item.ai-receptionist-nav > .menu-link {
+    position: relative;
+    border-radius: 0.5rem;
+    transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.menu-item.ai-receptionist-nav > .menu-link > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* -- Active: full premium card, in the theme's accent -- */
+.menu-item.ai-receptionist-nav.active > .menu-link {
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.30), rgba(var(--bs-primary-rgb), 0.16));
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.52);
+    box-shadow: 0 4px 16px rgba(var(--bs-primary-rgb), 0.24);
+}
+.menu-item.ai-receptionist-nav.active > .menu-link .menu-icon {
+    color: rgb(var(--bs-primary-rgb));
+}
+/* Flat accent, not a clipped gradient: -webkit-text-fill-color: transparent
+   makes the label invisible wherever the gradient fails to paint, and it bought
+   nothing legible at this size. */
+.menu-item.ai-receptionist-nav.active > .menu-link > div {
+    font-weight: 600;
+    color: rgb(var(--bs-primary-rgb));
+}
+/* one-shot shimmer sweep on hover, only for the active premium card */
+.menu-item.ai-receptionist-nav.active > .menu-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+    background-size: 200% 100%;
+}
+.menu-item.ai-receptionist-nav.active > .menu-link:hover::after {
+    opacity: 1;
+    animation: awtPremiumShimmer 1.1s ease;
+}
+@keyframes awtPremiumShimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+/* Golden PRO badge — shown in both states, with the crown icon */
+/*
+ * PRO badge. Shared by the sidebar's AI Receptionist row and the premium add-on
+ * cards, so `.awt-premium-badge` is an alias rather than a second set of rules.
+ *
+ * Drawn from the theme accent, not a fixed gold: it used to be a gold gradient
+ * with brown text regardless of the selected theme, which clashed on Sky,
+ * Eggplant and high-contrast alike. --bs-primary-rgb is set per variant in this
+ * file, so this now tracks whichever theme is on.
+ */
+.ai-pro-badge,
+.awt-premium-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.82), rgb(var(--bs-primary-rgb)));
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    box-shadow: 0 1px 3px rgba(var(--bs-primary-rgb), 0.4);
+}
+.ai-pro-badge i,
+.awt-premium-badge i {
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+/*
+ * Collapsed rail: the badge labels the "AI Receptionist" row, and with the menu
+ * collapsed there is no row to label — just an icon — so the crown spilled out
+ * past the rail's edge. Hidden on exactly the condition the theme uses to hide
+ * the menu text itself, so it returns the moment the menu is expanded or hovered
+ * open rather than being lost in the collapsed state.
+ */
+html.layout-menu-collapsed:not(.layout-menu-hover) #layout-menu .ai-pro-badge {
+    display: none;
+}
+
+/* Dark theme — only the active premium card changes */
+/* Dark theme only needs the fill dialled back — the accent itself already
+   tracks the theme, so there is no second palette to restate here. */
+html.awt-theme-dark .menu-item.ai-receptionist-nav.active > .menu-link {
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.18), rgba(var(--bs-primary-rgb), 0.09));
+    border-color: rgba(var(--bs-primary-rgb), 0.34);
+}
+
+
+/* Video hub panel (right pane, Upcoming / Past) */
+html.awt-theme-dark .rc-video-hub-promo {
+    background: linear-gradient(180deg, var(--bs-body-bg) 0%, var(--bs-tertiary-bg) 100%);
+}
+html.awt-theme-dark .rc-video-hub-title { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-hub-sub { color: rgba(226, 232, 240, 0.6); }
+html.awt-theme-dark .rc-video-hub-points li {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    color: rgba(226, 232, 240, 0.75);
+}
+html.awt-theme-dark .rc-video-hub-points li strong { color: var(--bs-body-color); }
+html.awt-theme-dark .rc-video-hub-points li i { color: #93c5fd; }
+
+/* ── Tooltip strobing guard ──────────────────────────────────────────────
+ * A Bootstrap tooltip is appended to <body>, so when it appears close enough
+ * to sit under the pointer (e.g. the sidebar brand tooltip placed to the right
+ * of a wide header — hovering the logo/toggle lands the cursor on the tooltip)
+ * the trigger fires mouseleave → tooltip hides → mouseenter → shows again, an
+ * endless flicker that also strobes the cursor. Making tooltips ignore the
+ * pointer means the cursor is always "over the trigger", never the tooltip, so
+ * the loop can't start. Tooltips here are plain text, never interactive. */
+.tooltip {
+    pointer-events: none;
+}
+
+/* ── Sidebar collapse toggle: a clear chevron, not a "random dot" ─────────
+ * Vuexy's default toggle glyph is a circle-with-a-centre-dot (a target/record
+ * look) that reads as a meaningless dot next to the logo. Swap it for a plain
+ * chevron so the control obviously means "collapse / expand the sidebar":
+ *   expanded  → "‹" (collapse toward the rail)
+ *   collapsed → "›" (expand back out)
+ * The #layout-menu id keeps this above Vuexy's own .menu-toggle-icon rules. */
+#layout-menu .layout-menu-toggle .menu-toggle-icon {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 6l-6 6l6 6'/%3E%3C/svg%3E");
+}
+
+html.layout-menu-collapsed #layout-menu .layout-menu-toggle .menu-toggle-icon {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 6l6 6l-6 6'/%3E%3C/svg%3E");
+}
+
+/* ── tabler-voicemail ────────────────────────────────────────────────────
+ * The bundled iconify pack (assets/vendor/fonts/iconify-icons.css) ships no
+ * .tabler-voicemail rule, so every `<i class="icon-base ti tabler-voicemail">`
+ * had no --svg to mask and rendered as a blank square: the dashboard's Call
+ * performance tile, the calls-list empty state and the global dialer modal.
+ * Declared here with the canonical glyph (two circles joined at the bottom),
+ * using the same --svg mask mechanism .ti already applies — the copy in the
+ * call popup does the same, because that window loads its own icon subset. */
+.tabler-voicemail {
+    --svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0m12 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M6 15h12'/%3E%3C/svg%3E");
+}
+
+/* Team pane (right side of the calls page) — dark theme.
+   Mirrors the favorites-list treatment above: transparent rows, border and
+   hover pulled from the theme variables rather than the light-mode greys. */
+html.awt-theme-dark .rc-team-item,
+html.awt-theme-dark .rc-contact-row {
+    border-color: transparent;
+}
+html.awt-theme-dark .rc-team-item:hover,
+html.awt-theme-dark .rc-contact-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--bs-border-color);
+    box-shadow: none;
+}
+html.awt-theme-dark .rc-team-name,
+html.awt-theme-dark .rc-contact-name,
+html.awt-theme-dark .rc-pane-title {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-team-sub,
+html.awt-theme-dark .rc-contact-sub,
+html.awt-theme-dark .rc-pane-count,
+html.awt-theme-dark .rc-contact-ext {
+    color: rgba(226, 232, 240, 0.65);
+}
+html.awt-theme-dark .rc-team-dept,
+html.awt-theme-dark .rc-contact-dept {
+    color: rgba(226, 232, 240, 0.45);
+}
+html.awt-theme-dark .rc-pane-search {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-pane-search:focus-within {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-pane-search-input,
+html.awt-theme-dark .rc-fav-search-input {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-pane-search-icon,
+html.awt-theme-dark .rc-pane-tool {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-pane-tool:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-team-dept-toggle:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+html.awt-theme-dark .rc-team-dept-count {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-presence-dot {
+    border-color: var(--bs-secondary-bg);
+}
+html.awt-theme-dark .rc-contact-action {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 0 0 1px var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contact-action.is-call {
+    background: rgba(40, 167, 69, 0.18);
+    color: #4ade80;
+    box-shadow: none;
+}
+html.awt-theme-dark .rc-contact-action.is-call:hover {
+    background: #1a7f43;
+    color: #fff;
+}
+html.awt-theme-dark .rc-contact-more-menu {
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+html.awt-theme-dark .rc-contact-more-menu button,
+html.awt-theme-dark .rc-contact-more-menu a {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-contact-more-menu button:hover,
+html.awt-theme-dark .rc-contact-more-menu a:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.awt-theme-dark .rc-pane-empty-icon {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(226, 232, 240, 0.65);
+}
+html.awt-theme-dark .rc-pane-empty h4 {
+    color: var(--bs-body-color);
+}
+html.awt-theme-dark .rc-pane-empty p {
+    color: rgba(226, 232, 240, 0.55);
+}
+html.awt-theme-dark .rc-team-call {
+    background: rgba(40, 167, 69, 0.18);
+    color: #4ade80;
+}
+html.awt-theme-dark .rc-team-call:hover {
+    background: #1a7f43;
+    color: #fff;
+}
+
+/* Live glass blur is idle-only. html.awt-scrolling is set by awt-glass.js.
+   These custom properties inherit into every glass surface; dropping them
+   here covers the inbox even when tenant-messages.css is a stale cache. */
+html.awt-scrolling .awt-dashboard,
+html.awt-scrolling .rc-messaging {
+    --awt-glass-blur: none;
+    --msg-blur: none;
+}

@@ -1,0 +1,750 @@
+/* ============================================================================
+   awt-responsive.css  —  Shared responsive foundation for AWT Phone
+   ----------------------------------------------------------------------------
+   ONE stylesheet, loaded LAST in every layout (after @stack('styles')), so it
+   can adjust layout at small viewports without adding new !important rules and
+   without fighting the theme. It introduces NO new CSS framework — it only uses
+   the existing Bootstrap 5 breakpoint ladder (sm 576 / md 768 / lg 992 /
+   xl 1200 / xxl 1400) already shipped in vendor/css/core.css.
+
+   HARD RULES honoured here:
+     • Everything meaningful lives inside a @media (max-width: …) block, so the
+       desktop design is byte-for-byte unchanged at ≥ the relevant breakpoint.
+     • No id/data-attr contract is touched; this file is pure styling.
+     • Reusable primitives only — pages opt in via existing classes; we do not
+       duplicate per-page CSS.
+
+   Sections:
+     1. Global safety (horizontal-overflow guard, 100vw shell fix)
+     2. Responsive modals (app-wide cap so dialogs never exceed the viewport)
+     3. Master-detail helper (single-pane + back button on ≤ md)  [Phase 3+]
+     4. Agent shell drawer (≤ lg off-canvas sidebar)              [Phase 2]
+   Sections 3–4 ship their styles here but are activated by markup/JS added in
+   their respective phases; until then they are inert (no matching elements).
+   ========================================================================== */
+
+/* ── 1. Global safety ─────────────────────────────────────────────────────
+   The agent shell hard-codes width:100vw (tenant-agent-layout.css) which can
+   introduce a horizontal scrollbar (100vw counts the scrollbar gutter). Pin it
+   to 100% instead. Scoped to the agent shell so nothing else is affected. */
+.tenant-agent-layout .tal-shell { width: 100%; max-width: 100%; }
+
+/* ── 2. Responsive modals (app-wide) ──────────────────────────────────────
+   Bootstrap's default dialogs are viewport-relative, but several custom modals
+   set fixed max-width (contacts 520px, webinar 560px, …) that exceed a 430px
+   phone. Cap EVERY dialog to the viewport on small screens and let scrollable
+   bodies keep header/footer reachable. Desktop (≥576px) is untouched. */
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin: 0.5rem auto;
+        max-width: calc(100% - 1rem);
+    }
+    .modal-dialog.modal-dialog-scrollable .modal-content {
+        max-height: calc(100dvh - 1rem);
+    }
+    /* Dropdowns/menus that Bootstrap sizes generously should not overflow. */
+    .modal .dropdown-menu { max-width: calc(100vw - 2rem); }
+}
+
+/* ── Header rows: wrap title + actions on phones ──────────────────────────
+   The shared card-header pattern `card-header d-flex justify-content-between`
+   keeps title and action button on one line; below sm they can collide/clip.
+   Let them wrap (reusable — no per-file edits). Desktop (≥576px) untouched. */
+@media (max-width: 575.98px) {
+    .card-header.d-flex.justify-content-between { flex-wrap: wrap; gap: 0.5rem; }
+}
+
+/* ── 3. Master-detail helper (single-pane + back button on ≤ md) ──────────
+   Shared behaviour for the rc-* "list + detail" screens (SMS, calls, contacts,
+   fax, video hub). A page opts in with three markers on its EXISTING panes:
+     [data-awt-md] on the flex body, [data-awt-md-list] on the list pane,
+     [data-awt-md-detail] on the detail pane, and a [data-awt-md-back] button.
+   awt-master-detail.js toggles `.awt-md-detail-active` on the body.
+
+   Specificity note: attribute selectors here (0-2-0 / 0-3-0) intentionally beat
+   the panes' fixed-width rules (e.g. .rc-conv-list-pane{width:340px}, 0-1-0) so
+   NO !important is needed. Desktop (≥768px) never enters these rules. */
+[data-awt-md-back] { display: none; } /* desktop: no back button */
+
+/* The detail opens as a BOTTOM SHEET over the list — 60% of the viewport, not
+   the whole screen. Keeping the list visible behind it is what makes working
+   down a list feel continuous: you can still see where you were, and the sheet
+   dismisses back onto it.
+
+   --awt-md-sheet-h is the one place that height is written.
+
+   A detail longer than 60% grows taller — up to --awt-md-sheet-h-max, 90% of
+   the viewport. Not 100%: the strip of dimmed list left at the top is what
+   keeps the sheet a sheet, showing there is a page behind it and a place to tap
+   to get back.
+
+   Growth is additive rather than a second fixed height: the pane is the short
+   detent PLUS --awt-md-sheet-grown, a pixel figure awt-master-detail.js writes
+   here frame by frame while it grows the sheet.
+
+   THE SCRIPT ANIMATES IT, not this file, and that is deliberate. Growing the
+   sheet moves its top edge, so every line of a detail anchored to the bottom
+   of the screen moves with it; the script cancels that out by taking the same
+   pixels off the scroll position on the same frame, and it can only do that if
+   it is the thing driving the change. A CSS transition here would animate the
+   height on its own schedule — including for the constant small `dvh`
+   corrections a phone makes as its address bar slides away, which is what made
+   the sheet wobble its way through every scroll. */
+:root {
+    --awt-md-sheet-h: 60vh;
+    --awt-md-sheet-h-max: 90vh;
+
+    /* Height the reader has earned by scrolling, in pixels, written on the root
+       by awt-master-detail.js. Zero until then, and capped by the max-height
+       below rather than by arithmetic here. */
+    --awt-md-sheet-grown: 0px;
+
+    /* One set of motion tokens for every sheet move there is: sliding up,
+       sliding away, growing to the tall detent, settling back to the short one,
+       and the backdrop dimming with it. They are written once here because the
+       sheet is described twice below (§6 and §6b collapse at different widths),
+       and two copies of a curve is how the two copies drift apart.
+
+       Arriving is slower than leaving and lands on a decelerating curve — the
+       sheet coasts into place the way a panel with weight would. Leaving uses
+       an accelerating one and less time: a dismissal should feel like it is
+       already gone, not like it is being escorted out. */
+    --awt-md-sheet-in: .34s;
+    --awt-md-sheet-out: .24s;
+    --awt-md-sheet-ease-in: cubic-bezier(.32, .72, 0, 1);
+    --awt-md-sheet-ease-out: cubic-bezier(.4, .04, 1, 1);
+}
+
+
+@media (max-width: 767.98px) {
+    /* The list keeps the full width of the collapsed body, and STAYS on screen
+       behind the sheet. */
+    [data-awt-md] > [data-awt-md-list] {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    [data-awt-md]:not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-list] { display: flex; }
+
+    /* ── Nothing in the list may paint over the sheet ──────────────────────
+     *
+     * A list pane is full of controls that lift themselves: the Phone header's
+     * settings gear sits at z-index 1100 so its menu clears the tab strip's
+     * overflow chevron at 1090. Both of those are higher than the sheet (1050)
+     * and its backdrop (1049), so the gear floated over the open detail —
+     * dimmed page behind it, sheet in front of it, and a gear on top of both.
+     *
+     * Capping them one by one would mean knowing every such number on every
+     * page that ever opts into this helper, and being told each time a new one
+     * appears. Instead the pane becomes a stacking context for as long as the
+     * sheet is up: whatever its contents claim inside it, the pane as a whole
+     * paints in normal flow order, which is under anything positioned above it.
+     * The numbers inside keep working relative to each other — the gear's menu
+     * still clears the chevron.
+     *
+     * `isolation` rather than `position: relative; z-index: 0`, which would do
+     * the same job but also make the pane the containing block for every
+     * absolutely-positioned descendant, moving anything that was positioned
+     * against an ancestor further up. This changes paint order and nothing
+     * else. */
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-list] {
+        isolation: isolate;
+    }
+
+    /* ── Full-screen detail (data-awt-md-full) ────────────────────────────
+       For a detail that IS the destination rather than a summary of the row —
+       the Text tab's chat room. The thread takes the whole screen: it needs the
+       height for message history, the composer and the keyboard, and there is
+       nothing useful to see behind it. This is the plain either/or swap the
+       shared helper started with. */
+    [data-awt-md-full] > [data-awt-md-list],
+    [data-awt-md-full] > [data-awt-md-detail] {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    [data-awt-md-full] > [data-awt-md-detail] { display: none; }
+    [data-awt-md-full].awt-md-detail-active > [data-awt-md-list] { display: none; }
+    [data-awt-md-full].awt-md-detail-active > [data-awt-md-detail] { display: flex; }
+
+    /* The sheet itself: parked below the fold, slid up when active. Always
+       `display: flex` so the transform has something to animate — off-screen,
+       so it cannot intercept a tap meant for the list. */
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]) > [data-awt-md-detail] {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        /* The short detent plus whatever height the reader has earned, and
+           never past the tall one. The cap lives in max-height so the growth
+           can be handed over in plain pixels without anyone having to do the
+           arithmetic in two places. */
+        height: calc(var(--awt-md-sheet-h) + var(--awt-md-sheet-grown));
+        max-height: var(--awt-md-sheet-h-max);
+        display: flex;
+        flex-direction: column;
+        /* The sheet is only 60% tall, so its content has to scroll INSIDE it.
+           `hidden` here (the pattern this was modelled on) simply cut the
+           content off at the fold with no way to reach the rest. */
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        transform: translateY(100%);
+        /* The LEAVING transition: this is the resting state the sheet returns
+           to when `.awt-md-detail-active` comes off, so the timing here is the
+           one a dismissal uses.
+
+           TRANSFORM ONLY, and height deliberately NOT in this list. The height
+           resolves from `dvh`, and `dvh` changes on its own every time a phone
+           collapses or restores its address bar — which is precisely what
+           happens while you scroll. A transition on height turns each of those
+           into a third-of-a-second animation, so the sheet wobbles its way
+           through every scroll. Height still changes between the two detents;
+           it is animated for that, and only that, by the `-resizing` rule
+           below, which the script turns on for the length of the change. */
+        transition: transform var(--awt-md-sheet-out) var(--awt-md-sheet-ease-out);
+        z-index: 1050;
+        background: var(--bs-body-bg, #fff);
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, .22);
+    }
+    /* The ARRIVING transition: longer, and on the decelerating curve. */
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-detail] {
+        transform: translateY(0);
+        transition: transform var(--awt-md-sheet-in) var(--awt-md-sheet-ease-in);
+    }
+
+    /* Dimmed backdrop over the part of the list the sheet does not cover.
+       Rendered by the ROOT, not by the pane: the pane is transformed (which
+       makes it the containing block for its own fixed-position boxes) and
+       scrolls its content, so a ::before on it was clipped away — invisible,
+       and impossible to tap. The root is neither, so its ::after lays over the
+       page exactly as intended and receives the tap that dismisses the sheet. */
+    /* Painted at all times, transparent until the sheet is up, so the dim can
+       FADE both ways. Defining it only on `.awt-md-detail-active` (as it was)
+       means it is created at full strength when the sheet opens and destroyed
+       the instant it closes: the slide animated, the dim blinked. Nothing can
+       transition into or out of existence.
+
+       `pointer-events: none` while it is invisible is the whole safety of
+       doing this — an untappable overlay over the list is exactly as
+       transparent to a finger as no overlay at all. When the sheet is up it
+       goes back to `auto`, and the tap that lands on it is the one the root's
+       click handler reads as "dismiss". */
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full])::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        /* Opacity, and nothing else. It used to stop at the sheet's top edge
+           (`bottom: var(--awt-md-sheet-h)`), which meant the dim had to be kept
+           in sync with a moving edge — an edge that also moves on its own every
+           time a phone's address bar collapses and `dvh` changes. Covering the
+           whole viewport is pixel-for-pixel identical, because the sheet is
+           opaque and sits above it, and there is no longer anything to sync. */
+        transition: opacity var(--awt-md-sheet-out) var(--awt-md-sheet-ease-out);
+        background: rgba(0, 0, 0, .4);
+        z-index: 1049; /* under the sheet (1050), over the list */
+    }
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active::after {
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity var(--awt-md-sheet-in) var(--awt-md-sheet-ease-in);
+    }
+
+
+    /* ── "Nothing selected" placeholders are a DESKTOP idea ────────────────
+       On a split screen, "Select a contact to view details" fills the empty
+       half and explains it. On a phone there is no empty half: the detail is a
+       sheet you opened deliberately, so the sentence can only ever appear
+       AFTER you dismiss the thing you were reading.
+
+       And that is exactly what went wrong. Every close button on these pages
+       hides the detail and reveals the placeholder in its place — but the
+       close button lives INSIDE the detail, so it disappears with it. What was
+       left was a sheet showing one line of grey text, with no X, no back
+       arrow, and nothing to tap: an orphan you could only escape by swiping it
+       away or reloading.
+
+       Hidden here so it cannot be reached on a phone whatever a page's own
+       close handler does. The sheet still dismisses (the X and the backdrop
+       both run the shared close), and this makes the failure impossible rather
+       than merely unlikely. Desktop is untouched — the placeholder is doing a
+       real job there. */
+    [data-awt-md] > [data-awt-md-detail] .rc-right-empty,
+    [data-awt-md] > [data-awt-md-detail] .rc-empty-state {
+        display: none !important;
+    }
+
+    /* Back button becomes visible inside the detail pane on small screens. */
+    [data-awt-md-back] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Newer mobile browsers: 60% of the *visible* viewport, so the sheet does not
+   grow behind the address bar as it collapses. Ignored where unsupported. */
+@supports (height: 60dvh) {
+    :root {
+        --awt-md-sheet-h: 60dvh;
+        --awt-md-sheet-h-max: 90dvh;
+    }
+}
+
+/* ── 4. Responsive tabs (horizontal scroll on ≤ md) ───────────────────────
+   The rc-* tab strips (Phone Keypad/Calls/Voicemail/Notes, Contacts categories,
+   HUD/Favorites, Video Upcoming/Past/Notes) are nav-tabs rows that crowd on
+   phones. Let them scroll horizontally instead of wrapping/compressing, keeping
+   labels readable and the active tab reachable. Opt-in via the known classes or
+   a [data-awt-scroll-tabs] hook. Desktop (≥768px) untouched. */
+@media (max-width: 767.98px) {
+    .rc-phone-tabs,
+    .rc-contacts-tabs,
+    .rc-right-tabs,
+    [data-awt-scroll-tabs] {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .rc-phone-tabs::-webkit-scrollbar,
+    .rc-contacts-tabs::-webkit-scrollbar,
+    .rc-right-tabs::-webkit-scrollbar,
+    [data-awt-scroll-tabs]::-webkit-scrollbar { display: none; }
+
+    .rc-phone-tabs > .nav-item,
+    .rc-contacts-tabs > .nav-item,
+    .rc-right-tabs > .nav-item,
+    [data-awt-scroll-tabs] > .nav-item { flex: 0 0 auto; }
+
+    .rc-phone-tabs .nav-link,
+    .rc-contacts-tabs .nav-link,
+    .rc-right-tabs .nav-link,
+    [data-awt-scroll-tabs] .nav-link { white-space: nowrap; }
+}
+
+/* ── 5. Long text safety inside detail panes ──────────────────────────────
+   Prevents the "one letter per line" wrapping seen in narrow panes: emails,
+   phone numbers and codes wrap on any character rather than overflowing, and
+   flex children can actually shrink (min-width:0). Scoped to detail panes. */
+@media (max-width: 767.98px) {
+    [data-awt-md-detail] { min-width: 0; }
+    [data-awt-md-detail] .text-break,
+    [data-awt-md-detail] .awt-md-wrap { overflow-wrap: anywhere; word-break: break-word; }
+}
+
+/* ── 6. Phone HUD as a bottom sheet on mobile ─────────────────────────────
+   On ≤lg the dialer (left) is full-width and the HUD/extensions (right) opens
+   as a bottom sheet on a row tap; a back/close ([data-awt-md-back]) dismisses
+   it. CSS-only reveal of the EXISTING pane — the dialer and its WebRTC client
+   are never re-rendered. The sheet sits below the dialer modal / call-pill
+   (z 1076) so an active call stays reachable.
+
+   The header's .rc-phone-hud-toggle button was removed, and its two display
+   rules with it — a row tap is now the way in. */
+.rc-hud-sheet-head { display: none; }
+
+@media (max-width: 991.98px) {
+    /* Sheet close/handle becomes visible. */
+    [data-awt-md-manual] [data-awt-md-back] { display: inline-flex; }
+    .rc-hud-sheet-head {
+        display: flex;
+        align-items: center;
+        position: relative;
+        padding: 10px 12px;
+        flex: 0 0 auto;
+        border-bottom: 1px solid var(--bs-border-color, #e9ecef);
+    }
+    .rc-hud-sheet-grip {
+        width: 40px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--bs-border-color, #d9dee3);
+        position: absolute;
+        left: 50%;
+        top: 6px;
+        transform: translateX(-50%);
+    }
+    .rc-hud-sheet-head .rc-md-back { margin-left: auto; }
+
+    /* Pinned inside a scrolling sheet, so the close control never scrolls out
+       of reach. `background: inherit` keeps content from showing through it. */
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]) > [data-awt-md-detail] > .rc-hud-sheet-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bs-body-bg, #fff);
+    }
+}
+
+/* ─── §6b. Phone-family master-detail up to the lg split ──────────────────
+   The generic single-pane rules above stop at 767.98px, which is right for the
+   SMS / Contacts / Video panes: those go side-by-side from 768px up. The Phone
+   family (Calls and the Auto-Dialer workspace) only splits at 992px, so between
+   768 and 991.98 it needs the same either/or treatment — otherwise a tablet
+   would show a list and a detail squeezed together in half the width each.
+
+   Scoped to .rc-phone-body so no other module's breakpoint moves. Mirrors §6
+   exactly; the bottom-sheet rules below still apply to anything that opts into
+   data-awt-md-manual. */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]) > [data-awt-md-list] {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]).awt-md-detail-active > [data-awt-md-list] { display: flex; }
+
+    /* The settings gear and the tab chevron live in this pane and outrank the
+       sheet on their own — see the note in §6. */
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-list] {
+        isolation: isolate;
+    }
+
+    /* Same 60% sheet as §6 — repeated rather than merged because the two
+       families collapse at different widths, and widening the shared rule to
+       992px would turn the SMS / Contacts / Video panes into sheets on tablets
+       where they are correctly side-by-side. */
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]) > [data-awt-md-detail] {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        /* The short detent plus whatever height the reader has earned, and
+           never past the tall one. The cap lives in max-height so the growth
+           can be handed over in plain pixels without anyone having to do the
+           arithmetic in two places. */
+        height: calc(var(--awt-md-sheet-h) + var(--awt-md-sheet-grown));
+        max-height: var(--awt-md-sheet-h-max);
+        display: flex;
+        flex-direction: column;
+        /* The sheet is only 60% tall, so its content has to scroll INSIDE it.
+           `hidden` here (the pattern this was modelled on) simply cut the
+           content off at the fold with no way to reach the rest. */
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        transform: translateY(100%);
+        /* The LEAVING transition: this is the resting state the sheet returns
+           to when `.awt-md-detail-active` comes off, so the timing here is the
+           one a dismissal uses.
+
+           TRANSFORM ONLY, and height deliberately NOT in this list. The height
+           resolves from `dvh`, and `dvh` changes on its own every time a phone
+           collapses or restores its address bar — which is precisely what
+           happens while you scroll. A transition on height turns each of those
+           into a third-of-a-second animation, so the sheet wobbles its way
+           through every scroll. Height still changes between the two detents;
+           it is animated for that, and only that, by the `-resizing` rule
+           below, which the script turns on for the length of the change. */
+        transition: transform var(--awt-md-sheet-out) var(--awt-md-sheet-ease-out);
+        z-index: 1050;
+        background: var(--bs-body-bg, #fff);
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, .22);
+    }
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-detail] {
+        transform: translateY(0);
+        transition: transform var(--awt-md-sheet-in) var(--awt-md-sheet-ease-in);
+    }
+    /* Backdrop on the ROOT, for the reason given in §6: a ::before on the pane
+       is clipped away by its own transform + scrolling, so it could neither be
+       seen nor tapped. */
+    /* Always painted, transparent and untappable until the sheet is up, so the
+       dim fades both ways — see the note in §6. */
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full])::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--awt-md-sheet-out) var(--awt-md-sheet-ease-out);
+        background: rgba(0, 0, 0, .4);
+        z-index: 1049;
+    }
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active::after {
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity var(--awt-md-sheet-in) var(--awt-md-sheet-ease-in);
+    }
+
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]) [data-awt-md-back] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 991.98px) {
+    [data-awt-md-manual] > [data-awt-md-detail] {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        height: 78vh;
+        max-height: 78vh;
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+        z-index: 1050;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.22);
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bs-body-bg, #fff);
+    }
+    [data-awt-md-manual].awt-md-detail-active > [data-awt-md-detail] {
+        transform: translateY(0);
+    }
+    /* Backdrop behind the sheet. On the ROOT, not the pane: the pane is
+       transformed and clips its overflow, so a ::before on it is clipped away —
+       invisible and untappable. (No page currently opts into `manual`; fixed
+       here so the bug cannot return with the next one that does.) */
+    [data-awt-md-manual].awt-md-detail-active::after {
+        content: "";
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 78vh;
+        background: rgba(0, 0, 0, 0.4);
+    }
+    /* The dialer (list) is full-width across the whole ≤lg range (Phone splits
+       only at ≥992), and stays visible even while the HUD sheet is open. */
+    [data-awt-md-manual] > [data-awt-md-list] {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    [data-awt-md-manual].awt-md-detail-active > [data-awt-md-list] { display: flex; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §8. Keypad — fit the dial pad in the viewport it actually has
+   ──────────────────────────────────────────────────────────────────────────
+   The keypad is sized for a 360px desktop rail: 18/24px pane padding, 18px
+   margins around the caller-ID line, 60px keys and 1.7rem digits. Full-width on
+   a phone that stack is taller than a short handset has, so Notes / Call /
+   Clear were pushed toward — and on small screens past — the fold, and the
+   whole screen needed scrolling to place a call.
+
+   Everything below is vertical rhythm and sizing. No colour, font family,
+   digit value, handler or DOM change: the same buttons in the same order, just
+   sized for the screen.
+
+   clamp() rather than fixed px so one rule covers a 320px Android through a
+   large phone: the middle term scales with the viewport, the outer two keep
+   keys tappable (≥46px, comfortably past the 44px target) and stop them
+   ballooning on a tablet.
+
+   Scoped to #rc-tab-keypad so the Calls / Voicemail / Notes / Recordings panes
+   — which set their own padding: 0 — are untouched, and to ≤991.98px so the
+   desktop keypad is exactly as it was.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991.98px) {
+    /* Header: keep the title and its two icons on one compact line. */
+    .rc-phone-left-header { padding: 10px 12px 4px; }
+
+    /* The keypad pane's own breathing room, plus the home-indicator inset so
+       the bottom row is never under it. */
+    .rc-phone-pane-body #rc-tab-keypad.tab-pane {
+        padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    }
+
+    /* Number display: less air above and below, and a long number shrinks
+       rather than wrapping or spilling. */
+    #rc-tab-keypad .rc-dial-display {
+        padding: 2px 0 8px;
+        margin-bottom: 8px;
+    }
+    #rc-tab-keypad .rc-dial-display input {
+        font-size: clamp(1.1rem, 5.5vw, 1.4rem);
+        min-width: 0;
+        text-overflow: ellipsis;
+    }
+
+    /* Caller ID stays directly under the number, and stays CENTRED.
+       `margin-block`, NOT a `margin: 8px 0 10px` shorthand — the line is
+       `width: fit-content` centred by `margin: 0 auto` (operator-phone.css),
+       and the shorthand silently reset those auto side margins to 0, which is
+       what pinned it to the left edge on a phone. Same trap the pad hit below. */
+    #rc-tab-keypad .rc-callerid-line { margin-block: 8px 10px; margin-inline: auto; }
+
+    /* The pad itself: tighter gaps, keys that scale with the viewport height
+       so a short screen gets a shorter pad instead of a scrollbar. */
+    #rc-tab-keypad .rc-keypad {
+        gap: clamp(2px, 0.6vh, 6px) clamp(10px, 5vw, 18px);
+        /* `margin-inline: auto`, NOT a `margin: 0 0 …` shorthand. The pad is
+           `max-width: 280px` with auto side margins (tenant-dialer.css), and a
+           shorthand silently resets those to 0 — which is what pinned the whole
+           pad to the left edge with a wide empty gutter on its right. */
+        margin: 0 auto clamp(8px, 1.5vh, 16px);
+        padding: 0 4px;
+        /* Room to breathe on a full-width phone, capped so it does not sprawl
+           on a tablet. Overrides the 280px desktop cap for these widths only. */
+        max-width: min(340px, 100%);
+        width: 100%;
+    }
+
+    /* ── Every digit on the same baseline ──────────────────────────────────
+       Keys are a flex column that centres whatever children they have, so 1, *
+       and # — which carry no letters — sat lower than 2…9 and 0, and the whole
+       pad read as ragged.
+
+       A two-row grid fixes it: row 1 holds the digit bottom-aligned, row 2 is
+       ALWAYS reserved for the letters whether or not a key has any. Every digit
+       then sits on one line and the letters hang below it, centred. */
+    #rc-tab-keypad .dialer-keypad .rc-key {
+        display: grid;
+        grid-template-rows: 1fr 0.85em;
+        align-items: end;
+        justify-items: center;
+        row-gap: 2px;
+    }
+    #rc-tab-keypad .dialer-keypad .rc-key small {
+        align-self: start;
+        line-height: 0.85em;
+        margin-top: 0;
+    }
+    /* `*` is drawn near the cap-height in most faces, so its ink reads high
+       even when its box is aligned with the others. A small optical nudge puts
+       it on the same visual line as the digits beside it; `#` needs none. */
+    #rc-tab-keypad .dialer-keypad .rc-key[data-digit="*"] .rc-key-digit {
+        transform: translateY(0.18em);
+    }
+    #rc-tab-keypad .rc-keypad .rc-key {
+        min-height: clamp(46px, 7.6vh, 60px);
+        padding: 2px 0;
+    }
+    #rc-tab-keypad .rc-keypad .rc-key .rc-key-digit {
+        font-size: clamp(1.25rem, 5.6vw, 1.7rem);
+    }
+
+    /* Notes / Call / Clear stay together directly below the pad — the row is
+       part of the same flow, so nothing pins it to the bottom of a tall
+       viewport. */
+    /* Pulled in toward the dial button. The desktop row is three EQUAL columns
+       (`1fr 1fr 1fr`), which on a phone parks Notes and Clear against the far
+       edges with a lake of white between them and the call button. Sizing the
+       columns to their content and centring the group instead keeps the three
+       reading as one control, with the gap — not the viewport — setting the
+       distance. */
+    #rc-tab-keypad .rc-action-row {
+        padding: 2px 0 0;
+        grid-template-columns: auto auto auto;
+        justify-content: center;
+        gap: clamp(14px, 6vw, 30px);
+    }
+    #rc-tab-keypad .rc-action-row .rc-side-btn {
+        width: clamp(48px, 13vw, 56px);
+        height: clamp(48px, 13vw, 56px);
+    }
+    #rc-tab-keypad .rc-action-row .rc-call-btn {
+        width: clamp(54px, 15vw, 64px);
+        height: clamp(54px, 15vw, 64px);
+    }
+}
+
+/* Landscape and very short viewports: the pad gives up its remaining slack
+   first, and the pane scrolls naturally rather than clipping the call button.
+   Keys stay at the 44px floor. */
+@media (max-height: 520px) and (orientation: landscape) {
+    .rc-phone-pane-body #rc-tab-keypad.tab-pane { padding: 6px 16px max(6px, env(safe-area-inset-bottom)); }
+    #rc-tab-keypad .rc-dial-display { padding: 0 0 6px; margin-bottom: 6px; }
+    #rc-tab-keypad .rc-callerid-line { margin-block: 6px; margin-inline: auto; }
+    #rc-tab-keypad .rc-keypad {
+        gap: 2px clamp(10px, 5vw, 18px);
+        margin-bottom: 8px;
+    }
+    #rc-tab-keypad .rc-keypad .rc-key { min-height: 44px; }
+    #rc-tab-keypad .rc-keypad .rc-key .rc-key-digit { font-size: 1.15rem; }
+    #rc-tab-keypad .rc-keypad .rc-key small { display: none; } /* letters go first */
+}
+
+/* ── §8b. Dynamic viewport height on mobile ───────────────────────────────
+   The app shell is `height: 100vh` (tenant-agent-layout.css). On a phone that
+   is the height WITH the browser chrome collapsed, so while the address bar is
+   showing the shell is taller than what you can see and its last row — the
+   keypad's Call button — sits under the chrome.
+
+   `100dvh` is the dynamic viewport: the height actually visible right now.
+   Applied only where the problem exists (≤lg) and only where the unit is
+   supported, so the desktop rule and every older browser keep the `100vh` they
+   have always had. Overriding here rather than editing the layout file keeps
+   that original declaration untouched. */
+@supports (height: 100dvh) {
+    @media (max-width: 991.98px) {
+        .tenant-agent-layout .tal-shell { height: 100dvh; }
+        .tenant-agent-layout { min-height: 100dvh; }
+    }
+}
+
+/* ── Inbox: scroll inside the pane on a short phone ───────────────────────
+   The Text tab's (+) menu and the thread list are sized for a tall desktop
+   dock. Below md they must scroll inside their own box rather than growing
+   the card (which the agent shell then clips). Desktop is unchanged: the
+   versioned messaging-voice.css already caps both at every width. */
+@media (max-width: 767.98px) {
+    .rc-messaging .awt-compose-tools {
+        max-inline-size: 100%;
+        max-block-size: min(18rem, calc(100dvh - 11rem));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    .rc-messaging .rc-thread-messages,
+    .rc-messaging .rc-conv-list {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ── §9. Reduced motion ───────────────────────────────────────────────────
+   The sheet is the one thing in this file that MOVES: it slides up, it grows
+   between two detents, and the dim behind it fades. Every bit of that is
+   decoration on top of a state change that is perfectly legible without it —
+   the pane is either up or it is not, either tall or short — so for a reader
+   who has asked the OS for less motion, it simply is where it is.
+
+   Scoped to the sheet rather than blanket-killing transitions on the page:
+   another module's fade is that module's decision to make.
+
+   Every selector below is a verbatim copy of one that sets a transition in §6
+   or §6b. That is not redundancy — this file bans !important (see the header),
+   so the only way to win against `…:not(…):not(…).awt-md-detail-active > …`
+   is to be exactly as specific and come later. A tidier `[data-awt-md] >
+   [data-awt-md-detail]` here would simply lose, and lose silently. */
+@media (prefers-reduced-motion: reduce) {
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]) > [data-awt-md-detail],
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-detail],
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full])::after,
+    [data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active::after,
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]) > [data-awt-md-detail],
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active > [data-awt-md-detail],
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full])::after,
+    .rc-phone-body[data-awt-md]:not([data-awt-md-manual]):not([data-awt-md-full]).awt-md-detail-active::after {
+        transition: none;
+    }
+}

@@ -1,0 +1,43 @@
+*.log
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
+/extractor/.env
+
+# PHP / Laravel
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/auth.json
+.phpunit.result.cache
+/.phpunit.cache
+/bootstrap/cache/*.php
+/storage/framework/
+/storage/logs/
+
+# Python extractor
+/extractor/.venv/
+/extractor/__pycache__/
+/extractor/**/__pycache__/
+/extractor/.pytest_cache/
+/extractor/.mypy_cache/
+/extractor/*.log
+
+# IDE
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
+
+Homestead.json
+Homestead.yaml

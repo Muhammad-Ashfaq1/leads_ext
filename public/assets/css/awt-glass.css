@@ -1,0 +1,424 @@
+/*
+ * Shared glass surfaces.
+ *
+ * The tenant dashboard's cards established this look; this file is the part of
+ * it that is not about the dashboard, so a second page can wear it without a
+ * second copy of the recipe. tenant-dashboard.css keeps only what is specific to
+ * its own components (KPI cards, metric tiles, health chips) and reads the tone
+ * palette from here.
+ *
+ * Pieces:
+ *
+ *   .awt-tone-*    sets --awt-tone-rgb. Every rule below, and every glass rule
+ *                  in tenant-dashboard.css, reads that variable rather than a
+ *                  colour, so a new tone is one class and a theme change carries
+ *                  everywhere at once.
+ *   .awt-glass-card + .awt-stat-* — a statistic on a glass surface: icon tile,
+ *                  label, value, description, footnote.
+ *   .awt-glass-intro + .awt-glass-pill — a page banner on the same surface
+ *                  (title / subtitle / optional action), and a tinted pill for
+ *                  a single linked figure such as MTD revenue.
+ *   .awt-glass-control — a labelled form control that sits in an intro
+ *                  actions cluster (e.g. "My status" on Agent Status).
+ *
+ * Deliberately unscoped: the point is that any page can use it. Every value
+ * comes from the theme's own variables, and there is no !important anywhere —
+ * these are built from the theme's card classes rather than fighting them.
+ *
+ * Scroll cost: live backdrop-filter is recast per card per frame. The kit
+ * keeps --awt-glass-blur short, skips saturate(), and awt-glass.js drops
+ * the blur while html.awt-scrolling is set so a long page stays smooth.
+ */
+
+:root {
+    --awt-glass-radius: 1rem;
+    /* Live backdrop blur is recast on every scroll frame for every glass
+       surface. Keep it short and skip saturate() (a second filter pass).
+       Nested tiles must not set this — the parent card already did. */
+    --awt-glass-blur: blur(8px);
+}
+
+html.awt-scrolling {
+    --awt-glass-blur: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --awt-glass-blur: none;
+    }
+}
+
+/* ── Tone palette ───────────────────────────────────────────────────── */
+
+.awt-tone-primary   { --awt-tone-rgb: var(--bs-primary-rgb); }
+.awt-tone-info      { --awt-tone-rgb: var(--bs-info-rgb); }
+.awt-tone-success   { --awt-tone-rgb: var(--bs-success-rgb); }
+.awt-tone-warning   { --awt-tone-rgb: var(--bs-warning-rgb); }
+.awt-tone-danger    { --awt-tone-rgb: var(--bs-danger-rgb); }
+.awt-tone-secondary { --awt-tone-rgb: var(--bs-secondary-rgb); }
+.awt-tone-dark      { --awt-tone-rgb: var(--bs-dark-rgb); }
+
+/* ── The surface ────────────────────────────────────────────────────── */
+
+/*
+ * Translucent fill over a blurred backdrop, an accent wash running off one
+ * corner, a light-catch along the top edge, and a shadow tinted by the accent
+ * rather than by black. The wash is kept faint: it is there to tell cards apart,
+ * not to colour them, and the text on top has to stay comfortably readable.
+ */
+.awt-glass-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(var(--awt-tone-rgb), 0.16);
+    border-radius: var(--awt-glass-radius);
+    background-color: rgba(255, 255, 255, 0.72);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--awt-tone-rgb), 0.1) 0%,
+        rgba(var(--awt-tone-rgb), 0.03) 42%,
+        rgba(var(--awt-tone-rgb), 0) 72%
+    );
+    -webkit-backdrop-filter: var(--awt-glass-blur);
+    backdrop-filter: var(--awt-glass-blur);
+    box-shadow:
+        0 8px 22px -12px rgba(var(--awt-tone-rgb), 0.34),
+        0 1px 2px rgba(47, 43, 61, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* The soft orb bleeding off the top-right corner. Decorative, and a
+   pseudo-element so it is invisible to assistive technology by construction. */
+.awt-glass-card::after {
+    content: "";
+    position: absolute;
+    inset-block-start: -3.5rem;
+    inset-inline-end: -2.5rem;
+    inline-size: 10rem;
+    block-size: 10rem;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(var(--awt-tone-rgb), 0.13) 0%,
+        rgba(var(--awt-tone-rgb), 0.045) 45%,
+        rgba(var(--awt-tone-rgb), 0) 70%
+    );
+    pointer-events: none;
+}
+
+/*
+ * Hover lifts the surface without promising anything: the glass brightens and
+ * the shadow deepens, but the cursor never changes and nothing moves. A card
+ * that rises under the pointer reads as a link, and these are not.
+ */
+.awt-glass-card:hover {
+    border-color: rgba(var(--awt-tone-rgb), 0.3);
+    background-color: rgba(255, 255, 255, 0.82);
+    box-shadow:
+        0 14px 30px -14px rgba(var(--awt-tone-rgb), 0.44),
+        0 1px 2px rgba(47, 43, 61, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+[data-bs-theme="dark"] .awt-glass-card {
+    border-color: rgba(var(--awt-tone-rgb), 0.22);
+    background-color: rgba(255, 255, 255, 0.035);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--awt-tone-rgb), 0.16) 0%,
+        rgba(var(--awt-tone-rgb), 0.05) 45%,
+        rgba(var(--awt-tone-rgb), 0) 74%
+    );
+    box-shadow:
+        0 10px 28px -14px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] .awt-glass-card:hover {
+    border-color: rgba(var(--awt-tone-rgb), 0.36);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── A statistic on that surface ────────────────────────────────────── */
+
+/*
+ * One `gap` owns every vertical space in the body, so a card carrying a footnote
+ * is spaced exactly like one without — which is what keeps a row of them level
+ * whatever each has to say. The content sits above the orb.
+ */
+.awt-stat-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+}
+
+.awt-stat-head {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-block-size: 2.5rem;
+}
+
+/* Solid accent tile, white glyph, shadow in its own colour — the one saturated
+   thing on the card, so it anchors the glass rather than floating on it. */
+.awt-stat-icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.75rem;
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--awt-tone-rgb), 1) 0%,
+        rgba(var(--awt-tone-rgb), 0.82) 100%
+    );
+    color: #fff;
+    box-shadow:
+        0 6px 14px -6px rgba(var(--awt-tone-rgb), 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    font-size: 1.1875rem;
+    line-height: 1;
+}
+
+/* Small, uppercase and muted, so the value below carries the weight. */
+.awt-stat-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    text-wrap: balance;
+    overflow-wrap: break-word;
+}
+
+.awt-stat-value {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--bs-heading-color, var(--bs-body-color));
+    overflow-wrap: break-word;
+}
+
+/* A value that carries its own meaning (profit in the red) keeps its colour. */
+.awt-stat-value.text-danger,
+.awt-stat-value.text-success,
+.awt-stat-value.text-warning {
+    color: inherit;
+}
+
+/*
+ * Descriptions here are sentences, not labels — "Usage × current Telnyx unit
+ * rates — not an invoice" has to stay readable on a narrow card, so it wraps
+ * normally and `text-wrap: pretty` keeps the last line from being one orphaned
+ * word where the browser supports it.
+ */
+.awt-stat-desc {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--bs-secondary-color);
+    text-wrap: pretty;
+}
+
+/* Supporting information: a rate timestamp, a linked count. Quieter again. */
+.awt-stat-note {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--bs-secondary-color);
+    /* Pushed to the bottom so the notes line up across a row of cards. */
+    margin-block-start: auto;
+    padding-block-start: 0.125rem;
+}
+
+.awt-stat-note a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.125em;
+}
+
+.awt-stat-note a:hover {
+    color: rgb(var(--awt-tone-rgb));
+}
+
+/* Five across is tight on a laptop; give the padding and the figure a little
+   back there, and only there. */
+@media (min-width: 1200px) and (max-width: 1599.98px) {
+    .awt-stat-body {
+        padding: 1rem;
+    }
+
+    .awt-stat-value {
+        font-size: 1.3125rem;
+    }
+}
+
+/* ── Page intro on that surface ─────────────────────────────────────── */
+
+/*
+ * Same glass as a KPI card, laid out as a banner: identity on the left, an
+ * optional action on the right. Stacks cleanly when the row is narrow. The
+ * content sits above the orb the same way .awt-stat-body does.
+ */
+.awt-glass-intro {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+    padding: 1.125rem 1.25rem;
+}
+
+.awt-glass-intro-copy {
+    min-width: 0;
+    flex: 1 1 14rem;
+}
+
+.awt-glass-intro-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--bs-heading-color, var(--bs-body-color));
+    text-wrap: balance;
+}
+
+.awt-glass-intro-subtitle {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--bs-secondary-color);
+    text-wrap: pretty;
+}
+
+/*
+ * A single linked figure on the glass. Reads its own .awt-tone-* so a green
+ * revenue pill can sit on a blue banner without borrowing the card's accent.
+ * The underline is dropped: the pill shape plus hover state carry the affordance.
+ */
+.awt-glass-pill {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    max-width: 100%;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid rgba(var(--awt-tone-rgb), 0.28);
+    border-radius: 999px;
+    background-color: rgba(var(--awt-tone-rgb), 0.12);
+    color: rgb(var(--awt-tone-rgb));
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out,
+        box-shadow 0.2s ease-in-out;
+}
+
+.awt-glass-pill:hover,
+.awt-glass-pill:focus-visible {
+    background-color: rgba(var(--awt-tone-rgb), 0.18);
+    border-color: rgba(var(--awt-tone-rgb), 0.42);
+    color: rgb(var(--awt-tone-rgb));
+    box-shadow: 0 4px 12px -6px rgba(var(--awt-tone-rgb), 0.45);
+}
+
+/*
+ * A labelled control sitting in an intro actions cluster. The select inherits
+ * the banner's tone so it reads as part of the glass rather than a floating
+ * Bootstrap control. Keep the native control for a11y and keyboard behaviour.
+ */
+.awt-glass-control {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.awt-glass-control-label {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+.awt-glass-control .form-select {
+    min-width: 9.5rem;
+    border-color: rgba(var(--awt-tone-rgb), 0.28);
+    background-color: rgba(255, 255, 255, 0.72);
+    color: var(--bs-heading-color, var(--bs-body-color));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.awt-glass-control .form-select:focus {
+    border-color: rgba(var(--awt-tone-rgb), 0.55);
+    box-shadow:
+        0 0 0 0.2rem rgba(var(--awt-tone-rgb), 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+[data-bs-theme="dark"] .awt-glass-control .form-select {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(var(--awt-tone-rgb), 0.32);
+    color: var(--bs-heading-color, var(--bs-body-color));
+    box-shadow: none;
+}
+
+.awt-glass-intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+}
+
+@media (max-width: 575.98px) {
+    .awt-glass-intro {
+        padding: 1rem;
+    }
+
+    .awt-glass-intro-title {
+        font-size: 1.0625rem;
+    }
+
+    .awt-glass-pill {
+        white-space: normal;
+        text-wrap: balance;
+    }
+
+    .awt-glass-control {
+        flex: 1 1 100%;
+    }
+
+    .awt-glass-control .form-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .awt-glass-card {
+        transition: none;
+    }
+
+    .awt-glass-pill {
+        transition: none;
+    }
+}
