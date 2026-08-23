@@ -35,10 +35,17 @@ class ExtractorController extends Controller
             'limit' => ['nullable', 'integer', 'min:'.config('extractor.min_limit'), 'max:'.config('extractor.max_limit')],
             'mode' => ['nullable', Rule::in(['live', 'mock', 'google_api'])],
             'simulate_verification' => ['sometimes', 'boolean'],
+            'filters' => ['nullable', 'array'],
+            'filters.require_website' => ['nullable', 'boolean'],
+            'filters.require_phone' => ['nullable', 'boolean'],
+            'filters.require_email' => ['nullable', 'boolean'],
+            'filters.min_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'filters.min_reviews' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $mode = $validated['mode'] ?? 'live';
         $simulate = (bool) ($validated['simulate_verification'] ?? false);
+        $filters = $validated['filters'] ?? [];
 
         if (($mode === 'mock' || $simulate) && ! config('extractor.allow_mock')) {
             return response()->json([
@@ -68,6 +75,9 @@ class ExtractorController extends Controller
             $jobUuid = (string) Str::uuid();
             if (! empty($apiKey)) {
                 session(['google_maps_api_key_'.$jobUuid => $apiKey]);
+            }
+            if (! empty($filters)) {
+                session(['google_maps_filters_'.$jobUuid => $filters]);
             }
 
             $job = ExtractionJob::create([
@@ -187,15 +197,18 @@ class ExtractorController extends Controller
             $ids = array_values(array_filter($ids, fn (int $id) => $id > 0));
         }
 
-        return $this->csvExporter->download($job, $ids);
+        $format = $request->query('format', 'excel');
+
+        return $this->csvExporter->download($job, $ids, $format);
     }
 
     public function stream(Request $request, ExtractionJob $job): StreamedResponse
     {
         if ($job->mode === 'google_api') {
             $apiKey = $request->query('api_key') ?: session('google_maps_api_key_'.$job->uuid);
+            $filters = session('google_maps_filters_'.$job->uuid, []);
 
-            return $this->googlePlacesService->stream($job, $apiKey);
+            return $this->googlePlacesService->stream($job, $apiKey, $filters);
         }
 
         $url = $this->client->streamUrl($job->uuid);

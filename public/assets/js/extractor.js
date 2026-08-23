@@ -34,6 +34,13 @@
         toggleKeyVisibilityBtn: document.getElementById('toggleKeyVisibilityBtn'),
         verifyToggleWrap: document.getElementById('verifyToggleWrap'),
 
+        // Pre-Extraction Filters (API Calling)
+        preFiltersContainer: document.getElementById('preFiltersContainer'),
+        preReqWebsite: document.getElementById('preReqWebsite'),
+        preReqPhone: document.getElementById('preReqPhone'),
+        preReqEmail: document.getElementById('preReqEmail'),
+        preMinRating: document.getElementById('preMinRating'),
+
         // Extraction inputs & controls
         prompt: document.getElementById('promptInput'),
         limit: document.getElementById('limitInput'),
@@ -91,16 +98,16 @@
         selectAllFilteredBtn: document.getElementById('selectAllFilteredBtn'),
         bulkFilteredCount: document.getElementById('bulkFilteredCount'),
         bulkDeselectBtn: document.getElementById('bulkDeselectBtn'),
-        bulkExportCsvBtn: document.getElementById('bulkExportCsvBtn'),
+        bulkExportExcelBtn: document.getElementById('bulkExportExcelBtn'),
         bulkExportJsonBtn: document.getElementById('bulkExportJsonBtn'),
         bulkCopyEmailsBtn: document.getElementById('bulkCopyEmailsBtn'),
         bulkCopyPhonesBtn: document.getElementById('bulkCopyPhonesBtn'),
 
         // Export Dropdown
         exportDropdownBtn: document.getElementById('exportDropdownBtn'),
-        exportAllCsvBtn: document.getElementById('exportAllCsvBtn'),
+        exportAllExcelBtn: document.getElementById('exportAllExcelBtn'),
         exportAllJsonBtn: document.getElementById('exportAllJsonBtn'),
-        exportFilteredCsvBtn: document.getElementById('exportFilteredCsvBtn'),
+        exportFilteredExcelBtn: document.getElementById('exportFilteredExcelBtn'),
         exportFilteredJsonBtn: document.getElementById('exportFilteredJsonBtn'),
 
         // Toast
@@ -170,6 +177,10 @@
         els.limit.disabled = running;
         if (els.engineGoogleApi) els.engineGoogleApi.disabled = running;
         if (els.engineBrowser) els.engineBrowser.disabled = running;
+        if (els.preReqWebsite) els.preReqWebsite.disabled = running;
+        if (els.preReqPhone) els.preReqPhone.disabled = running;
+        if (els.preReqEmail) els.preReqEmail.disabled = running;
+        if (els.preMinRating) els.preMinRating.disabled = running;
         els.stop.classList.toggle('d-none', !running);
         els.newExtraction.classList.toggle('d-none', running);
     }
@@ -255,13 +266,20 @@
             ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-outline-secondary" title="View on Google Maps"><i class="icon-base ti tabler-map-pin"></i> Maps</a>`
             : '';
 
+        const avatarImg = lead.avatar_url
+            ? `<img src="${escapeAttr(lead.avatar_url)}" alt="${escapeAttr(lead.business_name || '')}" class="extractor-lead-avatar-img" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+               <span class="extractor-lead-avatar-fallback" style="display:none;">${escapeHtml(initials(lead.business_name))}</span>`
+            : `<span class="extractor-lead-avatar-fallback">${escapeHtml(initials(lead.business_name))}</span>`;
+
         return `
             <article class="extractor-lead-card ${isSelected ? 'is-selected' : ''}" data-key="${escapeAttr(key)}">
                 <div class="extractor-lead-header">
                     <div class="extractor-lead-check-wrap">
                         <input class="form-check-input extractor-card-checkbox" type="checkbox" ${isSelected ? 'checked' : ''} data-key="${escapeAttr(key)}" aria-label="Select lead">
                     </div>
-                    <div class="extractor-lead-avatar">${escapeHtml(initials(lead.business_name))}</div>
+                    <div class="extractor-lead-avatar" title="${escapeAttr(lead.business_name || '')}">
+                        ${avatarImg}
+                    </div>
                     <div class="extractor-lead-title-area">
                         <h6 class="extractor-lead-name" title="${escapeAttr(lead.business_name || '')}">${escapeHtml(dash(lead.business_name))}</h6>
                         <div class="extractor-lead-badges">
@@ -513,7 +531,7 @@
         renderLeads();
     }
 
-    // CSV & JSON Export Utilities
+    // Excel & JSON Export Utilities
     function downloadBlob(content, filename, mimeType) {
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
@@ -526,51 +544,85 @@
         URL.revokeObjectURL(url);
     }
 
-    function exportToCsv(leadsList, filename = 'leads-export.csv') {
+    function exportToExcel(leadsList, filename = 'leads-export.xlsx') {
         if (!leadsList.length) {
             showToast('No leads to export.', true);
             return;
         }
 
-        const headers = [
-            'Business Name',
-            'Address',
-            'Email(s)',
-            'Phone',
-            'Website',
-            'Category',
-            'Rating',
-            'Reviews',
-            'Google Maps URL',
-            'Source',
-        ];
+        if (window.XLSX && window.XLSX.utils) {
+            const dataRows = leadsList.map((lead) => ({
+                'Business Name': lead.business_name || '',
+                'Address': lead.address || '',
+                'Email(s)': Array.isArray(lead.emails) ? lead.emails.join('; ') : '',
+                'Phone': lead.phone || '',
+                'Website': lead.website || '',
+                'Category': lead.category || '',
+                'Rating': lead.rating != null ? Number(lead.rating) : '',
+                'Reviews': lead.review_count != null ? Number(lead.review_count) : '',
+                'Google Maps URL': lead.google_maps_url || '',
+                'Source': lead.source || 'Google Maps',
+            }));
 
-        const rows = [headers];
-        for (const lead of leadsList) {
-            const emails = Array.isArray(lead.emails) ? lead.emails.join('; ') : '';
-            rows.push([
-                lead.business_name || '',
-                lead.address || '',
-                emails,
-                lead.phone || '',
-                lead.website || '',
-                lead.category || '',
-                lead.rating != null ? String(lead.rating) : '',
-                lead.review_count != null ? String(lead.review_count) : '',
-                lead.google_maps_url || '',
-                lead.source || 'Google Maps',
-            ]);
+            const ws = window.XLSX.utils.json_to_sheet(dataRows);
+            ws['!cols'] = [
+                { wch: 30 }, // Business Name
+                { wch: 35 }, // Address
+                { wch: 28 }, // Email(s)
+                { wch: 18 }, // Phone
+                { wch: 28 }, // Website
+                { wch: 20 }, // Category
+                { wch: 10 }, // Rating
+                { wch: 10 }, // Reviews
+                { wch: 40 }, // Maps URL
+                { wch: 18 }, // Source
+            ];
+
+            const wb = window.XLSX.utils.book_new();
+            window.XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+            window.XLSX.writeFile(wb, filename);
+            showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} to Excel (.xlsx).`);
+            return;
         }
 
-        const csvContent = '\uFEFF' + rows.map((row) =>
-            row.map((val) => {
-                const escaped = String(val).replace(/"/g, '""');
-                return `"${escaped}"`;
-            }).join(',')
-        ).join('\r\n');
+        // Fallback: Excel XML Spreadsheet
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        xml += '<?mso-application progid="Excel.Sheet"?>\n';
+        xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
+        xml += ' xmlns:o="urn:schemas-microsoft-com:office:office"\n';
+        xml += ' xmlns:x="urn:schemas-microsoft-com:office:excel"\n';
+        xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+        xml += ' <Styles>\n';
+        xml += '  <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#696CFF" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>\n';
+        xml += ' </Styles>\n';
+        xml += ' <Worksheet ss:Name="Leads">\n  <Table>\n';
 
-        downloadBlob(csvContent, filename, 'text/csv;charset=utf-8;');
-        showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} as CSV.`);
+        const headers = ['Business Name', 'Address', 'Email(s)', 'Phone', 'Website', 'Category', 'Rating', 'Reviews', 'Google Maps URL', 'Source'];
+        xml += '   <Row ss:StyleID="Header">\n';
+        for (const h of headers) {
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(h)}</Data></Cell>\n`;
+        }
+        xml += '   </Row>\n';
+
+        for (const lead of leadsList) {
+            const emails = Array.isArray(lead.emails) ? lead.emails.join('; ') : '';
+            xml += '   <Row>\n';
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.business_name || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.address || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(emails)}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.phone || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.website || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.category || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="${lead.rating != null ? 'Number' : 'String'}">${lead.rating != null ? Number(lead.rating) : ''}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="${lead.review_count != null ? 'Number' : 'String'}">${lead.review_count != null ? Number(lead.review_count) : ''}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.google_maps_url || '')}</Data></Cell>\n`;
+            xml += `    <Cell><Data ss:Type="String">${escapeHtml(lead.source || 'Google Maps')}</Data></Cell>\n`;
+            xml += '   </Row>\n';
+        }
+
+        xml += '  </Table>\n </Worksheet>\n</Workbook>\n';
+        downloadBlob(xml, filename.replace('.xlsx', '.xls'), 'application/vnd.ms-excel;charset=utf-8;');
+        showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} to Excel.`);
     }
 
     function exportToJson(leadsList, filename = 'leads-export.json') {
@@ -585,6 +637,7 @@
             emails: Array.isArray(lead.emails) ? lead.emails : [],
             phone: lead.phone || null,
             website: lead.website || null,
+            avatar_url: lead.avatar_url || null,
             category: lead.category || null,
             rating: lead.rating != null ? Number(lead.rating) : null,
             review_count: lead.review_count != null ? Number(lead.review_count) : null,
@@ -652,7 +705,7 @@
         `;
         if (state.jobId) {
             els.exportSummary.classList.remove('disabled');
-            els.exportSummary.href = jobUrl(cfg.exportUrl);
+            els.exportSummary.href = jobUrl(cfg.exportUrl) + '?format=excel';
         }
     }
 
@@ -761,6 +814,7 @@
                 els.promptInputCol.classList.remove('col-12');
                 els.promptInputCol.classList.add('col-lg-7');
             }
+            if (els.preFiltersContainer) els.preFiltersContainer.classList.remove('d-none');
             if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
             if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Law Firms';
             if (els.verifyToggleWrap) els.verifyToggleWrap.classList.add('d-none');
@@ -770,6 +824,7 @@
                 els.promptInputCol.classList.remove('col-lg-7');
                 els.promptInputCol.classList.add('col-12');
             }
+            if (els.preFiltersContainer) els.preFiltersContainer.classList.add('d-none');
             if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
             if (els.prompt) els.prompt.placeholder = 'e.g. Find dentists in Lahore';
             if (els.verifyToggleWrap) els.verifyToggleWrap.classList.remove('d-none');
@@ -790,6 +845,8 @@
         }
 
         let mode = 'live';
+        let filters = {};
+
         if (els.mock?.checked) {
             mode = 'mock';
         } else if (isGoogleApi) {
@@ -800,6 +857,13 @@
                 if (els.customApiKeyInput) els.customApiKeyInput.focus();
                 return;
             }
+
+            filters = {
+                require_website: Boolean(els.preReqWebsite?.checked),
+                require_phone: Boolean(els.preReqPhone?.checked),
+                require_email: Boolean(els.preReqEmail?.checked),
+                min_rating: Number(els.preMinRating?.value || 0),
+            };
         }
 
         setAlert('info', '', false);
@@ -820,6 +884,9 @@
             }
             if (customApiKey) {
                 payloadData.api_key = customApiKey;
+            }
+            if (isGoogleApi && Object.keys(filters).length > 0) {
+                payloadData.filters = filters;
             }
 
             const response = await fetch(cfg.startUrl, {
@@ -956,9 +1023,9 @@
     els.selectAllFilteredBtn.addEventListener('click', selectAllFiltered);
     els.bulkDeselectBtn.addEventListener('click', deselectAll);
 
-    els.bulkExportCsvBtn.addEventListener('click', () => {
+    els.bulkExportExcelBtn.addEventListener('click', () => {
         const selected = getSelectedLeadsList();
-        exportToCsv(selected, `selected-leads-${Date.now()}.csv`);
+        exportToExcel(selected, `selected-leads-${Date.now()}.xlsx`);
     });
 
     els.bulkExportJsonBtn.addEventListener('click', () => {
@@ -999,9 +1066,9 @@
     });
 
     // Export Dropdown Events
-    els.exportAllCsvBtn.addEventListener('click', (e) => {
+    els.exportAllExcelBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        exportToCsv(getAllLeadsList(), `all-leads-${Date.now()}.csv`);
+        exportToExcel(getAllLeadsList(), `all-leads-${Date.now()}.xlsx`);
     });
 
     els.exportAllJsonBtn.addEventListener('click', (e) => {
@@ -1009,10 +1076,10 @@
         exportToJson(getAllLeadsList(), `all-leads-${Date.now()}.json`);
     });
 
-    els.exportFilteredCsvBtn.addEventListener('click', (e) => {
+    els.exportFilteredExcelBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const filtered = getFilteredLeads().map((item) => item.lead);
-        exportToCsv(filtered, `filtered-leads-${Date.now()}.csv`);
+        exportToExcel(filtered, `filtered-leads-${Date.now()}.xlsx`);
     });
 
     els.exportFilteredJsonBtn.addEventListener('click', (e) => {

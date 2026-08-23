@@ -169,6 +169,24 @@
     color: #696cff;
     background: linear-gradient(135deg, rgba(105, 108, 255, 0.14), rgba(37, 185, 214, 0.12));
     border: 1px solid rgba(105, 108, 255, 0.15);
+    overflow: hidden;
+    position: relative;
+}
+
+.extractor-lead-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    display: block;
+}
+
+.extractor-lead-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 .extractor-lead-title-area {

@@ -13,11 +13,11 @@ class GooglePlacesService
 {
     private const PLACES_API_URL = 'https://places.googleapis.com/v1/places:searchText';
 
-    public function stream(ExtractionJob $job, ?string $apiKey = null): StreamedResponse
+    public function stream(ExtractionJob $job, ?string $apiKey = null, array $filters = []): StreamedResponse
     {
         $key = $apiKey ?: config('services.google.maps_api_key');
 
-        return response()->stream(function () use ($job, $key): void {
+        return response()->stream(function () use ($job, $key, $filters): void {
             @ini_set('output_buffering', 'off');
             @ini_set('zlib.output_compression', '0');
             if (! app()->environment('testing')) {
@@ -74,11 +74,17 @@ class GooglePlacesService
             $websitesCount = 0;
             $pageToken = null;
 
+            $reqWebsite = (bool) ($filters['require_website'] ?? false);
+            $reqPhone = (bool) ($filters['require_phone'] ?? false);
+            $reqEmail = (bool) ($filters['require_email'] ?? false);
+            $minRating = (float) ($filters['min_rating'] ?? 0);
+            $minReviews = (int) ($filters['min_reviews'] ?? 0);
+
             try {
                 do {
                     $payload = [
                         'textQuery' => $job->query,
-                        'pageSize' => min(20, $limit - $extractedCount),
+                        'pageSize' => min(20, max(20, $limit - $extractedCount)),
                     ];
                     if ($pageToken) {
                         $payload['pageToken'] = $pageToken;
@@ -87,7 +93,7 @@ class GooglePlacesService
                     $response = Http::withHeaders([
                         'Content-Type' => 'application/json',
                         'X-Goog-Api-Key' => $key,
-                        'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,nextPageToken',
+                        'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.photos,places.iconMaskBaseUri,nextPageToken',
                     ])->timeout(15)->post(self::PLACES_API_URL, $payload);
 
                     if ($response->failed()) {
@@ -131,8 +137,30 @@ class GooglePlacesService
 
                         $phone = $place['nationalPhoneNumber'] ?? ($place['internationalPhoneNumber'] ?? null);
                         $website = $place['websiteUri'] ?? null;
-                        $emails = [];
+                        $rating = isset($place['rating']) ? (float) $place['rating'] : null;
+                        $reviews = isset($place['userRatingCount']) ? (int) $place['userRatingCount'] : null;
 
+                        // Pre-extraction filter: require website
+                        if ($reqWebsite && empty($website)) {
+                            continue;
+                        }
+
+                        // Pre-extraction filter: require phone
+                        if ($reqPhone && empty($phone)) {
+                            continue;
+                        }
+
+                        // Pre-extraction filter: min rating
+                        if ($minRating > 0 && ($rating === null || $rating < $minRating)) {
+                            continue;
+                        }
+
+                        // Pre-extraction filter: min reviews
+                        if ($minReviews > 0 && ($reviews === null || $reviews < $minReviews)) {
+                            continue;
+                        }
+
+                        $emails = [];
                         if ($website) {
                             $websitesCount++;
                             $emails = $this->quickEnrichWebsiteEmails($website);
@@ -141,17 +169,33 @@ class GooglePlacesService
                             }
                         }
 
+                        // Pre-extraction filter: require email
+                        if ($reqEmail && empty($emails)) {
+                            continue;
+                        }
+
+                        // Avatar image resolution
+                        $avatarUrl = null;
+                        if (! empty($place['photos'][0]['name'])) {
+                            $photoName = $place['photos'][0]['name'];
+                            $avatarUrl = "https://places.googleapis.com/v1/{$photoName}/media?maxHeightPx=160&maxWidthPx=160&key={$key}";
+                        } elseif (! empty($website)) {
+                            $domain = parse_url($website, PHP_URL_HOST) ?: $website;
+                            $avatarUrl = "https://www.google.com/s2/favicons?domain=".urlencode($domain)."&sz=128";
+                        }
+
                         $leadData = [
                             'business_name' => $name,
                             'address' => $place['formattedAddress'] ?? null,
                             'phone' => $phone,
                             'emails' => $emails,
+                            'avatar_url' => $avatarUrl,
                             'website' => $website,
                             'google_maps_url' => $place['googleMapsUri'] ?? null,
                             'place_id' => $place['id'] ?? null,
                             'category' => $place['primaryTypeDisplayName']['text'] ?? null,
-                            'rating' => isset($place['rating']) ? (float) $place['rating'] : null,
-                            'review_count' => isset($place['userRatingCount']) ? (int) $place['userRatingCount'] : null,
+                            'rating' => $rating,
+                            'review_count' => $reviews,
                             'source' => 'Google Places API',
                             'extracted_at' => now(),
                         ];

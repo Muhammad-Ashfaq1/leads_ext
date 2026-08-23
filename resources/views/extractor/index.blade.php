@@ -89,6 +89,53 @@
             </div>
         </div>
 
+        <!-- Pre-Extraction Filters (Applied before API calling) -->
+        <div class="mt-3 p-3 rounded-2 bg-light-subtle border" id="preFiltersContainer">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold small text-uppercase text-muted d-flex align-items-center">
+                    <i class="icon-base ti tabler-adjustments-horizontal me-1 text-primary"></i> Pre-Extraction Criteria (API Filters)
+                </span>
+                <span class="badge bg-label-info small" style="font-size: 0.72rem;">Filters before saving</span>
+            </div>
+            <div class="row g-2 align-items-center">
+                <div class="col-6 col-sm-4 col-md-3">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" id="preReqWebsite">
+                        <label class="form-check-label small fw-medium" for="preReqWebsite">
+                            <i class="icon-base ti tabler-world-www me-1 text-primary"></i>Require Website
+                        </label>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-3">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" id="preReqPhone">
+                        <label class="form-check-label small fw-medium" for="preReqPhone">
+                            <i class="icon-base ti tabler-phone me-1 text-success"></i>Require Phone
+                        </label>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-3">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" id="preReqEmail">
+                        <label class="form-check-label small fw-medium" for="preReqEmail">
+                            <i class="icon-base ti tabler-mail me-1 text-danger"></i>Require Email
+                        </label>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-1">
+                        <label class="small text-muted mb-0 text-nowrap" for="preMinRating">Min Rating:</label>
+                        <select id="preMinRating" class="form-select form-select-sm">
+                            <option value="0">Any Rating</option>
+                            <option value="4.5">★ 4.5+</option>
+                            <option value="4.0">★ 4.0+</option>
+                            <option value="3.5">★ 3.5+</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom API Key input (shown when toggled or if key missing) -->
         <div class="mt-3 d-none" id="apiKeyRow">
             <label class="form-label small fw-semibold" for="customApiKeyInput">Google Maps Places API Key</label>
@@ -211,8 +258,8 @@
         <div class="row g-3 mb-3" id="summaryStats"></div>
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-primary disabled" id="exportBtn" href="#">
-                <i class="icon-base ti tabler-download me-1"></i>
-                Export CSV
+                <i class="icon-base ti tabler-file-spreadsheet me-1"></i>
+                Download Excel (.xlsx)
             </a>
             <button type="button" class="btn btn-outline-secondary" id="clearBtn">Clear Results</button>
             <button type="button" class="btn btn-outline-primary" id="summaryNewBtn">New Extraction</button>
@@ -237,11 +284,11 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="exportDropdownBtn">
                         <li><h6 class="dropdown-header">Export All Leads</h6></li>
-                        <li><a class="dropdown-item" href="#" id="exportAllCsvBtn"><i class="icon-base ti tabler-file-type-csv me-2 text-success"></i>Export All (CSV)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportAllExcelBtn"><i class="icon-base ti tabler-file-spreadsheet me-2 text-success"></i>Export All (Excel .xlsx)</a></li>
                         <li><a class="dropdown-item" href="#" id="exportAllJsonBtn"><i class="icon-base ti tabler-file-type-json me-2 text-warning"></i>Export All (JSON)</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Filtered Leads</h6></li>
-                        <li><a class="dropdown-item" href="#" id="exportFilteredCsvBtn"><i class="icon-base ti tabler-filter me-2 text-info"></i>Export Filtered (CSV)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportFilteredExcelBtn"><i class="icon-base ti tabler-filter me-2 text-info"></i>Export Filtered (Excel .xlsx)</a></li>
                         <li><a class="dropdown-item" href="#" id="exportFilteredJsonBtn"><i class="icon-base ti tabler-code me-2 text-info"></i>Export Filtered (JSON)</a></li>
                     </ul>
                 </div>
@@ -337,8 +384,8 @@
                 <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="bulkDeselectBtn">Deselect</button>
             </div>
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-primary" id="bulkExportCsvBtn">
-                    <i class="icon-base ti tabler-download me-1"></i>Export Selected (CSV)
+                <button type="button" class="btn btn-sm btn-primary" id="bulkExportExcelBtn">
+                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export Selected (Excel)
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-primary" id="bulkExportJsonBtn">
                     <i class="icon-base ti tabler-file-type-json me-1"></i>JSON
@@ -406,5 +453,6 @@
         csrf: @json(csrf_token()),
     };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="{{ asset('assets/js/extractor.js') }}"></script>
 @endpush

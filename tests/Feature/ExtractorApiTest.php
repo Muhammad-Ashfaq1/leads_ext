@@ -288,4 +288,91 @@ class ExtractorApiTest extends TestCase
             'source' => 'Google Places API',
         ]);
     }
+
+    public function test_google_api_pre_filters_skip_non_matching_places(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'places' => [
+                    [
+                        'id' => 'place_no_phone',
+                        'displayName' => ['text' => 'Place Without Phone'],
+                        'formattedAddress' => 'Lahore, Pakistan',
+                        'websiteUri' => 'https://example.com',
+                        'rating' => 4.8,
+                    ],
+                    [
+                        'id' => 'place_with_phone',
+                        'displayName' => ['text' => 'Place With Phone'],
+                        'formattedAddress' => 'Lahore, Pakistan',
+                        'nationalPhoneNumber' => '+92 42 3578000',
+                        'websiteUri' => 'https://phoneexample.com',
+                        'rating' => 4.9,
+                    ],
+                ],
+            ], 200),
+            'https://example.com' => Http::response('<html>Home</html>', 200),
+            'https://phoneexample.com' => Http::response('<html>Contact: info@phoneexample.com</html>', 200),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => '77777777-7777-7777-7777-777777777777',
+            'prompt' => 'Doctors (Lahore)',
+            'query' => 'Doctors in Lahore',
+            'status' => 'starting',
+            'limit' => 10,
+            'mode' => 'google_api',
+        ]);
+
+        session(['google_maps_filters_'.$job->uuid => [
+            'require_phone' => true,
+            'require_website' => true,
+        ]]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('Place With Phone', $streamContent);
+        $this->assertStringNotContainsString('Place Without Phone', $streamContent);
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Place With Phone',
+        ]);
+        $this->assertDatabaseMissing('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Place Without Phone',
+        ]);
+    }
+
+    public function test_excel_export_format(): void
+    {
+        $job = ExtractionJob::create([
+            'uuid' => '88888888-8888-8888-8888-888888888888',
+            'prompt' => 'Dentists in Lahore',
+            'query' => 'Dentists in Lahore',
+            'status' => 'completed',
+            'limit' => 10,
+        ]);
+
+        ExtractedLead::create([
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Super Dental Clinic',
+            'address' => 'Lahore, Pakistan',
+            'phone' => '+92 42 1234567',
+            'rating' => 4.9,
+            'review_count' => 50,
+            'source' => 'Google Places API',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/export?format=excel");
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Super Dental Clinic', $content);
+        $this->assertStringContainsString('urn:schemas-microsoft-com:office:spreadsheet', $content);
+    }
 }
