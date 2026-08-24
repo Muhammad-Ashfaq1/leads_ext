@@ -278,9 +278,14 @@
                 <h5 class="mb-0">Leads</h5>
                 <span class="badge bg-label-primary" id="leadCountBadge" title="Total leads extracted">0 total</span>
                 <span class="badge bg-label-info d-none" id="leadFilterBadge" title="Currently visible filtered leads">0 shown</span>
-                <span class="badge bg-label-success d-none" id="leadSelectedBadge" title="Currently selected leads">0 selected</span>
+                <span class="badge bg-label-success d-none" id="leadSelectedBadge" title="Currently selected leads">
+                    <i class="icon-base ti tabler-checks me-1"></i><span id="selectedRatioText">0 selected</span>
+                </span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+                <button type="button" class="btn btn-sm btn-success d-none" id="saveAllDiscoveredBtn">
+                    <i class="icon-base ti tabler-device-floppy me-1"></i>Save All (<span id="saveAllCount">0</span>)
+                </button>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-primary dropdown-toggle disabled" type="button" id="exportDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="icon-base ti tabler-download me-1"></i>
@@ -289,10 +294,12 @@
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="exportDropdownBtn">
                         <li><h6 class="dropdown-header">Export All Leads</h6></li>
                         <li><a class="dropdown-item" href="#" id="exportAllExcelBtn"><i class="icon-base ti tabler-file-spreadsheet me-2 text-success"></i>Export All (Excel .xlsx)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportAllCsvBtn"><i class="icon-base ti tabler-file-text me-2 text-info"></i>Export All (CSV .csv)</a></li>
                         <li><a class="dropdown-item" href="#" id="exportAllJsonBtn"><i class="icon-base ti tabler-file-type-json me-2 text-warning"></i>Export All (JSON)</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Filtered Leads</h6></li>
                         <li><a class="dropdown-item" href="#" id="exportFilteredExcelBtn"><i class="icon-base ti tabler-filter me-2 text-info"></i>Export Filtered (Excel .xlsx)</a></li>
+                        <li><a class="dropdown-item" href="#" id="exportFilteredCsvBtn"><i class="icon-base ti tabler-file-text me-2 text-info"></i>Export Filtered (CSV .csv)</a></li>
                         <li><a class="dropdown-item" href="#" id="exportFilteredJsonBtn"><i class="icon-base ti tabler-code me-2 text-info"></i>Export Filtered (JSON)</a></li>
                     </ul>
                 </div>
@@ -374,13 +381,13 @@
         </div>
     </div>
 
-    <!-- Bulk Selection Toolbar (Active when items checked) -->
+    <!-- Bulk Selection Floating / Sticky Toolbar (Active when items checked) -->
     <div class="card-body border-bottom bg-primary-subtle py-2 px-3 px-md-4 extractor-bulk-bar d-none" id="bulkBar">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-3">
                 <div class="form-check m-0">
                     <input class="form-check-input" type="checkbox" id="selectAllCheckbox">
-                    <label class="form-check-label fw-semibold text-primary" for="selectAllCheckbox" id="bulkCountLabel">
+                    <label class="form-check-label fw-bold text-primary" for="selectAllCheckbox" id="bulkCountLabel">
                         0 selected
                     </label>
                 </div>
@@ -388,17 +395,27 @@
                 <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="bulkDeselectBtn">Deselect</button>
             </div>
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-primary" id="bulkExportExcelBtn">
-                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export Selected (Excel)
+                <button type="button" class="btn btn-sm btn-success" id="bulkSaveBtn">
+                    <i class="icon-base ti tabler-device-floppy me-1"></i>Save Selected
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="bulkExportJsonBtn">
-                    <i class="icon-base ti tabler-file-type-json me-1"></i>JSON
-                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="bulkExportDropdownBtn">
+                        <i class="icon-base ti tabler-download me-1"></i>Export Selected
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="bulkExportDropdownBtn">
+                        <li><a class="dropdown-item" href="#" id="bulkExportExcelBtn"><i class="icon-base ti tabler-file-spreadsheet me-2 text-success"></i>Excel (.xlsx)</a></li>
+                        <li><a class="dropdown-item" href="#" id="bulkExportCsvBtn"><i class="icon-base ti tabler-file-text me-2 text-info"></i>CSV (.csv)</a></li>
+                        <li><a class="dropdown-item" href="#" id="bulkExportJsonBtn"><i class="icon-base ti tabler-file-type-json me-2 text-warning"></i>JSON</a></li>
+                    </ul>
+                </div>
                 <button type="button" class="btn btn-sm btn-label-secondary" id="bulkCopyEmailsBtn" title="Copy all emails from selected leads">
                     <i class="icon-base ti tabler-copy me-1"></i>Emails
                 </button>
                 <button type="button" class="btn btn-sm btn-label-secondary" id="bulkCopyPhonesBtn" title="Copy all phones from selected leads">
                     <i class="icon-base ti tabler-phone me-1"></i>Phones
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDiscardBtn" title="Discard selected leads from view">
+                    <i class="icon-base ti tabler-trash me-1"></i>Discard Selected
                 </button>
             </div>
         </div>
@@ -409,8 +426,8 @@
         <!-- Master select row when bulk bar is hidden -->
         <div class="d-flex align-items-center justify-content-between mb-3 extractor-leads-topbar" id="leadsTopbar">
             <div class="form-check m-0">
-                <input class="form-check-input" type="checkbox" id="masterCheckbox" disabled>
-                <label class="form-check-label small text-muted user-select-none" for="masterCheckbox">Select All</label>
+                <input class="form-check-input" type="checkbox" id="masterCheckbox" style="cursor: pointer;">
+                <label class="form-check-label small text-muted user-select-none" for="masterCheckbox" id="masterCheckboxLabel" style="cursor: pointer;">Select All</label>
             </div>
             <div class="small text-muted" id="leadsSummaryText">0 leads found</div>
         </div>
@@ -452,6 +469,8 @@
         focusUrl: @json(url('/api/extractor/__JOB__/focus')),
         exportUrl: @json(url('/api/extractor/__JOB__/export')),
         verifyCompleteUrl: @json(url('/api/extractor/__JOB__/verify-complete')),
+        bulkActionUrl: @json(route('leads.bulk-action')),
+        exportSelectedUrl: @json(route('leads.export-selected')),
         allowMock: @json((bool) $allowMock),
         hasGoogleApiKey: @json((bool) $hasGoogleApiKey),
         csrf: @json(csrf_token()),

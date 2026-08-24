@@ -215,6 +215,130 @@ class ExtractorController extends Controller
         return $this->csvExporter->download($job, $ids, $format);
     }
 
+    public function bulkAction(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'lead_ids' => ['nullable', 'array'],
+            'lead_ids.*' => ['integer', 'min:1'],
+            'job_id' => ['nullable', 'string'],
+            'action' => ['required', 'string', Rule::in(['save', 'save_all', 'discard', 'delete'])],
+        ]);
+
+        $user = Auth::user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $tenantId = $user?->tenant_id;
+
+        $leadIds = $validated['lead_ids'] ?? [];
+        $jobIdentifier = $validated['job_id'] ?? null;
+        $action = $validated['action'];
+
+        if (empty($leadIds) && empty($jobIdentifier)) {
+            return response()->json([
+                'message' => 'Either lead_ids or job_id must be provided.',
+            ], 422);
+        }
+
+        if (! empty($leadIds)) {
+            if ($tenantId && ! $isSuperAdmin) {
+                $unauthorized = ExtractedLead::whereIn('id', $leadIds)
+                    ->whereNotNull('tenant_id')
+                    ->where('tenant_id', '!=', $tenantId)
+                    ->exists();
+
+                if ($unauthorized) {
+                    return response()->json([
+                        'message' => 'Unauthorized: One or more leads do not belong to your organization.',
+                    ], 403);
+                }
+            }
+
+            $query = ExtractedLead::whereIn('id', $leadIds);
+        } else {
+            $job = ExtractionJob::where('uuid', $jobIdentifier)
+                ->orWhere('id', $jobIdentifier)
+                ->first();
+
+            if (! $job) {
+                return response()->json(['message' => 'Extraction job not found.'], 404);
+            }
+
+            if ($tenantId && ! $isSuperAdmin && $job->tenant_id && $job->tenant_id !== $tenantId) {
+                return response()->json([
+                    'message' => 'Unauthorized: Job does not belong to your organization.',
+                ], 403);
+            }
+
+            $query = $job->leads();
+        }
+
+        $affected = 0;
+        $message = '';
+
+        if ($action === 'save' || $action === 'save_all') {
+            $affected = $query->update([
+                'status' => 'saved',
+                'is_saved' => true,
+            ]);
+            $message = "Successfully saved {$affected} lead(s) to the master database.";
+        } elseif ($action === 'discard') {
+            $affected = $query->update([
+                'status' => 'discarded',
+                'is_saved' => false,
+            ]);
+            $message = "Successfully discarded {$affected} lead(s).";
+        } elseif ($action === 'delete') {
+            $affected = $query->delete();
+            $message = "Successfully deleted {$affected} lead(s).";
+        }
+
+        return response()->json([
+            'success' => true,
+            'action' => $action,
+            'affected' => $affected,
+            'message' => $message,
+        ]);
+    }
+
+    public function exportSelected(Request $request): StreamedResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'lead_ids' => ['required', 'array', 'min:1'],
+            'lead_ids.*' => ['integer', 'min:1'],
+            'format' => ['nullable', 'string', Rule::in(['excel', 'xlsx', 'xls', 'csv', 'json'])],
+        ]);
+
+        $user = Auth::user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $tenantId = $user?->tenant_id;
+        $leadIds = $validated['lead_ids'];
+        $format = $validated['format'] ?? 'excel';
+
+        if ($tenantId && ! $isSuperAdmin) {
+            $unauthorized = ExtractedLead::whereIn('id', $leadIds)
+                ->whereNotNull('tenant_id')
+                ->where('tenant_id', '!=', $tenantId)
+                ->exists();
+
+            if ($unauthorized) {
+                return response()->json([
+                    'message' => 'Unauthorized: One or more leads do not belong to your organization.',
+                ], 403);
+            }
+        }
+
+        if ($format === 'json') {
+            $leads = ExtractedLead::query()
+                ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+                ->whereIn('id', $leadIds)
+                ->orderBy('id')
+                ->get();
+
+            return response()->json($leads);
+        }
+
+        return $this->csvExporter->downloadByIds($leadIds, $format, $tenantId, $isSuperAdmin);
+    }
+
     public function stream(Request $request, ExtractionJob $job): StreamedResponse
     {
         if ($job->mode === 'google_api') {

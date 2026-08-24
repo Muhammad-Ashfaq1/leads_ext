@@ -76,8 +76,12 @@
         leadCountBadge: document.getElementById('leadCountBadge'),
         leadFilterBadge: document.getElementById('leadFilterBadge'),
         leadSelectedBadge: document.getElementById('leadSelectedBadge'),
+        selectedRatioText: document.getElementById('selectedRatioText'),
         leadsSummaryText: document.getElementById('leadsSummaryText'),
         masterCheckbox: document.getElementById('masterCheckbox'),
+        masterCheckboxLabel: document.getElementById('masterCheckboxLabel'),
+        saveAllDiscoveredBtn: document.getElementById('saveAllDiscoveredBtn'),
+        saveAllCount: document.getElementById('saveAllCount'),
 
         // Filter controls
         searchInput: document.getElementById('leadSearchInput'),
@@ -98,16 +102,22 @@
         selectAllFilteredBtn: document.getElementById('selectAllFilteredBtn'),
         bulkFilteredCount: document.getElementById('bulkFilteredCount'),
         bulkDeselectBtn: document.getElementById('bulkDeselectBtn'),
+        bulkSaveBtn: document.getElementById('bulkSaveBtn'),
+        bulkExportDropdownBtn: document.getElementById('bulkExportDropdownBtn'),
         bulkExportExcelBtn: document.getElementById('bulkExportExcelBtn'),
+        bulkExportCsvBtn: document.getElementById('bulkExportCsvBtn'),
         bulkExportJsonBtn: document.getElementById('bulkExportJsonBtn'),
         bulkCopyEmailsBtn: document.getElementById('bulkCopyEmailsBtn'),
         bulkCopyPhonesBtn: document.getElementById('bulkCopyPhonesBtn'),
+        bulkDiscardBtn: document.getElementById('bulkDiscardBtn'),
 
         // Export Dropdown
         exportDropdownBtn: document.getElementById('exportDropdownBtn'),
         exportAllExcelBtn: document.getElementById('exportAllExcelBtn'),
+        exportAllCsvBtn: document.getElementById('exportAllCsvBtn'),
         exportAllJsonBtn: document.getElementById('exportAllJsonBtn'),
         exportFilteredExcelBtn: document.getElementById('exportFilteredExcelBtn'),
+        exportFilteredCsvBtn: document.getElementById('exportFilteredCsvBtn'),
         exportFilteredJsonBtn: document.getElementById('exportFilteredJsonBtn'),
 
         // Toast
@@ -331,7 +341,10 @@
                 </div>
 
                 <div class="extractor-lead-footer">
-                    <span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;">Extracted</span>
+                    ${(lead.is_saved || lead.status === 'saved')
+                        ? '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;" title="Lead saved in database"><i class="icon-base ti tabler-device-floppy me-1"></i>Saved</span>'
+                        : '<span class="badge bg-label-info" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;">Discovered</span>'
+                    }
                     ${verificationBadge}
                     <div class="extractor-lead-btn-group">
                         ${mapsBtn}
@@ -471,6 +484,7 @@
 
     function updateSelectionUi() {
         const selectedCount = state.selectedKeys.size;
+        const total = state.leads.size;
         const filtered = getFilteredLeads();
         const filteredKeys = new Set(filtered.map((item) => item.key));
 
@@ -479,29 +493,56 @@
             if (state.selectedKeys.has(key)) selectedInFiltered += 1;
         }
 
-        // Master checkbox state
-        if (filtered.length > 0 && selectedInFiltered === filtered.length) {
-            els.masterCheckbox.checked = true;
-            els.masterCheckbox.indeterminate = false;
-            els.selectAllCheckbox.checked = true;
-            els.selectAllCheckbox.indeterminate = false;
-        } else if (selectedInFiltered > 0) {
-            els.masterCheckbox.checked = false;
-            els.masterCheckbox.indeterminate = true;
-            els.selectAllCheckbox.checked = false;
-            els.selectAllCheckbox.indeterminate = true;
-        } else {
-            els.masterCheckbox.checked = false;
-            els.masterCheckbox.indeterminate = false;
-            els.selectAllCheckbox.checked = false;
-            els.selectAllCheckbox.indeterminate = false;
+        // Master checkbox state in leads topbar
+        if (els.masterCheckbox) {
+            els.masterCheckbox.disabled = filtered.length === 0;
+            if (filtered.length > 0 && selectedInFiltered === filtered.length) {
+                els.masterCheckbox.checked = true;
+                els.masterCheckbox.indeterminate = false;
+            } else if (selectedInFiltered > 0) {
+                els.masterCheckbox.checked = false;
+                els.masterCheckbox.indeterminate = true;
+            } else {
+                els.masterCheckbox.checked = false;
+                els.masterCheckbox.indeterminate = false;
+            }
+        }
+
+        // Master checkbox in bulk floating bar
+        if (els.selectAllCheckbox) {
+            if (filtered.length > 0 && selectedInFiltered === filtered.length) {
+                els.selectAllCheckbox.checked = true;
+                els.selectAllCheckbox.indeterminate = false;
+            } else if (selectedInFiltered > 0) {
+                els.selectAllCheckbox.checked = false;
+                els.selectAllCheckbox.indeterminate = true;
+            } else {
+                els.selectAllCheckbox.checked = false;
+                els.selectAllCheckbox.indeterminate = false;
+            }
+        }
+
+        if (els.masterCheckboxLabel) {
+            els.masterCheckboxLabel.textContent = selectedInFiltered === filtered.length && filtered.length > 0
+                ? `Deselect All (${filtered.length})`
+                : `Select All (${filtered.length})`;
+        }
+
+        if (els.saveAllDiscoveredBtn) {
+            els.saveAllDiscoveredBtn.classList.toggle('d-none', total === 0);
+            if (els.saveAllCount) els.saveAllCount.textContent = String(total);
         }
 
         // Bulk bar & badge
         if (selectedCount > 0) {
             els.bulkBar.classList.remove('d-none');
             els.leadSelectedBadge.classList.remove('d-none');
-            els.leadSelectedBadge.textContent = `${selectedCount} selected`;
+            const ratioText = `${selectedCount} / ${total} selected`;
+            if (els.selectedRatioText) {
+                els.selectedRatioText.textContent = ratioText;
+            } else {
+                els.leadSelectedBadge.textContent = ratioText;
+            }
             els.bulkCountLabel.textContent = `${selectedCount} selected`;
             els.bulkFilteredCount.textContent = String(filtered.length);
         } else {
@@ -522,18 +563,21 @@
 
     // Bulk selection helpers
     function toggleLeadSelection(key, force) {
-        const shouldSelect = force !== undefined ? force : !state.selectedKeys.has(key);
+        const shouldSelect = force !== undefined ? Boolean(force) : !state.selectedKeys.has(key);
         if (shouldSelect) {
             state.selectedKeys.add(key);
         } else {
             state.selectedKeys.delete(key);
         }
 
-        const card = els.leadsGrid.querySelector(`.extractor-lead-card[data-key="${CSS.escape(key)}"]`);
-        if (card) {
-            card.classList.toggle('is-selected', shouldSelect);
-            const cb = card.querySelector('.extractor-card-checkbox');
-            if (cb) cb.checked = shouldSelect;
+        const cards = els.leadsGrid.querySelectorAll('.extractor-lead-card');
+        for (const card of cards) {
+            if (card.dataset.key === key) {
+                card.classList.toggle('is-selected', shouldSelect);
+                const cb = card.querySelector('.extractor-card-checkbox');
+                if (cb) cb.checked = shouldSelect;
+                break;
+            }
         }
 
         updateSelectionUi();
@@ -544,12 +588,38 @@
         for (const item of filtered) {
             state.selectedKeys.add(item.key);
         }
-        renderLeads();
+        const cards = els.leadsGrid.querySelectorAll('.extractor-lead-card');
+        cards.forEach((card) => {
+            card.classList.add('is-selected');
+            const cb = card.querySelector('.extractor-card-checkbox');
+            if (cb) cb.checked = true;
+        });
+        updateSelectionUi();
+    }
+
+    function deselectFiltered() {
+        const filtered = getFilteredLeads();
+        for (const item of filtered) {
+            state.selectedKeys.delete(item.key);
+        }
+        const cards = els.leadsGrid.querySelectorAll('.extractor-lead-card');
+        cards.forEach((card) => {
+            card.classList.remove('is-selected');
+            const cb = card.querySelector('.extractor-card-checkbox');
+            if (cb) cb.checked = false;
+        });
+        updateSelectionUi();
     }
 
     function deselectAll() {
         state.selectedKeys.clear();
-        renderLeads();
+        const cards = els.leadsGrid.querySelectorAll('.extractor-lead-card');
+        cards.forEach((card) => {
+            card.classList.remove('is-selected');
+            const cb = card.querySelector('.extractor-card-checkbox');
+            if (cb) cb.checked = false;
+        });
+        updateSelectionUi();
     }
 
     // Excel & JSON Export Utilities
@@ -682,6 +752,126 @@
         const jsonContent = JSON.stringify(cleanList, null, 2);
         downloadBlob(jsonContent, filename, 'application/json;charset=utf-8;');
         showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} as JSON.`);
+    }
+
+    function exportToCsv(leadsList, filename = 'leads-export.csv') {
+        if (!leadsList.length) {
+            showToast('No leads to export.', true);
+            return;
+        }
+
+        const headers = ['Business Name', 'Address', 'Email(s)', 'Phone', 'Website', 'Category', 'Rating', 'Reviews', 'Google Maps URL', 'Source'];
+        const rows = [headers];
+
+        for (const lead of leadsList) {
+            const emails = Array.isArray(lead.emails) ? lead.emails.join('; ') : '';
+            rows.push([
+                lead.business_name || '',
+                lead.address || '',
+                emails,
+                lead.phone || '',
+                lead.website || '',
+                lead.category || '',
+                lead.rating != null ? String(lead.rating) : '',
+                lead.review_count != null ? String(lead.review_count) : '',
+                lead.google_maps_url || '',
+                lead.source || 'Google Maps',
+            ]);
+        }
+
+        const csvContent = rows
+            .map((row) =>
+                row
+                    .map((val) => `"${String(val).replace(/"/g, '""')}"`)
+                    .join(',')
+            )
+            .join('\r\n');
+
+        downloadBlob('\uFEFF' + csvContent, filename, 'text/csv;charset=utf-8;');
+        showToast(`Exported ${leadsList.length} lead${leadsList.length === 1 ? '' : 's'} to CSV.`);
+    }
+
+    async function executeBulkAction(action, customLeadIds = null, confirmMessage = null) {
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+            return;
+        }
+
+        const selectedLeads = getSelectedLeadsList();
+        let targetLeadIds = [];
+
+        if (Array.isArray(customLeadIds) && customLeadIds.length > 0) {
+            targetLeadIds = customLeadIds;
+        } else if (action === 'save_all') {
+            targetLeadIds = Array.from(state.leads.values())
+                .map((l) => l.id)
+                .filter(Boolean);
+        } else {
+            targetLeadIds = selectedLeads.map((l) => l.id).filter(Boolean);
+        }
+
+        // Optimistic UI updates
+        if (action === 'discard') {
+            const keysToDiscard = Array.from(state.selectedKeys);
+            for (const key of keysToDiscard) {
+                state.leads.delete(key);
+                state.selectedKeys.delete(key);
+            }
+            renderLeads();
+            updateSelectionUi();
+        }
+
+        const payload = {
+            action,
+            job_id: state.jobId,
+        };
+
+        if (targetLeadIds.length > 0) {
+            payload.lead_ids = targetLeadIds;
+        }
+
+        const endpoint = cfg.bulkActionUrl || '/api/leads/bulk-action';
+
+        try {
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify(payload),
+            });
+
+            const data = await resp.json();
+            if (!resp.ok) {
+                throw new Error(data.message || `Failed to execute ${action}.`);
+            }
+
+            if (action === 'save' || action === 'save_all') {
+                if (action === 'save_all') {
+                    for (const lead of state.leads.values()) {
+                        lead.status = 'saved';
+                        lead.is_saved = true;
+                    }
+                } else {
+                    for (const lead of selectedLeads) {
+                        lead.status = 'saved';
+                        lead.is_saved = true;
+                    }
+                }
+                renderLeads();
+                showToast(data.message || `Saved ${data.affected ?? targetLeadIds.length} lead(s) to master database.`);
+            } else if (action === 'discard') {
+                showToast(data.message || `Discarded lead(s).`);
+            } else if (action === 'delete') {
+                const keysToDelete = Array.from(state.selectedKeys);
+                for (const key of keysToDelete) {
+                    state.leads.delete(key);
+                    state.selectedKeys.delete(key);
+                }
+                renderLeads();
+                updateSelectionUi();
+                showToast(data.message || `Deleted lead(s).`);
+            }
+        } catch (err) {
+            showToast(err.message || 'Action failed.', true);
+        }
     }
 
     function copyToClipboard(text, successMessage) {
@@ -1036,36 +1226,105 @@
         }
     });
 
-    // Master checkbox click
-    els.masterCheckbox.addEventListener('change', () => {
-        if (els.masterCheckbox.checked) {
-            selectAllFiltered();
-        } else {
-            deselectAll();
+    // Grid event delegation for clicking on card body
+    els.leadsGrid.addEventListener('click', (event) => {
+        if (event.target.closest('a, button, .btn, .dropdown-menu, input, label, select')) {
+            return;
+        }
+        const card = event.target.closest('.extractor-lead-card');
+        if (!card) return;
+        const key = card.dataset.key;
+        if (key) {
+            toggleLeadSelection(key);
         }
     });
 
-    // Bulk bar events
-    els.selectAllCheckbox.addEventListener('change', () => {
-        if (els.selectAllCheckbox.checked) {
-            selectAllFiltered();
-        } else {
-            deselectAll();
-        }
-    });
+    // Master checkbox in leads topbar
+    if (els.masterCheckbox) {
+        els.masterCheckbox.addEventListener('change', () => {
+            if (els.masterCheckbox.checked) {
+                selectAllFiltered();
+            } else {
+                deselectFiltered();
+            }
+        });
+    }
 
-    els.selectAllFilteredBtn.addEventListener('click', selectAllFiltered);
-    els.bulkDeselectBtn.addEventListener('click', deselectAll);
+    // Bulk floating bar checkbox
+    if (els.selectAllCheckbox) {
+        els.selectAllCheckbox.addEventListener('change', () => {
+            if (els.selectAllCheckbox.checked) {
+                selectAllFiltered();
+            } else {
+                deselectFiltered();
+            }
+        });
+    }
 
-    els.bulkExportExcelBtn.addEventListener('click', () => {
-        const selected = getSelectedLeadsList();
-        exportToExcel(selected, `selected-leads-${Date.now()}.xlsx`);
-    });
+    if (els.selectAllFilteredBtn) {
+        els.selectAllFilteredBtn.addEventListener('click', selectAllFiltered);
+    }
 
-    els.bulkExportJsonBtn.addEventListener('click', () => {
-        const selected = getSelectedLeadsList();
-        exportToJson(selected, `selected-leads-${Date.now()}.json`);
-    });
+    if (els.bulkDeselectBtn) {
+        els.bulkDeselectBtn.addEventListener('click', deselectAll);
+    }
+
+    if (els.bulkSaveBtn) {
+        els.bulkSaveBtn.addEventListener('click', () => {
+            const selected = getSelectedLeadsList();
+            if (selected.length === 0) {
+                showToast('No leads selected to save.', true);
+                return;
+            }
+            executeBulkAction('save');
+        });
+    }
+
+    if (els.bulkDiscardBtn) {
+        els.bulkDiscardBtn.addEventListener('click', () => {
+            const count = state.selectedKeys.size;
+            if (count === 0) {
+                showToast('No leads selected to discard.', true);
+                return;
+            }
+            executeBulkAction('discard', null, `Discard ${count} selected lead(s) from current extraction view?`);
+        });
+    }
+
+    if (els.saveAllDiscoveredBtn) {
+        els.saveAllDiscoveredBtn.addEventListener('click', () => {
+            const total = state.leads.size;
+            if (total === 0) {
+                showToast('No leads discovered yet.', true);
+                return;
+            }
+            executeBulkAction('save_all', null, `Save all ${total} discovered leads to the master database?`);
+        });
+    }
+
+    if (els.bulkExportExcelBtn) {
+        els.bulkExportExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const selected = getSelectedLeadsList();
+            exportToExcel(selected, `selected-leads-${Date.now()}.xlsx`);
+        });
+    }
+
+    if (els.bulkExportCsvBtn) {
+        els.bulkExportCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const selected = getSelectedLeadsList();
+            exportToCsv(selected, `selected-leads-${Date.now()}.csv`);
+        });
+    }
+
+    if (els.bulkExportJsonBtn) {
+        els.bulkExportJsonBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const selected = getSelectedLeadsList();
+            exportToJson(selected, `selected-leads-${Date.now()}.json`);
+        });
+    }
 
     els.bulkCopyEmailsBtn.addEventListener('click', () => {
         const selected = getSelectedLeadsList();
@@ -1105,6 +1364,13 @@
         exportToExcel(getAllLeadsList(), `all-leads-${Date.now()}.xlsx`);
     });
 
+    if (els.exportAllCsvBtn) {
+        els.exportAllCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            exportToCsv(getAllLeadsList(), `all-leads-${Date.now()}.csv`);
+        });
+    }
+
     els.exportAllJsonBtn.addEventListener('click', (e) => {
         e.preventDefault();
         exportToJson(getAllLeadsList(), `all-leads-${Date.now()}.json`);
@@ -1115,6 +1381,14 @@
         const filtered = getFilteredLeads().map((item) => item.lead);
         exportToExcel(filtered, `filtered-leads-${Date.now()}.xlsx`);
     });
+
+    if (els.exportFilteredCsvBtn) {
+        els.exportFilteredCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const filtered = getFilteredLeads().map((item) => item.lead);
+            exportToCsv(filtered, `filtered-leads-${Date.now()}.csv`);
+        });
+    }
 
     els.exportFilteredJsonBtn.addEventListener('click', (e) => {
         e.preventDefault();

@@ -119,6 +119,7 @@
     box-shadow: 0 1px 3px rgba(47, 43, 61, 0.04);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
+    cursor: pointer;
     animation: extractor-card-in 0.24s ease-out;
 }
 
@@ -132,6 +133,12 @@
     border-color: #696cff;
     background: rgba(105, 108, 255, 0.03);
     box-shadow: 0 0 0 1.5px #696cff, 0 6px 18px rgba(105, 108, 255, 0.12);
+}
+
+.extractor-lead-card a,
+.extractor-lead-card button,
+.extractor-lead-card .btn {
+    cursor: pointer;
 }
 
 @keyframes extractor-card-in {
@@ -408,9 +415,20 @@
 
 /* Bulk Bar */
 .extractor-bulk-bar {
-    background: rgba(105, 108, 255, 0.08) !important;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: rgba(235, 240, 255, 0.96) !important;
+    backdrop-filter: blur(8px);
     border-left: 4px solid #696cff;
+    box-shadow: 0 4px 14px rgba(47, 43, 61, 0.08);
     animation: extractor-card-in 0.2s ease;
+}
+
+.extractor-lead-card.is-discarded {
+    opacity: 0.5;
+    background: #f8f9fa;
+    border-style: dashed;
 }
 
 /* Engine Toggle */

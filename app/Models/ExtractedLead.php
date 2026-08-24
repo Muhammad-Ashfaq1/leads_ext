@@ -30,6 +30,8 @@ class ExtractedLead extends Model
         'city',
         'country',
         'source',
+        'status',
+        'is_saved',
         'metadata',
         'extracted_at',
     ];
@@ -41,6 +43,7 @@ class ExtractedLead extends Model
             'social_links' => 'array',
             'email_verification_status' => 'array',
             'metadata' => 'array',
+            'is_saved' => 'boolean',
             'rating' => 'float',
             'review_count' => 'integer',
             'latitude' => 'float',
@@ -88,6 +91,8 @@ class ExtractedLead extends Model
             'city' => $lead['city'] ?? null,
             'country' => $lead['country'] ?? null,
             'source' => $lead['source'] ?? 'Google Maps',
+            'status' => $lead['status'] ?? 'saved',
+            'is_saved' => $lead['is_saved'] ?? true,
             'metadata' => $lead['metadata'] ?? [],
             'extracted_at' => $lead['extracted_at'] ?? now(),
         ];

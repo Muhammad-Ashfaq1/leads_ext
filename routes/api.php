@@ -15,3 +15,8 @@ Route::prefix('extractor')->name('extractor.')->group(function (): void {
     Route::post('/{job}/focus', [ExtractorController::class, 'focus'])->name('focus');
     Route::post('/{job}/verify-complete', [ExtractorController::class, 'verifyComplete'])->name('verify-complete');
 });
+
+Route::prefix('leads')->name('leads.')->group(function (): void {
+    Route::post('/bulk-action', [ExtractorController::class, 'bulkAction'])->name('bulk-action');
+    Route::post('/export-selected', [ExtractorController::class, 'exportSelected'])->name('export-selected');
+});
