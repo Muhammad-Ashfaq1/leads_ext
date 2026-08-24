@@ -22,6 +22,7 @@ Thumbs.db
 /bootstrap/cache/*.php
 /storage/framework/
 /storage/logs/
+composer.lock
 
 # Python extractor
 /extractor/.venv/
