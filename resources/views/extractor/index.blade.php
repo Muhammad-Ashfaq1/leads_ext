@@ -395,6 +395,9 @@
                 <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="bulkDeselectBtn">Deselect</button>
             </div>
             <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-primary" id="bulkSendEmailBtn" title="Send Email to selected leads">
+                    <i class="icon-base ti tabler-send me-1"></i>Send Email
+                </button>
                 <button type="button" class="btn btn-sm btn-success" id="bulkSaveBtn">
                     <i class="icon-base ti tabler-device-floppy me-1"></i>Save Selected
                 </button>
@@ -448,6 +451,87 @@
     </div>
 </div>
 
+<!-- Extractor Send Outreach Email Modal -->
+<div class="modal fade" id="extractorSendEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title">
+                    <i class="icon-base ti tabler-send me-1 text-primary"></i> Send Outreach Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="icon-base ti tabler-mail me-1"></i>
+                        <span id="extractorModalRecipients" class="fw-semibold">1 recipient selected</span>
+                    </div>
+                    <span class="badge bg-white text-primary" id="extractorModalEmailBadge">1 with email</span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="extractorTemplateSelect">Select Email Template</label>
+                        <select class="form-select" id="extractorTemplateSelect">
+                            <option value="">-- Choose a template (optional) --</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 d-flex align-items-end justify-content-end">
+                        <a href="{{ route('email-templates.index') }}" target="_blank" class="small text-decoration-none">
+                            <i class="icon-base ti tabler-external-link me-1"></i> Manage Templates
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="extractorModalSubject">Email Subject <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="extractorModalSubject" placeholder="e.g. Quick inquiry for @{{business_name}}">
+                </div>
+
+                <!-- Dynamic tags toolbar -->
+                <div class="mb-3 p-2 bg-light-subtle border rounded">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <small class="fw-bold text-muted me-2"><i class="icon-base ti tabler-code me-1"></i>Insert Tag:</small>
+                        <span class="badge bg-label-primary cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{business_name}}')">@{{business_name}}</span>
+                        <span class="badge bg-label-info cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{email}}')">@{{email}}</span>
+                        <span class="badge bg-label-secondary cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{phone}}')">@{{phone}}</span>
+                        <span class="badge bg-label-success cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{city}}')">@{{city}}</span>
+                        <span class="badge bg-label-warning cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{category}}')">@{{category}}</span>
+                        <span class="badge bg-label-dark cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{website}}')">@{{website}}</span>
+                        <span class="badge bg-label-primary cursor-pointer ext-var-pill" onclick="insertExtractorVariable('@{{sender_name}}')">@{{sender_name}}</span>
+                    </div>
+                </div>
+
+                <!-- Rich Text Editor -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email Body <span class="text-danger">*</span></label>
+                    <div class="editor-toolbar" style="background: #f8f9fa; border: 1px solid #dee2e6; border-bottom: none; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; padding: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatExtractorDoc('bold')" title="Bold"><i class="icon-base ti tabler-bold"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatExtractorDoc('italic')" title="Italic"><i class="icon-base ti tabler-italic"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatExtractorDoc('underline')" title="Underline"><i class="icon-base ti tabler-underline"></i></button>
+                        <span class="border-end mx-1"></span>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatExtractorDoc('insertUnorderedList')" title="Bullet List"><i class="icon-base ti tabler-list"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatExtractorDoc('insertOrderedList')" title="Numbered List"><i class="icon-base ti tabler-list-numbers"></i></button>
+                    </div>
+                    <div class="editor-content" id="extractorModalEditor" contenteditable="true" spellcheck="false" style="min-height: 180px; border: 1px solid #dee2e6; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; padding: 0.75rem; background: #fff; outline: none; overflow-y: auto; max-height: 350px;">
+                        <p>Hi <strong>@{{business_name}}</strong> Team,</p>
+                        <p>I came across your business in @{{city}} and wanted to reach out regarding our lead generation and growth services.</p>
+                        <p>Would you have 5 minutes this week for a brief call?</p>
+                        <p>Best regards,<br><strong>@{{sender_name}}</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnExtractorConfirmSend">
+                    <i class="icon-base ti tabler-send me-1"></i> Send Outreach Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast notification container -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
     <div id="extractorToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -471,6 +555,8 @@
         verifyCompleteUrl: @json(url('/api/extractor/__JOB__/verify-complete')),
         bulkActionUrl: @json(route('leads.bulk-action')),
         exportSelectedUrl: @json(route('leads.export-selected')),
+        sendEmailUrl: @json(route('leads.send-email')),
+        emailTemplatesUrl: @json(route('email-templates.list')),
         allowMock: @json((bool) $allowMock),
         hasGoogleApiKey: @json((bool) $hasGoogleApiKey),
         csrf: @json(csrf_token()),

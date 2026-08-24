@@ -90,8 +90,12 @@
                 <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="deselectAllBtn">Deselect All</button>
             </div>
             <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-primary" id="sendEmailBulkBtn" title="Send Email to selected leads">
+                    <i class="icon-base ti tabler-send me-1"></i>Send Email
+                </button>
                 <button type="button" class="btn btn-sm btn-success" id="exportSelectedExcelBtn">
                     <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export Selected (Excel)
+                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export (Excel)
                 </button>
                 <button type="button" class="btn btn-sm btn-info text-white" id="exportSelectedCsvBtn">
                     <i class="icon-base ti tabler-file-text me-1"></i>CSV
@@ -227,6 +231,11 @@
                         </td>
                         <td class="pe-3 text-end">
                             <div class="d-flex justify-content-end gap-1">
+                                @if ($firstEmail)
+                                    <button type="button" class="btn btn-xs btn-primary btn-send-single-email" title="Send Email to {{ $firstEmail }}" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
+                                        <i class="icon-base ti tabler-send"></i>
+                                    </button>
+                                @endif
                                 @if ($lead->website)
                                     <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-info" title="Visit Website">
                                         <i class="icon-base ti tabler-world"></i>
@@ -278,6 +287,87 @@
             </div>
         </div>
     @endif
+</div>
+
+<!-- Send Outreach Email Modal -->
+<div class="modal fade" id="sendLeadEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title" id="sendLeadEmailModalTitle">
+                    <i class="icon-base ti tabler-send me-1 text-primary"></i> Send Outreach Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="icon-base ti tabler-mail me-1"></i>
+                        <span id="modalRecipientsSummary" class="fw-semibold">1 recipient selected</span>
+                    </div>
+                    <span class="badge bg-white text-primary" id="modalValidEmailsBadge">1 with valid email</span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="modalTemplateSelect">Select Email Template</label>
+                        <select class="form-select" id="modalTemplateSelect">
+                            <option value="">-- Choose a template (optional) --</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 d-flex align-items-end justify-content-end">
+                        <a href="{{ route('email-templates.index') }}" target="_blank" class="small text-decoration-none">
+                            <i class="icon-base ti tabler-external-link me-1"></i> Manage Templates
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="modalEmailSubject">Email Subject <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="modalEmailSubject" placeholder="e.g. Quick inquiry for @{{business_name}}">
+                </div>
+
+                <!-- Dynamic tags toolbar -->
+                <div class="mb-3 p-2 bg-light-subtle border rounded">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <small class="fw-bold text-muted me-2"><i class="icon-base ti tabler-code me-1"></i>Insert Tag:</small>
+                        <span class="badge bg-label-primary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{business_name}}')">@{{business_name}}</span>
+                        <span class="badge bg-label-info cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{email}}')">@{{email}}</span>
+                        <span class="badge bg-label-secondary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{phone}}')">@{{phone}}</span>
+                        <span class="badge bg-label-success cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{city}}')">@{{city}}</span>
+                        <span class="badge bg-label-warning cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{category}}')">@{{category}}</span>
+                        <span class="badge bg-label-dark cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{website}}')">@{{website}}</span>
+                        <span class="badge bg-label-primary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{sender_name}}')">@{{sender_name}}</span>
+                    </div>
+                </div>
+
+                <!-- Rich Text Editor -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email Body <span class="text-danger">*</span></label>
+                    <div class="editor-toolbar" style="background: #f8f9fa; border: 1px solid #dee2e6; border-bottom: none; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; padding: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatModalDoc('bold')" title="Bold"><i class="icon-base ti tabler-bold"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatModalDoc('italic')" title="Italic"><i class="icon-base ti tabler-italic"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatModalDoc('underline')" title="Underline"><i class="icon-base ti tabler-underline"></i></button>
+                        <span class="border-end mx-1"></span>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatModalDoc('insertUnorderedList')" title="Bullet List"><i class="icon-base ti tabler-list"></i></button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="formatModalDoc('insertOrderedList')" title="Numbered List"><i class="icon-base ti tabler-list-numbers"></i></button>
+                    </div>
+                    <div class="editor-content" id="modalRichEditor" contenteditable="true" spellcheck="false" style="min-height: 180px; border: 1px solid #dee2e6; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; padding: 0.75rem; background: #fff; outline: none; overflow-y: auto; max-height: 350px;">
+                        <p>Hi <strong>@{{business_name}}</strong> Team,</p>
+                        <p>I came across your business in @{{city}} and wanted to reach out regarding our lead generation and growth services.</p>
+                        <p>Would you have 5 minutes this week for a brief call?</p>
+                        <p>Best regards,<br><strong>@{{sender_name}}</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnConfirmSendEmail">
+                    <i class="icon-base ti tabler-send me-1"></i> Send Outreach Email
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Toast notification container -->
@@ -548,6 +638,193 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Email Outreach System
+    let loadedTemplates = [];
+    let activeEmailLeadIds = [];
+    const sendEmailModalEl = document.getElementById('sendLeadEmailModal');
+    let sendEmailModalInstance = null;
+    if (sendEmailModalEl && window.bootstrap && window.bootstrap.Modal) {
+        sendEmailModalInstance = new window.bootstrap.Modal(sendEmailModalEl);
+    }
+    const templateSelect = document.getElementById('modalTemplateSelect');
+    const modalSubjectInput = document.getElementById('modalEmailSubject');
+    const modalEditor = document.getElementById('modalRichEditor');
+    const modalRecipientsSummary = document.getElementById('modalRecipientsSummary');
+    const modalValidEmailsBadge = document.getElementById('modalValidEmailsBadge');
+    const btnConfirmSendEmail = document.getElementById('btnConfirmSendEmail');
+    const sendEmailBulkBtn = document.getElementById('sendEmailBulkBtn');
+
+    // Fetch Email Templates
+    async function loadTemplates() {
+        try {
+            const resp = await fetch('{{ route("email-templates.list") }}');
+            if (resp.ok) {
+                loadedTemplates = await resp.json();
+                if (templateSelect) {
+                    templateSelect.innerHTML = '<option value="">-- Choose a template (optional) --</option>';
+                    loadedTemplates.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.textContent = `${t.name} (${t.category || 'Outreach'})${t.is_default ? ' ★ Default' : ''}`;
+                        templateSelect.appendChild(opt);
+                    });
+                }
+            }
+        } catch (_) {}
+    }
+    loadTemplates();
+
+    if (templateSelect) {
+        templateSelect.addEventListener('change', () => {
+            const selectedId = parseInt(templateSelect.value, 10);
+            const tmpl = loadedTemplates.find(t => t.id === selectedId);
+            if (tmpl) {
+                if (modalSubjectInput) modalSubjectInput.value = tmpl.subject;
+                if (modalEditor) modalEditor.innerHTML = tmpl.body;
+            }
+        });
+    }
+
+    // Single Lead Email Click Handler
+    document.querySelectorAll('.btn-send-single-email').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const leadId = parseInt(btn.dataset.id, 10);
+            const email = btn.dataset.email || '';
+            const name = btn.dataset.name || 'Business Owner';
+            activeEmailLeadIds = [leadId];
+
+            if (modalRecipientsSummary) {
+                modalRecipientsSummary.textContent = `${name} <${email}>`;
+            }
+            if (modalValidEmailsBadge) {
+                modalValidEmailsBadge.textContent = '1 recipient';
+            }
+
+            // Apply default template if exists
+            const defaultTmpl = loadedTemplates.find(t => t.is_default) || loadedTemplates[0];
+            if (defaultTmpl) {
+                if (templateSelect) templateSelect.value = defaultTmpl.id;
+                if (modalSubjectInput) modalSubjectInput.value = defaultTmpl.subject;
+                if (modalEditor) modalEditor.innerHTML = defaultTmpl.body;
+            } else {
+                if (modalSubjectInput) modalSubjectInput.value = `Quick inquiry regarding @{{business_name}}`;
+                if (modalEditor) {
+                    modalEditor.innerHTML = `
+                        <p>Hi <strong>@{{business_name}}</strong> Team,</p>
+                        <p>I came across your business in @{{city}} and wanted to reach out regarding our lead generation and growth services.</p>
+                        <p>Would you have 5 minutes this week for a brief call?</p>
+                        <p>Best regards,<br><strong>@{{sender_name}}</strong></p>
+                    `;
+                }
+            }
+
+            if (sendEmailModalInstance) sendEmailModalInstance.show();
+        });
+    });
+
+    // Bulk Email Button Handler
+    if (sendEmailBulkBtn) {
+        sendEmailBulkBtn.addEventListener('click', () => {
+            const selectedCheckboxes = document.querySelectorAll('.row-select-checkbox:checked');
+            const idsWithEmail = [];
+            selectedCheckboxes.forEach(cb => {
+                const email = cb.dataset.email;
+                if (email && email.trim() && email !== 'null' && email !== 'undefined') {
+                    idsWithEmail.push(parseInt(cb.value, 10));
+                }
+            });
+
+            if (idsWithEmail.length === 0) {
+                showToast('None of the selected leads have an email address.', true);
+                return;
+            }
+
+            activeEmailLeadIds = idsWithEmail;
+
+            if (modalRecipientsSummary) {
+                modalRecipientsSummary.textContent = `Sending outreach to ${idsWithEmail.length} selected lead(s)`;
+            }
+            if (modalValidEmailsBadge) {
+                modalValidEmailsBadge.textContent = `${idsWithEmail.length} with valid email`;
+            }
+
+            const defaultTmpl = loadedTemplates.find(t => t.is_default) || loadedTemplates[0];
+            if (defaultTmpl) {
+                if (templateSelect) templateSelect.value = defaultTmpl.id;
+                if (modalSubjectInput) modalSubjectInput.value = defaultTmpl.subject;
+                if (modalEditor) modalEditor.innerHTML = defaultTmpl.body;
+            }
+
+            if (sendEmailModalInstance) sendEmailModalInstance.show();
+        });
+    }
+
+    // Confirm Send Email Submission
+    if (btnConfirmSendEmail) {
+        btnConfirmSendEmail.addEventListener('click', async () => {
+            const subject = (modalSubjectInput ? modalSubjectInput.value : '').trim();
+            const body = modalEditor ? modalEditor.innerHTML.trim() : '';
+
+            if (!subject) {
+                showToast('Please enter an email subject.', true);
+                if (modalSubjectInput) modalSubjectInput.focus();
+                return;
+            }
+            if (!body || body === '<p><br></p>') {
+                showToast('Please enter an email body message.', true);
+                if (modalEditor) modalEditor.focus();
+                return;
+            }
+
+            btnConfirmSendEmail.disabled = true;
+            btnConfirmSendEmail.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+
+            try {
+                const resp = await fetch('{{ route("leads.send-email") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        lead_ids: activeEmailLeadIds,
+                        template_id: templateSelect && templateSelect.value ? parseInt(templateSelect.value, 10) : null,
+                        subject: subject,
+                        body: body
+                    })
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    if (sendEmailModalInstance) sendEmailModalInstance.hide();
+                    showToast(data.message || `Dispatched ${data.sent_count} email(s) successfully!`);
+                } else {
+                    showToast(data.message || 'Failed to dispatch email.', true);
+                }
+            } catch (err) {
+                showToast('Network error while dispatching email.', true);
+            } finally {
+                btnConfirmSendEmail.disabled = false;
+                btnConfirmSendEmail.innerHTML = '<i class="icon-base ti tabler-send me-1"></i> Send Outreach Email';
+            }
+        });
+    }
 });
+
+function formatModalDoc(cmd, val = null) {
+    document.execCommand(cmd, false, val);
+    const ed = document.getElementById('modalRichEditor');
+    if (ed) ed.focus();
+}
+
+function insertModalVariable(tag) {
+    const editor = document.getElementById('modalRichEditor');
+    if (editor) {
+        editor.focus();
+        document.execCommand('insertText', false, tag);
+    }
+}
 </script>
 @endpush

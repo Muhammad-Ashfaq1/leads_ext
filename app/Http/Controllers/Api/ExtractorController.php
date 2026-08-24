@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
+use App\Services\EmailOutreachService;
 use App\Services\ExtractorClient;
 use App\Services\GooglePlacesService;
 use App\Services\LeadCsvExporter;
@@ -25,6 +26,7 @@ class ExtractorController extends Controller
         private readonly ExtractorClient $client,
         private readonly LeadCsvExporter $csvExporter,
         private readonly GooglePlacesService $googlePlacesService,
+        private readonly EmailOutreachService $emailOutreachService,
     ) {}
 
     public function start(Request $request): JsonResponse
@@ -341,6 +343,78 @@ class ExtractorController extends Controller
         }
 
         return $this->csvExporter->downloadByIds($leadIds, $format, $tenantId, $isSuperAdmin);
+    }
+
+    public function sendEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'lead_ids' => ['required_without:lead_id', 'nullable', 'array', 'min:1'],
+            'lead_ids.*' => ['integer', 'min:1'],
+            'lead_id' => ['required_without:lead_ids', 'nullable', 'integer', 'min:1'],
+            'template_id' => ['nullable', 'integer', 'min:1'],
+            'subject' => ['required', 'string', 'max:500'],
+            'body' => ['required', 'string'],
+        ]);
+
+        $user = Auth::user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $tenantId = $user?->tenant_id;
+
+        $leadIds = $validated['lead_ids'] ?? [];
+        if (! empty($validated['lead_id'])) {
+            $leadIds[] = (int) $validated['lead_id'];
+        }
+        $leadIds = array_values(array_unique(array_filter($leadIds, fn ($id) => $id > 0)));
+
+        if (empty($leadIds)) {
+            return response()->json([
+                'message' => 'Please provide at least one valid lead ID.',
+            ], 422);
+        }
+
+        // Validate tenant isolation
+        if ($tenantId && ! $isSuperAdmin) {
+            $unauthorized = ExtractedLead::whereIn('id', $leadIds)
+                ->whereNotNull('tenant_id')
+                ->where('tenant_id', '!=', $tenantId)
+                ->exists();
+
+            if ($unauthorized) {
+                return response()->json([
+                    'message' => 'Unauthorized: One or more leads do not belong to your organization.',
+                ], 403);
+            }
+        }
+
+        $result = $this->emailOutreachService->sendBulk(
+            $leadIds,
+            $validated['subject'],
+            $validated['body'],
+            $validated['template_id'] ?? null,
+            $user,
+            $tenantId,
+            $isSuperAdmin
+        );
+
+        $sentCount = $result['sent_count'];
+        $skippedCount = $result['skipped_count'];
+        $failedCount = $result['failed_count'];
+
+        $message = "Successfully dispatched email to {$sentCount} lead(s).";
+        if ($skippedCount > 0) {
+            $message .= " ({$skippedCount} skipped without email).";
+        }
+        if ($failedCount > 0) {
+            $message .= " ({$failedCount} failed delivery).";
+        }
+
+        return response()->json([
+            'success' => true,
+            'sent_count' => $sentCount,
+            'failed_count' => $failedCount,
+            'skipped_count' => $skippedCount,
+            'message' => $message,
+        ]);
     }
 
     public function stream(Request $request, ExtractionJob $job): StreamedResponse
