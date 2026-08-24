@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\ExtractorController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\ExtractorPageController;
 use App\Http\Controllers\JobsController;
 use App\Http\Controllers\LeadsController;
@@ -34,13 +33,6 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     // Extracted Leads Management
     Route::get('/leads', [LeadsController::class, 'index'])->name('leads.index');
     Route::get('/leads/export/excel', [LeadsController::class, 'exportExcel'])->name('leads.export.excel');
-
-    // Email Templates & Outreach
-    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
-    Route::post('/email-templates', [EmailTemplateController::class, 'store'])->name('email-templates.store');
-    Route::put('/email-templates/{emailTemplate}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
-    Route::delete('/email-templates/{emailTemplate}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
-    Route::post('/email-templates/{emailTemplate}/default', [EmailTemplateController::class, 'setDefault'])->name('email-templates.default');
 
     // Extraction History & Job Export
     Route::get('/jobs', [JobsController::class, 'index'])->name('jobs.index');
