@@ -47,6 +47,7 @@ jobs:
             --exclude='.env.backup' \
             --exclude='.env.production' \
             --exclude='composer.lock' \
+            --exclude='bootstrap/cache/*.php' \
             --exclude='.venv' \
             --exclude='__pycache__' \
             --exclude='storage/logs/*' \
@@ -66,8 +67,8 @@ jobs:
           set -e
           cd /home/u407529782/domains/obtainsolutions.com/public_html/leads
 
-          echo "Ensuring no composer.lock on server..."
-          rm -f composer.lock
+          echo "Ensuring no composer.lock or stale bootstrap files on server..."
+          rm -f composer.lock bootstrap/cache/*.php
 
           echo "Ensuring writable dirs..."
           mkdir -p \
@@ -82,8 +83,10 @@ jobs:
           echo "Running migrations..."
           php artisan migrate --force
 
+          echo "Discovering production packages..."
+          php artisan package:discover --ansi
+
           echo "Rebuilding caches..."
-          php artisan optimize:clear
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
