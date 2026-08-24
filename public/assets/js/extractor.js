@@ -1,5 +1,6 @@
 (() => {
     const cfg = window.ExtractorConfig || {};
+    const STORAGE_KEY = 'leads_extractor_live_session';
     const state = {
         jobId: null,
         source: null,
@@ -7,6 +8,7 @@
         selectedKeys: new Set(),
         running: false,
         leadCounter: 0,
+        isSaved: false,
         filters: {
             query: '',
             email: 'all',
@@ -26,15 +28,7 @@
         customOptionBrowser: document.getElementById('customOptionBrowser'),
         promptLabel: document.getElementById('promptLabel'),
         promptInputCol: document.getElementById('promptInputCol'),
-        businessNameCol: document.getElementById('businessNameCol'),
-        businessName: document.getElementById('businessNameInput'),
-        locationParamsContainer: document.getElementById('locationParamsContainer'),
-        cityInput: document.getElementById('cityInput'),
-        stateInput: document.getElementById('stateInput'),
-        zipCodeInput: document.getElementById('zipCodeInput'),
-        countrySelect: document.getElementById('countrySelect'),
-        clearLocationFieldsBtn: document.getElementById('clearLocationFieldsBtn'),
-        radiusSelect: document.getElementById('radiusSelect'),
+        locationInputCol: document.getElementById('locationInputCol'),
         locationInput: document.getElementById('locationInput'),
         apiKeyRow: document.getElementById('apiKeyRow'),
         toggleApiKeyBtn: document.getElementById('toggleApiKeyBtn'),
@@ -979,6 +973,7 @@
                 if (event.lead) upsertLead(event.lead);
                 setStatus(event.status || 'extracting', event.lead?.business_name);
                 showVerification(false);
+                saveStateThrottled();
                 break;
             case 'human_verification_required':
                 setStatus('waiting_for_human_verification', event.message);
@@ -997,6 +992,7 @@
                 setRunning(false);
                 setStatus('error', event.message);
                 setAlert('danger', event.message || event.error || 'Extraction failed.', true);
+                saveStateToStorage();
                 closeStream();
                 break;
             case 'completed':
@@ -1005,6 +1001,7 @@
                 setAlert('success', event.message || 'Extraction completed.', true);
                 showVerification(false);
                 showSummary(event);
+                saveStateToStorage();
                 closeStream();
                 break;
             case 'cancelled':
@@ -1013,6 +1010,7 @@
                 setAlert('secondary', event.message || 'Extraction stopped. Previously extracted leads have been preserved.', true);
                 showVerification(false);
                 showSummary(event);
+                saveStateToStorage();
                 closeStream();
                 break;
             case 'verification_timeout':
@@ -1021,11 +1019,21 @@
                 setAlert('warning', event.message || 'Human verification was not completed within the allowed time. Extraction has stopped. Previously extracted leads have been preserved.', true);
                 showVerification(false);
                 showSummary(event);
+                saveStateToStorage();
                 closeStream();
                 break;
             default:
                 break;
         }
+    }
+
+    let saveTimeout = null;
+    function saveStateThrottled() {
+        if (saveTimeout) return;
+        saveTimeout = setTimeout(() => {
+            saveTimeout = null;
+            saveStateToStorage();
+        }, 800);
     }
 
     function closeStream() {
@@ -1060,19 +1068,17 @@
         if (els.customOptionBrowser) els.customOptionBrowser.classList.toggle('checked', !isGoogleApi);
 
         if (isGoogleApi) {
-            if (els.locationParamsContainer) els.locationParamsContainer.classList.remove('d-none');
-            if (els.businessNameCol) els.businessNameCol.classList.remove('d-none');
+            if (els.locationInputCol) els.locationInputCol.classList.remove('d-none');
             if (els.promptInputCol) {
                 els.promptInputCol.classList.remove('col-12');
                 els.promptInputCol.classList.add('col-lg-7');
             }
             if (els.preFiltersContainer) els.preFiltersContainer.classList.remove('d-none');
             if (els.promptLabel) els.promptLabel.innerHTML = '<i class="icon-base ti tabler-category me-1 text-primary"></i>Industry / Business Category <span class="text-danger">*</span>';
-            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Software Companies';
+            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Software Companies, Law Firms';
             if (els.verifyToggleWrap) els.verifyToggleWrap.classList.add('d-none');
         } else {
-            if (els.locationParamsContainer) els.locationParamsContainer.classList.add('d-none');
-            if (els.businessNameCol) els.businessNameCol.classList.add('d-none');
+            if (els.locationInputCol) els.locationInputCol.classList.add('d-none');
             if (els.promptInputCol) {
                 els.promptInputCol.classList.remove('col-lg-7');
                 els.promptInputCol.classList.add('col-12');
@@ -1087,13 +1093,7 @@
 
     async function startExtraction() {
         const prompt = (els.prompt?.value || '').trim();
-        const businessName = (els.businessName?.value || '').trim();
-        const city = (els.cityInput?.value || '').trim();
-        const stateVal = (els.stateInput?.value || '').trim();
-        const zipCode = (els.zipCodeInput?.value || '').trim();
-        const country = (els.countrySelect?.value || '').trim();
-        const radius = Number(els.radiusSelect?.value || 0);
-        const directLocation = (els.locationInput?.value || '').trim();
+        const location = (els.locationInput?.value || '').trim();
         const isGoogleApi = els.engineGoogleApi?.checked ?? false;
         const customApiKey = (els.customApiKeyInput?.value || '').trim();
 
@@ -1141,13 +1141,7 @@
         try {
             const payloadData = {
                 prompt,
-                business_name: businessName || undefined,
-                city: city || undefined,
-                state: stateVal || undefined,
-                zip_code: zipCode || undefined,
-                country: country || undefined,
-                radius: radius > 0 ? radius : undefined,
-                location: directLocation || undefined,
+                location: location || undefined,
                 limit: Number(els.limit?.value || 100),
                 mode,
                 simulate_verification: Boolean(els.verify?.checked),
@@ -1172,6 +1166,7 @@
             state.jobId = payload.job_id;
             els.searchLabel.textContent = `Search: ${payload.query || prompt}`;
             saveStateToStorage();
+            connectStream();
         } catch (error) {
             setRunning(false);
             setStatus('error', error.message);
@@ -1738,25 +1733,11 @@
         }
     };
 
-    // Location reset and suggestion pills
-    if (els.clearLocationFieldsBtn) {
-        els.clearLocationFieldsBtn.addEventListener('click', () => {
-            if (els.cityInput) els.cityInput.value = '';
-            if (els.stateInput) els.stateInput.value = '';
-            if (els.zipCodeInput) els.zipCodeInput.value = '';
-            if (els.countrySelect) els.countrySelect.value = '';
-            if (els.locationInput) els.locationInput.value = '';
-            if (els.businessName) els.businessName.value = '';
-        });
-    }
-
+    // Quick suggestion pills
     document.querySelectorAll('.loc-suggestion-pill').forEach((pill) => {
         pill.addEventListener('click', () => {
             if (pill.dataset.cat && els.prompt) els.prompt.value = pill.dataset.cat;
-            if (pill.dataset.city && els.cityInput) els.cityInput.value = pill.dataset.city;
-            if (pill.dataset.state && els.stateInput) els.stateInput.value = pill.dataset.state;
-            if (pill.dataset.zip && els.zipCodeInput) els.zipCodeInput.value = pill.dataset.zip;
-            if (pill.dataset.country && els.countrySelect) els.countrySelect.value = pill.dataset.country;
+            if (pill.dataset.loc && els.locationInput) els.locationInput.value = pill.dataset.loc;
             if (els.prompt) els.prompt.focus();
         });
     });
@@ -1771,12 +1752,6 @@
             const data = {
                 jobId: state.jobId,
                 prompt: els.prompt ? els.prompt.value : '',
-                businessName: els.businessName ? els.businessName.value : '',
-                city: els.cityInput ? els.cityInput.value : '',
-                stateVal: els.stateInput ? els.stateInput.value : '',
-                zipCode: els.zipCodeInput ? els.zipCodeInput.value : '',
-                country: els.countrySelect ? els.countrySelect.value : '',
-                radius: els.radiusSelect ? els.radiusSelect.value : '0',
                 location: els.locationInput ? els.locationInput.value : '',
                 limit: els.limit ? els.limit.value : '100',
                 engineGoogleApi: els.engineGoogleApi ? els.engineGoogleApi.checked : true,
@@ -1820,12 +1795,6 @@
             }
 
             if (session.prompt && els.prompt) els.prompt.value = session.prompt;
-            if (session.businessName && els.businessName) els.businessName.value = session.businessName;
-            if (session.city && els.cityInput) els.cityInput.value = session.city;
-            if (session.stateVal && els.stateInput) els.stateInput.value = session.stateVal;
-            if (session.zipCode && els.zipCodeInput) els.zipCodeInput.value = session.zipCode;
-            if (session.country && els.countrySelect) els.countrySelect.value = session.country;
-            if (session.radius && els.radiusSelect) els.radiusSelect.value = session.radius;
             if (session.location && els.locationInput) els.locationInput.value = session.location;
             if (session.limit && els.limit) els.limit.value = session.limit;
             if (els.engineGoogleApi && els.engineBrowser) {

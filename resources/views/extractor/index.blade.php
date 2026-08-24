@@ -77,90 +77,32 @@
                     type="text"
                     id="promptInput"
                     class="form-control form-control-lg"
-                    placeholder="e.g. Dentists, Real Estate, Plumbers, Software Companies"
+                    placeholder="e.g. Dentists, Real Estate, Plumbers, Software Companies, Law Firms"
                     autocomplete="off"
                     maxlength="500">
             </div>
-            <div class="col-12 col-lg-5" id="businessNameCol">
-                <label class="form-label fw-semibold" for="businessNameInput">
-                    <i class="icon-base ti tabler-building me-1 text-primary"></i>Business Name <small class="text-muted fw-normal">(Optional)</small>
+            <div class="col-12 col-lg-5" id="locationInputCol">
+                <label class="form-label fw-semibold" for="locationInput">
+                    <i class="icon-base ti tabler-map-pin me-1 text-primary"></i>Zip Code, City, State, or Area
                 </label>
                 <input
                     type="text"
-                    id="businessNameInput"
+                    id="locationInput"
                     class="form-control form-control-lg"
-                    placeholder="e.g. Specific brand or leave blank for all"
+                    placeholder="e.g. 90210, Miami FL, London, Toronto, Chicago"
                     autocomplete="off"
                     maxlength="200">
             </div>
         </div>
 
-        <!-- Target Location & Geographic Parameters -->
-        <div class="mt-3 p-3 rounded-2 bg-light-subtle border" id="locationParamsContainer">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="fw-semibold small text-uppercase text-muted d-flex align-items-center">
-                    <i class="icon-base ti tabler-map-pin me-1 text-primary"></i> Target Location &amp; Geographic Parameters
-                </span>
-                <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none text-muted" id="clearLocationFieldsBtn">
-                    <i class="icon-base ti tabler-rotate me-1"></i>Reset Location
-                </button>
-            </div>
-            <div class="row g-2">
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <label class="form-label small fw-semibold mb-1" for="cityInput">
-                        <i class="icon-base ti tabler-building-skyscraper me-1 text-secondary"></i>City / Town
-                    </label>
-                    <input type="text" id="cityInput" class="form-control form-control-sm" placeholder="e.g. Beverly Hills, Miami, London">
-                </div>
-                <div class="col-6 col-sm-6 col-lg-3">
-                    <label class="form-label small fw-semibold mb-1" for="stateInput">
-                        <i class="icon-base ti tabler-map me-1 text-secondary"></i>State / Province / Region
-                    </label>
-                    <input type="text" id="stateInput" class="form-control form-control-sm" placeholder="e.g. CA, FL, NY, Ontario, NSW">
-                </div>
-                <div class="col-6 col-sm-6 col-lg-3">
-                    <label class="form-label small fw-semibold mb-1" for="zipCodeInput">
-                        <i class="icon-base ti tabler-mail-code me-1 text-secondary"></i>Zip / Postal Code
-                    </label>
-                    <input type="text" id="zipCodeInput" class="form-control form-control-sm" placeholder="e.g. 90210, 33101, 10001, SW1A 1AA">
-                </div>
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <label class="form-label small fw-semibold mb-1" for="countrySelect">
-                        <i class="icon-base ti tabler-world me-1 text-secondary"></i>Country
-                    </label>
-                    <select id="countrySelect" class="form-select form-select-sm">
-                        <option value="">Any / Global</option>
-                        <option value="United States" selected>United States</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Australia">Australia</option>
-                        <option value="Germany">Germany</option>
-                        <option value="France">France</option>
-                        <option value="United Arab Emirates">United Arab Emirates</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="New Zealand">New Zealand</option>
-                        <option value="Ireland">Ireland</option>
-                        <option value="Netherlands">Netherlands</option>
-                        <option value="Spain">Spain</option>
-                        <option value="Italy">Italy</option>
-                        <option value="Switzerland">Switzerland</option>
-                        <option value="South Africa">South Africa</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Direct flexible location override -->
-            <input type="hidden" id="locationInput" value="">
-
-            <!-- Quick generic location suggestions -->
-            <div class="d-flex align-items-center flex-wrap gap-1 mt-2 pt-2 border-top">
-                <small class="text-muted me-1"><i class="icon-base ti tabler-sparkles me-1 text-warning"></i>Quick Examples:</small>
-                <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Dentists" data-city="Beverly Hills" data-state="CA" data-zip="90210" data-country="United States">Dentists in Beverly Hills, CA 90210</span>
-                <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Real Estate Agencies" data-city="Miami" data-state="FL" data-zip="33101" data-country="United States">Real Estate in Miami, FL</span>
-                <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Digital Marketing" data-city="London" data-state="England" data-zip="SW1A 1AA" data-country="United Kingdom">Marketing in London, UK</span>
-                <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Accounting Firms" data-city="Toronto" data-state="Ontario" data-zip="M5V 2T6" data-country="Canada">Accounting in Toronto, ON</span>
-                <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Solar Contractors" data-city="Sydney" data-state="NSW" data-zip="2000" data-country="Australia">Solar in Sydney, NSW</span>
-            </div>
+        <!-- Quick generic location suggestions -->
+        <div class="d-flex align-items-center flex-wrap gap-1 mt-2">
+            <small class="text-muted me-1"><i class="icon-base ti tabler-sparkles me-1 text-warning"></i>Quick Examples:</small>
+            <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Dentists" data-loc="Beverly Hills, CA 90210">Dentists in Beverly Hills, CA 90210</span>
+            <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Real Estate Agencies" data-loc="Miami, FL">Real Estate in Miami, FL</span>
+            <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Digital Marketing" data-loc="London, UK">Marketing in London, UK</span>
+            <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Accounting Firms" data-loc="Toronto, ON">Accounting in Toronto, ON</span>
+            <span class="badge bg-label-secondary cursor-pointer loc-suggestion-pill" data-cat="Plumbers" data-loc="Chicago, IL">Plumbers in Chicago, IL</span>
         </div>
 
         <!-- Pre-Extraction Filters (Applied before API calling) -->
@@ -221,10 +163,10 @@
             <div class="form-text small text-muted">Enter a Google Maps Platform API key with Places API enabled, or configure `GOOGLE_MAPS_API_KEY` in `.env`.</div>
         </div>
 
-        <div class="row g-3 align-items-end mt-2">
-            <div class="col-12 col-sm-6 col-md-3">
+        <div class="d-flex flex-wrap align-items-end gap-3 mt-4">
+            <div style="min-width: 180px;">
                 <label class="form-label mb-1 fw-semibold" for="limitInput">
-                    <i class="icon-base ti tabler-list-numbers me-1 text-primary"></i>Maximum Leads Target
+                    <i class="icon-base ti tabler-list-numbers me-1 text-primary"></i>Maximum Leads
                 </label>
                 <select id="limitInput" class="form-select">
                     @foreach ($allowedLimits as $limit)
@@ -232,29 +174,14 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
-                <label class="form-label mb-1 fw-semibold" for="radiusSelect">
-                    <i class="icon-base ti tabler-radar me-1 text-primary"></i>Coverage Radius
-                </label>
-                <select id="radiusSelect" class="form-select">
-                    <option value="0" selected>Auto (Optimized Grid)</option>
-                    <option value="5">5 km (City Center)</option>
-                    <option value="10">10 km (Standard)</option>
-                    <option value="25">25 km (Metro Area)</option>
-                    <option value="50">50 km (Regional)</option>
-                    <option value="100">100 km (Wide Region)</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-6 d-flex gap-2">
-                <button type="button" class="btn btn-primary flex-grow-1" id="startBtn">
-                    <i class="icon-base ti tabler-player-play me-1"></i>
-                    Start Extraction
-                </button>
-                <button type="button" class="btn btn-outline-secondary d-none" id="newExtractionBtn">
-                    <i class="icon-base ti tabler-plus me-1"></i>
-                    New Extraction
-                </button>
-            </div>
+            <button type="button" class="btn btn-primary" id="startBtn">
+                <i class="icon-base ti tabler-player-play me-1"></i>
+                Start Extraction
+            </button>
+            <button type="button" class="btn btn-outline-secondary d-none" id="newExtractionBtn">
+                <i class="icon-base ti tabler-plus me-1"></i>
+                New Extraction
+            </button>
         </div>
         @if ($allowMock)
             <div class="extractor-dev mt-4">

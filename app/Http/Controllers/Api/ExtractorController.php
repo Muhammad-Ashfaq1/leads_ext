@@ -33,13 +33,10 @@ class ExtractorController extends Controller
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'min:2', 'max:500'],
-            'business_name' => ['nullable', 'string', 'max:200'],
+            'location' => ['nullable', 'string', 'max:300'],
             'city' => ['nullable', 'string', 'max:150'],
             'state' => ['nullable', 'string', 'max:100'],
             'zip_code' => ['nullable', 'string', 'max:50'],
-            'country' => ['nullable', 'string', 'max:100'],
-            'location' => ['nullable', 'string', 'max:300'],
-            'radius' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'api_key' => ['nullable', 'string', 'max:200'],
             'limit' => ['nullable', 'integer', 'min:'.config('extractor.min_limit'), 'max:'.config('extractor.max_limit')],
             'mode' => ['nullable', Rule::in(['live', 'mock', 'google_api'])],
@@ -63,39 +60,24 @@ class ExtractorController extends Controller
         }
 
         $prompt = trim($validated['prompt']);
-        $businessName = trim($validated['business_name'] ?? '');
+        $location = trim($validated['location'] ?? '');
         $city = trim($validated['city'] ?? '');
         $state = trim($validated['state'] ?? '');
         $zipCode = trim($validated['zip_code'] ?? '');
-        $country = trim($validated['country'] ?? '');
-        $directLocation = trim($validated['location'] ?? '');
         $apiKey = trim($validated['api_key'] ?? '');
         $limit = (int) ($validated['limit'] ?? config('extractor.default_limit'));
 
-        // Assemble location from structured parameters or direct input
-        $locationParts = array_filter([
-            $city,
-            $state,
-            $zipCode,
-            ($country && ! in_array(strtolower($country), ['any', 'global', 'all'], true)) ? $country : null,
-        ]);
-
-        if (! empty($locationParts)) {
-            $location = implode(', ', $locationParts);
-        } else {
-            $location = $directLocation;
-        }
-
-        // Build the search term (incorporate specific business name if specified)
-        $searchTerm = $prompt;
-        if (! empty($businessName)) {
-            $searchTerm = "{$businessName} {$prompt}";
+        if (empty($location)) {
+            $locationParts = array_filter([$city, $state, $zipCode]);
+            if (! empty($locationParts)) {
+                $location = implode(', ', $locationParts);
+            }
         }
 
         if ($location !== '') {
-            $query = PromptNormalizer::toSearchQuery($searchTerm)." in {$location}";
+            $query = PromptNormalizer::toSearchQuery($prompt)." in {$location}";
         } else {
-            $query = PromptNormalizer::toSearchQuery($searchTerm);
+            $query = PromptNormalizer::toSearchQuery($prompt);
         }
 
         $user = Auth::user();
@@ -126,7 +108,7 @@ class ExtractorController extends Controller
                 'tenant_id' => $tenantId,
                 'user_id' => $userId,
                 'uuid' => $jobUuid,
-                'prompt' => $searchTerm.($location ? " ({$location})" : ''),
+                'prompt' => $prompt.($location ? " ({$location})" : ''),
                 'query' => $query,
                 'status' => ExtractionJob::STATUS_STARTING,
                 'limit' => $limit,
