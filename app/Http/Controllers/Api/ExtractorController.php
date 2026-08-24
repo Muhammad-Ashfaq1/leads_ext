@@ -66,8 +66,8 @@ class ExtractorController extends Controller
         }
 
         $user = Auth::user();
-        $tenantId = $user?->tenant_id;
-        $userId = $user?->id;
+        $tenantId = $user?->tenant_id ?? \App\Models\Tenant::first()?->id;
+        $userId = $user?->id ?? \App\Models\User::where('email', 'admin@obtainsolutions.com')->value('id') ?? \App\Models\User::first()?->id;
         $tenantKey = $user?->tenant?->google_maps_api_key;
 
         if ($mode === 'google_api') {
@@ -275,10 +275,14 @@ class ExtractorController extends Controller
         $message = '';
 
         if ($action === 'save' || $action === 'save_all') {
-            $affected = $query->update([
+            $updateData = [
                 'status' => 'saved',
                 'is_saved' => true,
-            ]);
+            ];
+            if ($tenantId) {
+                $updateData['tenant_id'] = $tenantId;
+            }
+            $affected = $query->update($updateData);
             $message = "Successfully saved {$affected} lead(s) to the master database.";
         } elseif ($action === 'discard') {
             $affected = $query->update([
@@ -480,7 +484,9 @@ class ExtractorController extends Controller
             ->exists();
 
         if (! $exists) {
-            $job->leads()->create(ExtractedLead::fromPayload($lead, $job->tenant_id, $job->user_id));
+            $tenantId = $job->tenant_id ?? \App\Models\Tenant::first()?->id;
+            $userId = $job->user_id ?? \App\Models\User::where('email', 'admin@obtainsolutions.com')->value('id');
+            $job->leads()->create(ExtractedLead::fromPayload($lead, $tenantId, $userId));
         }
 
         $job->forceFill([

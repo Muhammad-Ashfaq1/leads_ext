@@ -23,7 +23,12 @@ class JobsController extends Controller
         $jobs = ExtractionJob::query()
             ->with(['user', 'tenant'])
             ->withCount('leads')
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
+                $q->where(function ($sub) use ($tenantId): void {
+                    $sub->where('tenant_id', $tenantId)
+                        ->orWhereNull('tenant_id');
+                });
+            })
             ->latest('id')
             ->paginate($perPage)
             ->withQueryString();

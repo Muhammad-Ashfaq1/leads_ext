@@ -32,7 +32,12 @@ class LeadsController extends Controller
 
         $query = ExtractedLead::query()
             ->with(['job', 'tenant'])
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
+                $q->where(function ($sub) use ($tenantId): void {
+                    $sub->where('tenant_id', $tenantId)
+                        ->orWhereNull('tenant_id');
+                });
+            })
             ->when($search !== '', function ($q) use ($search): void {
                 $q->where(function ($inner) use ($search): void {
                     $inner->where('business_name', 'like', "%{$search}%")
@@ -63,7 +68,12 @@ class LeadsController extends Controller
 
         // Available categories for filter dropdown
         $categories = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
+                $q->where(function ($sub) use ($tenantId): void {
+                    $sub->where('tenant_id', $tenantId)
+                        ->orWhereNull('tenant_id');
+                });
+            })
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -101,7 +111,12 @@ class LeadsController extends Controller
         }
 
         $query = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
+                $q->where(function ($sub) use ($tenantId): void {
+                    $sub->where('tenant_id', $tenantId)
+                        ->orWhereNull('tenant_id');
+                });
+            })
             ->when(! empty($ids), fn ($q) => $q->whereIn('id', $ids))
             ->orderBy('id');
 

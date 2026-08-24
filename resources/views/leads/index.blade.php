@@ -81,13 +81,41 @@
         </form>
     </div>
 
+    <!-- Bulk Actions Toolbar (Active when rows checked) -->
+    <div class="p-2 px-3 border-bottom bg-primary-subtle d-none" id="leadsBulkBar">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary text-white fs-6 px-3 py-1" id="leadsBulkCount">0 selected</span>
+                <button type="button" class="btn btn-xs btn-outline-primary" id="selectAllPageBtn">Select All on Page ({{ count($leads) }})</button>
+                <button type="button" class="btn btn-xs btn-link text-secondary text-decoration-none p-0" id="deselectAllBtn">Deselect All</button>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-success" id="exportSelectedExcelBtn">
+                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export Selected (Excel)
+                </button>
+                <button type="button" class="btn btn-sm btn-info text-white" id="exportSelectedCsvBtn">
+                    <i class="icon-base ti tabler-file-text me-1"></i>CSV
+                </button>
+                <button type="button" class="btn btn-sm btn-label-secondary" id="copySelectedEmailsBtn" title="Copy all emails from selected leads">
+                    <i class="icon-base ti tabler-copy me-1"></i>Emails
+                </button>
+                <button type="button" class="btn btn-sm btn-label-secondary" id="copySelectedPhonesBtn" title="Copy all phones from selected leads">
+                    <i class="icon-base ti tabler-phone me-1"></i>Phones
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn" title="Delete selected leads from database">
+                    <i class="icon-base ti tabler-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Table -->
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="table table-hover align-middle mb-0" id="leadsTable">
             <thead class="table-light">
                 <tr>
                     <th class="ps-3" style="width: 40px;">
-                        <input class="form-check-input" type="checkbox" id="masterTableCheckbox">
+                        <input class="form-check-input" type="checkbox" id="masterTableCheckbox" style="cursor: pointer;" title="Select / Deselect all on this page">
                     </th>
                     <th>Business Name</th>
                     <th>Category</th>
@@ -107,9 +135,9 @@
                         $vStatus = is_array($lead->email_verification_status) ? $lead->email_verification_status : [];
                         $isValidEmail = $firstEmail && isset($vStatus[$firstEmail]['is_valid']) && $vStatus[$firstEmail]['is_valid'];
                     @endphp
-                    <tr>
+                    <tr data-id="{{ $lead->id }}" style="cursor: pointer;">
                         <td class="ps-3">
-                            <input class="form-check-input row-select-checkbox" type="checkbox" value="{{ $lead->id }}">
+                            <input class="form-check-input row-select-checkbox" type="checkbox" value="{{ $lead->id }}" style="cursor: pointer;" data-email="{{ $firstEmail }}" data-phone="{{ $lead->phone }}">
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
@@ -251,4 +279,275 @@
         </div>
     @endif
 </div>
+
+<!-- Toast notification container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="leadsPageToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="leadsPageToastBody">Action completed.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const masterCheckbox = document.getElementById('masterTableCheckbox');
+    const rowCheckboxes = document.querySelectorAll('.row-select-checkbox');
+    const bulkBar = document.getElementById('leadsBulkBar');
+    const bulkCountLabel = document.getElementById('leadsBulkCount');
+    const selectAllPageBtn = document.getElementById('selectAllPageBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const exportSelectedExcelBtn = document.getElementById('exportSelectedExcelBtn');
+    const exportSelectedCsvBtn = document.getElementById('exportSelectedCsvBtn');
+    const copySelectedEmailsBtn = document.getElementById('copySelectedEmailsBtn');
+    const copySelectedPhonesBtn = document.getElementById('copySelectedPhonesBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const toastEl = document.getElementById('leadsPageToast');
+    const toastBody = document.getElementById('leadsPageToastBody');
+
+    let toastInstance = null;
+    if (toastEl && window.bootstrap && window.bootstrap.Toast) {
+        toastInstance = new window.bootstrap.Toast(toastEl, { delay: 3000 });
+    }
+
+    function showToast(message, isDanger = false) {
+        if (!toastEl || !toastBody) {
+            alert(message);
+            return;
+        }
+        toastBody.textContent = message;
+        toastEl.className = `toast align-items-center border-0 ${isDanger ? 'text-bg-danger' : 'text-bg-primary'}`;
+        if (toastInstance) toastInstance.show();
+    }
+
+    function getSelectedIds() {
+        const ids = [];
+        document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
+            const id = parseInt(cb.value, 10);
+            if (id) ids.push(id);
+        });
+        return ids;
+    }
+
+    function updateSelectionState() {
+        const total = rowCheckboxes.length;
+        const checkedList = document.querySelectorAll('.row-select-checkbox:checked');
+        const selected = checkedList.length;
+
+        if (masterCheckbox) {
+            if (total > 0 && selected === total) {
+                masterCheckbox.checked = true;
+                masterCheckbox.indeterminate = false;
+            } else if (selected > 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = true;
+            } else {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+            }
+        }
+
+        if (bulkBar) {
+            if (selected > 0) {
+                bulkBar.classList.remove('d-none');
+                if (bulkCountLabel) bulkCountLabel.textContent = `${selected} selected`;
+            } else {
+                bulkBar.classList.add('d-none');
+            }
+        }
+
+        // Highlight selected rows
+        rowCheckboxes.forEach(cb => {
+            const tr = cb.closest('tr');
+            if (tr) {
+                tr.classList.toggle('table-active', cb.checked);
+            }
+        });
+    }
+
+    // Master Table Checkbox
+    if (masterCheckbox) {
+        masterCheckbox.addEventListener('change', () => {
+            const shouldCheck = masterCheckbox.checked;
+            rowCheckboxes.forEach(cb => {
+                cb.checked = shouldCheck;
+            });
+            updateSelectionState();
+        });
+    }
+
+    // Individual Row Checkboxes
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateSelectionState();
+        });
+    });
+
+    // Row Click to toggle
+    document.querySelectorAll('#leadsTable tbody tr').forEach(tr => {
+        tr.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, .btn, input, label, select, .dropdown')) {
+                return;
+            }
+            const cb = tr.querySelector('.row-select-checkbox');
+            if (cb) {
+                cb.checked = !cb.checked;
+                updateSelectionState();
+            }
+        });
+    });
+
+    // Select All on Page button
+    if (selectAllPageBtn) {
+        selectAllPageBtn.addEventListener('click', () => {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = true;
+            });
+            updateSelectionState();
+        });
+    }
+
+    // Deselect All button
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', () => {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectionState();
+        });
+    }
+
+    // Export Selected Excel
+    if (exportSelectedExcelBtn) {
+        exportSelectedExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const ids = getSelectedIds();
+            if (!ids.length) {
+                showToast('Please select at least one lead.', true);
+                return;
+            }
+            window.location.href = `{{ route('leads.export.excel') }}?ids=${ids.join(',')}`;
+        });
+    }
+
+    // Export Selected CSV
+    if (exportSelectedCsvBtn) {
+        exportSelectedCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const ids = getSelectedIds();
+            if (!ids.length) {
+                showToast('Please select at least one lead.', true);
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("leads.export-selected") }}';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            const formatInput = document.createElement('input');
+            formatInput.type = 'hidden';
+            formatInput.name = 'format';
+            formatInput.value = 'csv';
+            form.appendChild(formatInput);
+
+            ids.forEach(id => {
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'lead_ids[]';
+                idInput.value = id;
+                form.appendChild(idInput);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        });
+    }
+
+    // Quick Copy Emails
+    if (copySelectedEmailsBtn) {
+        copySelectedEmailsBtn.addEventListener('click', () => {
+            const emails = new Set();
+            document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
+                const email = cb.dataset.email;
+                if (email && email.trim()) emails.add(email.trim());
+            });
+            if (emails.size === 0) {
+                showToast('No emails found in selected leads.', true);
+                return;
+            }
+            navigator.clipboard.writeText(Array.from(emails).join(', ')).then(() => {
+                showToast(`Copied ${emails.size} email(s) to clipboard.`);
+            });
+        });
+    }
+
+    // Quick Copy Phones
+    if (copySelectedPhonesBtn) {
+        copySelectedPhonesBtn.addEventListener('click', () => {
+            const phones = new Set();
+            document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
+                const phone = cb.dataset.phone;
+                if (phone && phone.trim()) phones.add(phone.trim());
+            });
+            if (phones.size === 0) {
+                showToast('No phone numbers found in selected leads.', true);
+                return;
+            }
+            navigator.clipboard.writeText(Array.from(phones).join(', ')).then(() => {
+                showToast(`Copied ${phones.size} phone number(s) to clipboard.`);
+            });
+        });
+    }
+
+    // Delete Selected Leads
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', async () => {
+            const ids = getSelectedIds();
+            if (!ids.length) {
+                showToast('Please select at least one lead to delete.', true);
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected lead(s)?`)) {
+                return;
+            }
+
+            deleteSelectedBtn.disabled = true;
+            try {
+                const response = await fetch('{{ route("leads.bulk-action") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        lead_ids: ids,
+                        action: 'delete'
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    showToast(data.message || 'Failed to delete leads.', true);
+                    deleteSelectedBtn.disabled = false;
+                }
+            } catch (err) {
+                showToast('Network error while deleting leads.', true);
+                deleteSelectedBtn.disabled = false;
+            }
+        });
+    }
+});
+</script>
+@endpush
