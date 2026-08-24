@@ -100,6 +100,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '436 N Bedford Dr, Beverly Hills, CA 90210',
                 'phone' => '(310) 274-8828',
                 'web' => 'https://beverlyhillsdentalstudio.com',
+                'avatar' => 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['info@beverlyhillsdentalstudio.com', 'care@beverlyhillsdentalstudio.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/beverly-hills-dental-studio',
@@ -115,6 +116,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '9400 Wilshire Blvd, Beverly Hills, CA 90212',
                 'phone' => '(310) 550-7000',
                 'web' => 'https://rodeodentalcare.com',
+                'avatar' => 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['care@rodeodentalcare.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/rodeodentalcare',
@@ -130,6 +132,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '8500 Wilshire Blvd, Beverly Hills, CA 90211',
                 'phone' => '(310) 659-5437',
                 'web' => 'https://sunsethillsdentistry.com',
+                'avatar' => 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['hello@sunsethillsdentistry.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/sunsethillsdentistry',
@@ -145,6 +148,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '9735 Wilshire Blvd, Beverly Hills, CA 90212',
                 'phone' => '(310) 278-1440',
                 'web' => 'https://crownandroot.com',
+                'avatar' => 'https://images.unsplash.com/photo-1598256989800-fe5f95da9787?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['appointments@crownandroot.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/crown-and-root',
@@ -159,6 +163,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '9100 Wilshire Blvd, Beverly Hills, CA 90212',
                 'phone' => '(310) 273-0101',
                 'web' => 'https://wilshiresmiles.com',
+                'avatar' => 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['frontdesk@wilshiresmiles.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/wilshiresmiles',
@@ -193,7 +198,7 @@ class DatabaseSeeder extends Seeder
                 'emails' => $d['emails'],
                 'social_links' => $d['socials'],
                 'email_verification_status' => $vStatus,
-                'avatar_url' => 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
+                'avatar_url' => $d['avatar'] ?? 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
                 'website' => $d['web'],
                 'category' => $d['cat'],
                 'rating' => $d['rating'],
@@ -229,6 +234,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '1910 Pacific Ave, Dallas, TX 75201',
                 'phone' => '(214) 555-0199',
                 'web' => 'https://dallasmasterplumbing.com',
+                'avatar' => 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['service@dallasmasterplumbing.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/dallasmasterplumbing',
@@ -244,6 +250,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '2500 Main St, Dallas, TX 75226',
                 'phone' => '(214) 555-0240',
                 'web' => 'https://lonestarplumbingtx.com',
+                'avatar' => 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['dispatch@lonestarplumbingtx.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/lonestarplumbingtx',
@@ -258,6 +265,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '6000 Preston Rd, Dallas, TX 75205',
                 'phone' => '(214) 555-0377',
                 'web' => 'https://prestonhollowplumbing.com',
+                'avatar' => 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['contact@prestonhollowplumbing.com'],
                 'socials' => [
                     'facebook' => 'https://www.facebook.com/prestonhollowplumbing',
@@ -292,7 +300,7 @@ class DatabaseSeeder extends Seeder
                 'emails' => $p['emails'],
                 'social_links' => $p['socials'],
                 'email_verification_status' => $vStatus,
-                'avatar_url' => 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
+                'avatar_url' => $p['avatar'] ?? 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
                 'website' => $p['web'],
                 'category' => $p['cat'],
                 'rating' => $p['rating'],
@@ -328,6 +336,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '1450 Brickell Ave, Miami, FL 33131',
                 'phone' => '(305) 371-2000',
                 'web' => 'https://brickellluxury.com',
+                'avatar' => 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['leads@brickellluxury.com', 'agents@brickellluxury.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/brickell-luxury-realty',
@@ -344,6 +353,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '1100 Lincoln Rd, Miami Beach, FL 33139',
                 'phone' => '(305) 538-4444',
                 'web' => 'https://soberealty.com',
+                'avatar' => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['info@soberealty.com'],
                 'socials' => [
                     'instagram' => 'https://www.instagram.com/soberealty',
@@ -358,6 +368,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '255 Aragon Ave, Coral Gables, FL 33134',
                 'phone' => '(305) 445-1200',
                 'web' => 'https://coralgablesproperties.com',
+                'avatar' => 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['contact@coralgablesproperties.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/coral-gables-estates',
@@ -392,7 +403,7 @@ class DatabaseSeeder extends Seeder
                 'emails' => $re['emails'],
                 'social_links' => $re['socials'],
                 'email_verification_status' => $vStatus,
-                'avatar_url' => 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
+                'avatar_url' => $re['avatar'] ?? 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
                 'website' => $re['web'],
                 'category' => $re['cat'],
                 'rating' => $re['rating'],
@@ -428,6 +439,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '350 5th Ave, New York, NY 10118',
                 'phone' => '(212) 555-0188',
                 'web' => 'https://manhattancorporatelaw.com',
+                'avatar' => 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['partner@manhattancorporatelaw.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/manhattan-corporate-counsel',
@@ -442,6 +454,7 @@ class DatabaseSeeder extends Seeder
                 'addr' => '100 Wall St, New York, NY 10005',
                 'phone' => '(212) 555-0144',
                 'web' => 'https://wallstreetadvisorslaw.com',
+                'avatar' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=160&auto=format&fit=crop&q=80',
                 'emails' => ['info@wallstreetadvisorslaw.com'],
                 'socials' => [
                     'linkedin' => 'https://www.linkedin.com/company/wall-street-legal-advisors',
@@ -476,7 +489,7 @@ class DatabaseSeeder extends Seeder
                 'emails' => $lf['emails'],
                 'social_links' => $lf['socials'],
                 'email_verification_status' => $vStatus,
-                'avatar_url' => 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
+                'avatar_url' => $lf['avatar'] ?? 'https://www.google.com/s2/favicons?domain='.urlencode($domain).'&sz=128',
                 'website' => $lf['web'],
                 'category' => $lf['cat'],
                 'rating' => $lf['rating'],
