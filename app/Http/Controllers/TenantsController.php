@@ -10,9 +10,17 @@ use Illuminate\View\View;
 
 class TenantsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tenants = Tenant::withCount(['users', 'jobs', 'leads'])->latest('id')->paginate(15);
+        $perPage = (int) $request->input('per_page', 10);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $tenants = Tenant::withCount(['users', 'jobs', 'leads'])
+            ->latest('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.index', [
             'tenants' => $tenants,

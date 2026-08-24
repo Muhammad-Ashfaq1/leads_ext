@@ -19,11 +19,17 @@ class UsersController extends Controller
         $isSuperAdmin = $currentUser->isSuperAdmin();
         $tenantId = $currentUser->tenant_id;
 
+        $perPage = (int) $request->input('per_page', 10);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
         $users = User::query()
             ->with('tenant')
             ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
             ->latest('id')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $tenants = $isSuperAdmin ? Tenant::where('is_active', true)->get() : collect();
 

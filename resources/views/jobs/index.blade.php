@@ -100,11 +100,29 @@
         </table>
     </div>
 
-    @if ($jobs->hasPages())
+    @if ($jobs->total() > 0)
         <div class="card-footer border-top py-3">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <small class="text-muted">Showing {{ $jobs->firstItem() }} to {{ $jobs->lastItem() }} of {{ number_format($jobs->total()) }} extraction tasks</small>
-                <div>{{ $jobs->links('vendor.pagination.pos') }}</div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted">
+                        Showing <span class="fw-semibold text-heading">{{ $jobs->firstItem() }}</span> to <span class="fw-semibold text-heading">{{ $jobs->lastItem() }}</span> of <span class="fw-semibold text-heading">{{ number_format($jobs->total()) }}</span> tasks
+                    </small>
+                    <div class="d-inline-flex align-items-center ms-3">
+                        <label for="perPageJobs" class="small text-muted me-1 text-nowrap d-none d-sm-inline">Show:</label>
+                        <select id="perPageJobs" class="form-select form-select-sm" style="width: auto;" onchange="window.location.href=this.value">
+                            @foreach ([10, 25, 50, 100] as $size)
+                                <option value="{{ request()->fullUrlWithQuery(['per_page' => $size, 'page' => 1]) }}" @selected($jobs->perPage() == $size)>
+                                    {{ $size }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    {{ $jobs->links('vendor.pagination.pos') }}
+                </div>
+            </div>
+        </div>
     @endif
 </div>
 @endsection

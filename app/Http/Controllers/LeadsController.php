@@ -54,7 +54,12 @@ class LeadsController extends Controller
             ->when($jobId, fn ($q) => $q->where('extraction_job_id', $jobId))
             ->latest('id');
 
-        $leads = $query->paginate(20)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $leads = $query->paginate($perPage)->withQueryString();
 
         // Available categories for filter dropdown
         $categories = ExtractedLead::query()

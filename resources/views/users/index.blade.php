@@ -139,11 +139,27 @@
         </table>
     </div>
 
-    @if ($users->hasPages())
+    @if ($users->total() > 0)
         <div class="card-footer border-top py-3">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <small class="text-muted">Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ number_format($users->total()) }} members</small>
-                <div>{{ $users->links('vendor.pagination.pos') }}</div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted">
+                        Showing <span class="fw-semibold text-heading">{{ $users->firstItem() }}</span> to <span class="fw-semibold text-heading">{{ $users->lastItem() }}</span> of <span class="fw-semibold text-heading">{{ number_format($users->total()) }}</span> members
+                    </small>
+                    <div class="d-inline-flex align-items-center ms-3">
+                        <label for="perPageUsers" class="small text-muted me-1 text-nowrap d-none d-sm-inline">Show:</label>
+                        <select id="perPageUsers" class="form-select form-select-sm" style="width: auto;" onchange="window.location.href=this.value">
+                            @foreach ([10, 25, 50, 100] as $size)
+                                <option value="{{ request()->fullUrlWithQuery(['per_page' => $size, 'page' => 1]) }}" @selected($users->perPage() == $size)>
+                                    {{ $size }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    {{ $users->links('vendor.pagination.pos') }}
+                </div>
             </div>
         </div>
     @endif
