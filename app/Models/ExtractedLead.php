@@ -15,6 +15,8 @@ class ExtractedLead extends Model
         'address',
         'phone',
         'emails',
+        'social_links',
+        'email_verification_status',
         'avatar_url',
         'website',
         'google_maps_url',
@@ -36,6 +38,8 @@ class ExtractedLead extends Model
     {
         return [
             'emails' => 'array',
+            'social_links' => 'array',
+            'email_verification_status' => 'array',
             'metadata' => 'array',
             'rating' => 'float',
             'review_count' => 'integer',
@@ -69,6 +73,8 @@ class ExtractedLead extends Model
             'address' => $lead['address'] ?? null,
             'phone' => $lead['phone'] ?? null,
             'emails' => $lead['emails'] ?? [],
+            'social_links' => $lead['social_links'] ?? [],
+            'email_verification_status' => $lead['email_verification_status'] ?? [],
             'avatar_url' => $lead['avatar_url'] ?? null,
             'website' => $lead['website'] ?? null,
             'google_maps_url' => $lead['google_maps_url'] ?? null,

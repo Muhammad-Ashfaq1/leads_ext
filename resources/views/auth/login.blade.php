@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/iconify-icons.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-glass.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/extractor.css') }}" />
     <style>
         .auth-wrapper {
@@ -26,28 +27,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at 10% 20%, rgba(105, 108, 255, 0.08) 0%, rgba(248, 249, 250, 0.95) 90%);
+            background: radial-gradient(circle at 10% 20%, rgba(105, 108, 255, 0.12) 0%, rgba(248, 249, 250, 0.96) 90%);
             padding: 1.5rem;
         }
         .auth-card {
             width: 100%;
-            max-width: 440px;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(105, 108, 255, 0.15);
-            box-shadow: 0 10px 30px rgba(47, 43, 61, 0.08);
+            max-width: 450px;
+            border-radius: 1rem;
+            border: 1px solid rgba(105, 108, 255, 0.18);
+            box-shadow: 0 16px 40px rgba(47, 43, 61, 0.1);
             background: #ffffff;
         }
         .auth-brand-badge {
-            width: 3.2rem;
-            height: 3.2rem;
-            border-radius: 0.75rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 0.85rem;
             background: linear-gradient(135deg, #696cff, #4338ca);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 1.6rem;
-            box-shadow: 0 4px 12px rgba(105, 108, 255, 0.35);
+            font-size: 1.8rem;
+            box-shadow: 0 6px 16px rgba(105, 108, 255, 0.35);
+        }
+        .demo-cred-btn {
+            background: rgba(105, 108, 255, 0.08);
+            border: 1px dashed rgba(105, 108, 255, 0.35);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+        .demo-cred-btn:hover {
+            background: rgba(105, 108, 255, 0.18);
+            border-color: #696cff;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -60,7 +76,7 @@
                         <i class="icon-base ti tabler-radar"></i>
                     </div>
                     <h4 class="mb-1 fw-bold">Leads Engine</h4>
-                    <p class="text-muted small mb-0">Please sign in to your account</p>
+                    <p class="text-muted small mb-0">Sign in to your Obtain Solutions account</p>
                 </div>
 
                 @if ($errors->any())
@@ -78,26 +94,53 @@
                     </div>
                 @endif
 
+                <!-- Quick Login Credentials Pill Bar -->
+                <div class="mb-4">
+                    <label class="form-label small text-muted fw-semibold mb-2">
+                        <i class="icon-base ti tabler-key me-1"></i> Quick Sign-In Accounts:
+                    </label>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="demo-cred-btn d-flex justify-content-between align-items-center" onclick="fillCreds('superadmin@obtainsolutions.com', 'Obtain@2026!')">
+                            <div>
+                                <span class="badge bg-label-danger me-1">Super Admin</span>
+                                <strong class="text-heading">superadmin@obtainsolutions.com</strong>
+                            </div>
+                            <i class="icon-base ti tabler-chevron-right text-muted"></i>
+                        </button>
+                        <button type="button" class="demo-cred-btn d-flex justify-content-between align-items-center" onclick="fillCreds('admin@obtainsolutions.com', 'Obtain@2026!')">
+                            <div>
+                                <span class="badge bg-label-primary me-1">Tenant Admin</span>
+                                <strong class="text-heading">admin@obtainsolutions.com</strong>
+                            </div>
+                            <i class="icon-base ti tabler-chevron-right text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <form method="POST" action="{{ route('login.post') }}">
                     @csrf
                     <div class="mb-3">
                         <label for="email" class="form-label fw-medium">Email Address</label>
-                        <input
-                            type="email"
-                            class="form-control @error('email') is-invalid @enderror"
-                            id="email"
-                            name="email"
-                            value="{{ old('email') }}"
-                            placeholder="Enter your email"
-                            autocomplete="email"
-                            autofocus
-                            required>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="icon-base ti tabler-mail"></i></span>
+                            <input
+                                type="email"
+                                class="form-control @error('email') is-invalid @enderror"
+                                id="email"
+                                name="email"
+                                value="{{ old('email') }}"
+                                placeholder="Enter your email"
+                                autocomplete="email"
+                                autofocus
+                                required>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-medium mb-0" for="password">Password</label>
                         </div>
-                        <div class="input-group input-group-merge">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="icon-base ti tabler-lock"></i></span>
                             <input
                                 type="password"
                                 id="password"
@@ -106,21 +149,48 @@
                                 placeholder="············"
                                 autocomplete="current-password"
                                 required>
+                            <span class="input-group-text cursor-pointer" id="togglePasswordBtn" title="Toggle password visibility">
+                                <i class="icon-base ti tabler-eye" id="togglePasswordIcon"></i>
+                            </span>
                         </div>
                     </div>
                     <div class="mb-3 d-flex justify-content-between align-items-center">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                            <input class="form-check-input" type="checkbox" id="remember" name="remember" checked>
                             <label class="form-check-label small" for="remember">Remember Me</label>
                         </div>
                     </div>
                     <button class="btn btn-primary d-grid w-100 py-2 fw-semibold" type="submit">
-                        <i class="icon-base ti tabler-login me-1"></i> Sign In
+                        <i class="icon-base ti tabler-login me-1"></i> Sign In to Platform
                     </button>
                 </form>
 
+                <div class="text-center mt-4">
+                    <small class="text-muted">Obtain Solutions Leads Engine Platform © 2026</small>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        function fillCreds(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
+        }
+
+        document.getElementById('togglePasswordBtn').addEventListener('click', function () {
+            const pwdInput = document.getElementById('password');
+            const icon = document.getElementById('togglePasswordIcon');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                icon.classList.remove('tabler-eye');
+                icon.classList.add('tabler-eye-off');
+            } else {
+                pwdInput.type = 'password';
+                icon.classList.remove('tabler-eye-off');
+                icon.classList.add('tabler-eye');
+            }
+        });
+    </script>
 </body>
 </html>
