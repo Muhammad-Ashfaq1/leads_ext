@@ -153,7 +153,7 @@
                                                 @endif
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                    <form action="{{ route('email-templates.destroy', $tmpl) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this template?');">
+                                                    <form action="{{ route('email-templates.destroy', $tmpl) }}" method="POST" onsubmit="return confirmDeleteTemplate(event, this);">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger">
@@ -398,9 +398,30 @@ function formatDoc(cmd, val = null) {
 }
 
 function insertLinkPrompt() {
-    const url = prompt('Enter link URL (e.g. https://yourwebsite.com):');
-    if (url) {
-        formatDoc('createLink', url);
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Insert Link',
+            input: 'url',
+            inputLabel: 'Enter Web Link URL',
+            inputPlaceholder: 'https://example.com',
+            showCancelButton: true,
+            confirmButtonText: 'Insert Link',
+            customClass: {
+                popup: 'pos-swal-popup pos-glass-card',
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-outline-secondary'
+            },
+            buttonsStyling: false
+        }).then(result => {
+            if (result.isConfirmed && result.value) {
+                formatDoc('createLink', result.value);
+            }
+        });
+    } else {
+        const url = prompt('Enter link URL (e.g. https://yourwebsite.com):');
+        if (url) {
+            formatDoc('createLink', url);
+        }
     }
 }
 
@@ -408,6 +429,30 @@ function insertVariable(tag) {
     const editor = document.getElementById('richEditor');
     editor.focus();
     document.execCommand('insertText', false, tag);
+    if (typeof window.showToast === 'function') {
+        window.showToast('info', `Inserted placeholder: ${tag}`, 'Template Editor');
+    }
+}
+
+function confirmDeleteTemplate(event, form) {
+    event.preventDefault();
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm(
+            'Delete Template?',
+            'Are you sure you want to delete this outreach email template? This action cannot be undone.',
+            'Yes, Delete Template',
+            true
+        ).then(result => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else {
+        if (confirm('Are you sure you want to delete this template?')) {
+            form.submit();
+        }
+    }
+    return false;
 }
 
 function switchToBuilder() {

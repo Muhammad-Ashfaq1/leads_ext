@@ -37,7 +37,7 @@ class ExtractorPageTest extends TestCase
             ->assertOk()
             ->assertSee('Leads Engine')
             ->assertSee('Lead Extractor')
-            ->assertSee('What leads do you want to find?')
+            ->assertSee('Industry / Business Category')
             ->assertSee('Start Extraction')
             ->assertSee('Extraction Status')
             ->assertDontSee('AWT Phone');

@@ -26,7 +26,15 @@
         customOptionBrowser: document.getElementById('customOptionBrowser'),
         promptLabel: document.getElementById('promptLabel'),
         promptInputCol: document.getElementById('promptInputCol'),
-        locationInputCol: document.getElementById('locationInputCol'),
+        businessNameCol: document.getElementById('businessNameCol'),
+        businessName: document.getElementById('businessNameInput'),
+        locationParamsContainer: document.getElementById('locationParamsContainer'),
+        cityInput: document.getElementById('cityInput'),
+        stateInput: document.getElementById('stateInput'),
+        zipCodeInput: document.getElementById('zipCodeInput'),
+        countrySelect: document.getElementById('countrySelect'),
+        clearLocationFieldsBtn: document.getElementById('clearLocationFieldsBtn'),
+        radiusSelect: document.getElementById('radiusSelect'),
         locationInput: document.getElementById('locationInput'),
         apiKeyRow: document.getElementById('apiKeyRow'),
         toggleApiKeyBtn: document.getElementById('toggleApiKeyBtn'),
@@ -184,9 +192,15 @@
     }
 
     function setAlert(type, message, show = true) {
-        els.alert.className = `alert alert-${type}`;
-        els.alert.textContent = message;
-        els.alert.classList.toggle('d-none', !show);
+        if (els.alert) {
+            els.alert.className = `alert alert-${type}`;
+            els.alert.textContent = message;
+            els.alert.classList.toggle('d-none', !show);
+        }
+        if (show && message && typeof window.showToast === 'function') {
+            const toastType = (type === 'danger' ? 'error' : (type === 'secondary' ? 'info' : type));
+            window.showToast(toastType, message);
+        }
     }
 
     function setRunning(running) {
@@ -1046,38 +1060,46 @@
         if (els.customOptionBrowser) els.customOptionBrowser.classList.toggle('checked', !isGoogleApi);
 
         if (isGoogleApi) {
-            if (els.locationInputCol) els.locationInputCol.classList.remove('d-none');
+            if (els.locationParamsContainer) els.locationParamsContainer.classList.remove('d-none');
+            if (els.businessNameCol) els.businessNameCol.classList.remove('d-none');
             if (els.promptInputCol) {
                 els.promptInputCol.classList.remove('col-12');
                 els.promptInputCol.classList.add('col-lg-7');
             }
             if (els.preFiltersContainer) els.preFiltersContainer.classList.remove('d-none');
-            if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
-            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Law Firms';
+            if (els.promptLabel) els.promptLabel.innerHTML = '<i class="icon-base ti tabler-category me-1 text-primary"></i>Industry / Business Category <span class="text-danger">*</span>';
+            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists, Real Estate, Plumbers, Software Companies';
             if (els.verifyToggleWrap) els.verifyToggleWrap.classList.add('d-none');
         } else {
-            if (els.locationInputCol) els.locationInputCol.classList.add('d-none');
+            if (els.locationParamsContainer) els.locationParamsContainer.classList.add('d-none');
+            if (els.businessNameCol) els.businessNameCol.classList.add('d-none');
             if (els.promptInputCol) {
                 els.promptInputCol.classList.remove('col-lg-7');
                 els.promptInputCol.classList.add('col-12');
             }
             if (els.preFiltersContainer) els.preFiltersContainer.classList.add('d-none');
-            if (els.promptLabel) els.promptLabel.textContent = 'What leads do you want to find?';
-            if (els.prompt) els.prompt.placeholder = 'e.g. Find dentists in Lahore';
+            if (els.promptLabel) els.promptLabel.innerHTML = '<i class="icon-base ti tabler-category me-1 text-primary"></i>Search Query (e.g. "Dentists in Beverly Hills, CA") <span class="text-danger">*</span>';
+            if (els.prompt) els.prompt.placeholder = 'e.g. Dentists in Beverly Hills, CA 90210';
             if (els.verifyToggleWrap) els.verifyToggleWrap.classList.remove('d-none');
             if (els.apiKeyRow) els.apiKeyRow.classList.add('d-none');
         }
     }
 
     async function startExtraction() {
-        const prompt = (els.prompt.value || '').trim();
-        const location = (els.locationInput?.value || '').trim();
+        const prompt = (els.prompt?.value || '').trim();
+        const businessName = (els.businessName?.value || '').trim();
+        const city = (els.cityInput?.value || '').trim();
+        const stateVal = (els.stateInput?.value || '').trim();
+        const zipCode = (els.zipCodeInput?.value || '').trim();
+        const country = (els.countrySelect?.value || '').trim();
+        const radius = Number(els.radiusSelect?.value || 0);
+        const directLocation = (els.locationInput?.value || '').trim();
         const isGoogleApi = els.engineGoogleApi?.checked ?? false;
         const customApiKey = (els.customApiKeyInput?.value || '').trim();
 
         if (prompt.length < 2) {
-            setAlert('warning', 'Please enter a search prompt or business category (e.g. “Dentists”).', true);
-            els.prompt.focus();
+            setAlert('warning', 'Please enter an industry or business category (e.g. “Dentists”, “Real Estate”).', true);
+            if (els.prompt) els.prompt.focus();
             return;
         }
 
@@ -1110,15 +1132,27 @@
         setRunning(true);
 
         state.leads.clear();
+        state.selectedKeys.clear();
+        state.leadCounter = 0;
+        state.isSaved = false;
+        renderLeads();
+        updateSelectionUi();
+
+        try {
             const payloadData = {
                 prompt,
-                limit: Number(els.limit.value || 100),
+                business_name: businessName || undefined,
+                city: city || undefined,
+                state: stateVal || undefined,
+                zip_code: zipCode || undefined,
+                country: country || undefined,
+                radius: radius > 0 ? radius : undefined,
+                location: directLocation || undefined,
+                limit: Number(els.limit?.value || 100),
                 mode,
                 simulate_verification: Boolean(els.verify?.checked),
             };
-            if (location) {
-                payloadData.location = location;
-            }
+
             if (customApiKey) {
                 payloadData.api_key = customApiKey;
             }
@@ -1169,29 +1203,46 @@
         await fetch(jobUrl(cfg.verifyCompleteUrl), { method: 'POST', headers: headers() });
     }
 
-    function clearResults() {
+    async function clearResults() {
+        if (state.leads && state.leads.size > 0 && !state.isSaved) {
+            if (typeof window.showConfirm === 'function') {
+                const confirmed = await window.showConfirm(
+                    'Clear Discovered Leads?',
+                    `You have ${state.leads.size} discovered lead(s) on screen that will be cleared. Do you want to continue?`,
+                    'Yes, Clear Results',
+                    false
+                );
+                if (!confirmed.isConfirmed) return;
+            }
+        }
         closeStream();
         try {
+            localStorage.removeItem(STORAGE_KEY);
+        } catch (_) {}
+
         state.leads.clear();
         state.selectedKeys.clear();
         state.leadCounter = 0;
         state.isSaved = false;
         renderLeads();
 
-        els.kpiLeads.textContent = '0';
-        els.kpiSeen.textContent = '0';
-        els.kpiEmails.textContent = '0';
-        els.kpiWebsites.textContent = '0';
-        els.summaryCard.classList.add('d-none');
+        if (els.kpiLeads) els.kpiLeads.textContent = '0';
+        if (els.kpiSeen) els.kpiSeen.textContent = '0';
+        if (els.kpiEmails) els.kpiEmails.textContent = '0';
+        if (els.kpiWebsites) els.kpiWebsites.textContent = '0';
+        if (els.summaryCard) els.summaryCard.classList.add('d-none');
         showVerification(false);
         setAlert('info', '', false);
         setStatus('ready', 'Waiting for a search.');
-        els.searchLabel.textContent = 'Search: —';
+        if (els.searchLabel) els.searchLabel.textContent = 'Search: —';
         if (els.exportSummary) {
             els.exportSummary.classList.add('disabled');
             els.exportSummary.href = '#';
         }
         setRunning(false);
+        if (typeof window.showToast === 'function') {
+            window.showToast('info', 'Extraction results cleared.', 'Extractor');
+        }
     }
 
     function resetFilterValues() {
@@ -1687,6 +1738,29 @@
         }
     };
 
+    // Location reset and suggestion pills
+    if (els.clearLocationFieldsBtn) {
+        els.clearLocationFieldsBtn.addEventListener('click', () => {
+            if (els.cityInput) els.cityInput.value = '';
+            if (els.stateInput) els.stateInput.value = '';
+            if (els.zipCodeInput) els.zipCodeInput.value = '';
+            if (els.countrySelect) els.countrySelect.value = '';
+            if (els.locationInput) els.locationInput.value = '';
+            if (els.businessName) els.businessName.value = '';
+        });
+    }
+
+    document.querySelectorAll('.loc-suggestion-pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+            if (pill.dataset.cat && els.prompt) els.prompt.value = pill.dataset.cat;
+            if (pill.dataset.city && els.cityInput) els.cityInput.value = pill.dataset.city;
+            if (pill.dataset.state && els.stateInput) els.stateInput.value = pill.dataset.state;
+            if (pill.dataset.zip && els.zipCodeInput) els.zipCodeInput.value = pill.dataset.zip;
+            if (pill.dataset.country && els.countrySelect) els.countrySelect.value = pill.dataset.country;
+            if (els.prompt) els.prompt.focus();
+        });
+    });
+
     function saveStateToStorage() {
         try {
             if (!state.leads || state.leads.size === 0) {
@@ -1697,6 +1771,12 @@
             const data = {
                 jobId: state.jobId,
                 prompt: els.prompt ? els.prompt.value : '',
+                businessName: els.businessName ? els.businessName.value : '',
+                city: els.cityInput ? els.cityInput.value : '',
+                stateVal: els.stateInput ? els.stateInput.value : '',
+                zipCode: els.zipCodeInput ? els.zipCodeInput.value : '',
+                country: els.countrySelect ? els.countrySelect.value : '',
+                radius: els.radiusSelect ? els.radiusSelect.value : '0',
                 location: els.locationInput ? els.locationInput.value : '',
                 limit: els.limit ? els.limit.value : '100',
                 engineGoogleApi: els.engineGoogleApi ? els.engineGoogleApi.checked : true,
@@ -1740,6 +1820,12 @@
             }
 
             if (session.prompt && els.prompt) els.prompt.value = session.prompt;
+            if (session.businessName && els.businessName) els.businessName.value = session.businessName;
+            if (session.city && els.cityInput) els.cityInput.value = session.city;
+            if (session.stateVal && els.stateInput) els.stateInput.value = session.stateVal;
+            if (session.zipCode && els.zipCodeInput) els.zipCodeInput.value = session.zipCode;
+            if (session.country && els.countrySelect) els.countrySelect.value = session.country;
+            if (session.radius && els.radiusSelect) els.radiusSelect.value = session.radius;
             if (session.location && els.locationInput) els.locationInput.value = session.location;
             if (session.limit && els.limit) els.limit.value = session.limit;
             if (els.engineGoogleApi && els.engineBrowser) {

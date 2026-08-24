@@ -506,4 +506,32 @@ class ExtractorApiTest extends TestCase
         $this->assertStringContainsString('Repeated Business', $streamContent);
         $this->assertEquals(1, ExtractedLead::where('extraction_job_id', $job->id)->count());
     }
+
+    public function test_start_supports_granular_parameters_and_high_limit_up_to_2500(): void
+    {
+        $response = $this->postJson('/api/extractor/start', [
+            'prompt' => 'Dentists',
+            'business_name' => 'Apex Care',
+            'city' => 'Beverly Hills',
+            'state' => 'CA',
+            'zip_code' => '90210',
+            'country' => 'United States',
+            'radius' => 25,
+            'limit' => 2500,
+            'mode' => 'google_api',
+            'api_key' => 'AIzaSyFakeTestKey123',
+        ]);
+
+        $response->assertOk();
+        $data = $response->json();
+
+        $this->assertNotNull($data['job_id']);
+        $this->assertEquals('Apex Care Dentists in Beverly Hills, CA, 90210, United States', $data['query']);
+
+        $this->assertDatabaseHas('extraction_jobs', [
+            'uuid' => $data['job_id'],
+            'query' => 'Apex Care Dentists in Beverly Hills, CA, 90210, United States',
+            'limit' => 2500,
+        ]);
+    }
 }

@@ -403,13 +403,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showToast(message, isDanger = false) {
-        if (!toastEl || !toastBody) {
-            alert(message);
-            return;
+        if (typeof window.showToast === 'function') {
+            window.showToast(isDanger ? 'error' : 'success', message, isDanger ? 'Notice' : 'Success');
+        } else if (toastEl && toastBody) {
+            toastBody.textContent = message;
+            toastEl.className = `toast align-items-center border-0 ${isDanger ? 'text-bg-danger' : 'text-bg-primary'}`;
+            if (toastInstance) toastInstance.show();
+        } else {
+            console.log(message);
         }
-        toastBody.textContent = message;
-        toastEl.className = `toast align-items-center border-0 ${isDanger ? 'text-bg-danger' : 'text-bg-primary'}`;
-        if (toastInstance) toastInstance.show();
     }
 
     function getSelectedIds() {
@@ -447,6 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 bulkBar.classList.add('d-none');
             }
         }
+
+        // Toggle bulk action buttons enabled state
+        if (deleteSelectedBtn) deleteSelectedBtn.disabled = selected === 0;
 
         // Highlight selected rows
         rowCheckboxes.forEach(cb => {
@@ -518,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Please select at least one lead.', true);
                 return;
             }
+            showToast('Preparing Excel export...', false);
             window.location.href = `{{ route('leads.export.excel') }}?ids=${ids.join(',')}`;
         });
     }
@@ -532,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            showToast('Preparing CSV export...', false);
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{{ route("leads.export-selected") }}';
@@ -606,7 +613,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Please select at least one lead to delete.', true);
                 return;
             }
-            if (!confirm(`Are you sure you want to delete ${ids.length} selected lead(s)?`)) {
+
+            const confirmed = await window.showConfirm(
+                'Delete Selected Leads?',
+                `Are you sure you want to permanently delete ${ids.length} selected lead(s)? This action cannot be undone.`,
+                'Yes, Delete Leads',
+                true
+            );
+            if (!confirmed.isConfirmed) {
                 return;
             }
 
@@ -626,7 +640,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    window.location.reload();
+                    if (window.showToast) {
+                        window.showToast('success', data.message || 'Leads deleted successfully.');
+                    }
+                    setTimeout(() => window.location.reload(), 600);
                 } else {
                     showToast(data.message || 'Failed to delete leads.', true);
                     deleteSelectedBtn.disabled = false;

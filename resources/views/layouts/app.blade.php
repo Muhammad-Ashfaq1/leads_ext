@@ -37,6 +37,9 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pos-menu.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/pos-table.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/extractor.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <link rel="stylesheet" href="{{ asset('assets/css/pos-notifications.css') }}" />
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
     <style>
@@ -359,6 +362,105 @@
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Global Toastr Configuration (Matching POS Glass / Vuexy UI)
+        if (typeof toastr !== 'undefined') {
+            toastr.options = {
+                closeButton: true,
+                debug: false,
+                newestOnTop: true,
+                progressBar: true,
+                positionClass: 'toast-top-right',
+                preventDuplicates: false,
+                onclick: null,
+                showDuration: '300',
+                hideDuration: '1000',
+                timeOut: '4500',
+                extendedTimeOut: '1500',
+                showEasing: 'swing',
+                hideEasing: 'linear',
+                showMethod: 'fadeIn',
+                hideMethod: 'fadeOut'
+            };
+        }
+
+        // Global Helper: showToast
+        window.showToast = function(type, message, title = '') {
+            if (typeof toastr === 'undefined') {
+                console.log(`[${type}] ${title}: ${message}`);
+                return;
+            }
+            const titles = {
+                success: title || 'Success',
+                error: title || 'Error',
+                warning: title || 'Warning',
+                info: title || 'Notice'
+            };
+            switch (type) {
+                case 'success':
+                    toastr.success(message, titles.success);
+                    break;
+                case 'error':
+                case 'danger':
+                    toastr.error(message, titles.error);
+                    break;
+                case 'warning':
+                    toastr.warning(message, titles.warning);
+                    break;
+                default:
+                    toastr.info(message, titles.info);
+                    break;
+            }
+        };
+
+        // Global Helper: showConfirm
+        window.showConfirm = function(title, text, confirmButtonText = 'Yes, Proceed', isDanger = true) {
+            if (typeof Swal === 'undefined') {
+                return Promise.resolve({ isConfirmed: window.confirm(`${title}\n\n${text}`) });
+            }
+            return Swal.fire({
+                title: title,
+                text: text,
+                icon: isDanger ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonText: confirmButtonText,
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'pos-swal-popup pos-glass-card',
+                    confirmButton: isDanger ? 'btn btn-danger me-2' : 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-outline-secondary'
+                },
+                buttonsStyling: false
+            });
+        };
+
+        // Global Session Flash Alerts listener (Auto Toastr)
+        document.addEventListener('DOMContentLoaded', function () {
+            @if (session('success'))
+                showToast('success', {!! json_encode(session('success')) !!}, 'Success');
+            @endif
+
+            @if (session('error'))
+                showToast('error', {!! json_encode(session('error')) !!}, 'Error');
+            @endif
+
+            @if (session('warning'))
+                showToast('warning', {!! json_encode(session('warning')) !!}, 'Warning');
+            @endif
+
+            @if (session('info'))
+                showToast('info', {!! json_encode(session('info')) !!}, 'Information');
+            @endif
+
+            @if ($errors->any())
+                @foreach ($errors->all() as $error)
+                    showToast('error', {!! json_encode($error) !!}, 'Validation Error');
+                @endforeach
+            @endif
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>

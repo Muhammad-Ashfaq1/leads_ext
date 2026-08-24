@@ -6,8 +6,8 @@ return [
     'stream_timeout' => (int) env('EXTRACTOR_STREAM_TIMEOUT', 0),
     'default_limit' => (int) env('EXTRACTOR_DEFAULT_LIMIT', 100),
     'min_limit' => 1,
-    'max_limit' => 1000,
-    'allowed_limits' => [100, 500, 1000],
+    'max_limit' => 2500,
+    'allowed_limits' => [50, 100, 250, 500, 1000, 1500, 2000, 2500],
     'allow_mock' => env('APP_ENV', 'production') !== 'production'
         && filter_var(env('EXTRACTOR_ALLOW_MOCK', true), FILTER_VALIDATE_BOOL),
 ];
