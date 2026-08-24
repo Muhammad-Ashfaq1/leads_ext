@@ -138,6 +138,15 @@
             </tbody>
         </table>
     </div>
+
+    @if ($users->hasPages())
+        <div class="card-footer border-top py-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <small class="text-muted">Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ number_format($users->total()) }} members</small>
+                <div>{{ $users->links('vendor.pagination.pos') }}</div>
+            </div>
+        </div>
+    @endif
 </div>
 
 <!-- Create User Modal -->

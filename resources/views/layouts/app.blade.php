@@ -103,7 +103,6 @@
         <div class="layout-container">
             <!-- Sidebar / Vertical Menu -->
             <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-                <div class="app-brand demo py-3">
                 <div class="app-brand demo">
                     <a href="{{ route('dashboard') }}" class="app-brand-link text-decoration-none d-flex align-items-center gap-2">
                         <span class="app-brand-logo-custom">

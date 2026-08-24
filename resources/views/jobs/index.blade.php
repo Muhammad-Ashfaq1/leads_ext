@@ -103,10 +103,8 @@
     @if ($jobs->hasPages())
         <div class="card-footer border-top py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <small class="text-muted">Showing {{ $jobs->firstItem() }} to {{ $jobs->lastItem() }} of {{ $jobs->total() }} extraction tasks</small>
-                <div>{{ $jobs->links('pagination::bootstrap-5') }}</div>
-            </div>
-        </div>
+                <small class="text-muted">Showing {{ $jobs->firstItem() }} to {{ $jobs->lastItem() }} of {{ number_format($jobs->total()) }} extraction tasks</small>
+                <div>{{ $jobs->links('vendor.pagination.pos') }}</div>
     @endif
 </div>
 @endsection

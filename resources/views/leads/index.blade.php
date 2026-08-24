@@ -230,7 +230,7 @@
         <div class="card-footer border-top py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <small class="text-muted">Showing {{ $leads->firstItem() }} to {{ $leads->lastItem() }} of {{ number_format($leads->total()) }} leads</small>
-                <div>{{ $leads->links('pagination::bootstrap-5') }}</div>
+                <div>{{ $leads->links('vendor.pagination.pos') }}</div>
             </div>
         </div>
     @endif

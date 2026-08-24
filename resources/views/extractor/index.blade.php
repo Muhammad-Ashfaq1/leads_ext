@@ -17,7 +17,6 @@
             </span>
         </div>
     @endif
-<div class="pos-glass-card pos-tone-primary mb-4" id="promptCard">
 </div>
 
 <div class="pos-glass-card pos-tone-primary mb-4 w-100" id="promptCard">
@@ -210,7 +209,6 @@
     </div>
 </div>
 
-<div class="pos-glass-card pos-tone-info mb-4">
 <div class="pos-glass-card pos-tone-info mb-4 w-100" id="statusCard">
     <div class="card-body p-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
@@ -258,7 +256,6 @@
     </div>
 </div>
 
-<div class="pos-glass-card pos-tone-success mb-4 d-none" id="summaryCard">
 <div class="pos-glass-card pos-tone-success mb-4 d-none w-100" id="summaryCard">
     <div class="card-body p-4">
         <h5 class="mb-3">Extraction Completed</h5>
@@ -274,7 +271,6 @@
     </div>
 </div>
 
-<div class="pos-glass-card pos-tone-primary mb-4" id="leadsSection">
 <div class="pos-glass-card pos-tone-primary mb-4 w-100" id="leadsSection">
     <div class="card-header border-bottom py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
