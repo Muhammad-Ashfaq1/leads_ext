@@ -288,10 +288,10 @@
             ? `<span class="extractor-lead-tag extractor-lead-tag-muted">${escapeHtml(lead.source)}</span>`
             : '';
         const websiteBtn = lead.website
-            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-primary" title="Visit Website"><i class="icon-base ti tabler-world-www"></i> Website</a>`
+            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-xs btn-primary d-inline-flex align-items-center" title="Visit Website"><i class="icon-base ti tabler-world-www me-1"></i>Web</a>`
             : '';
         const mapsBtn = lead.google_maps_url
-            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-outline-secondary" title="View on Google Maps"><i class="icon-base ti tabler-map-pin"></i> Maps</a>`
+            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-secondary d-inline-flex align-items-center" title="View on Google Maps"><i class="icon-base ti tabler-map-pin me-1"></i>Map</a>`
             : '';
 
         const avatarImg = lead.avatar_url
@@ -315,7 +315,7 @@
         const vStatus = lead.email_verification_status && typeof lead.email_verification_status === 'object' ? lead.email_verification_status : {};
         const hasVerifiedEmail = Object.values(vStatus).some((v) => v && v.is_valid);
         if (hasVerifiedEmail) {
-            verificationBadge = '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;" title="Email Verified (MX Valid)"><i class="icon-base ti tabler-mail-check me-1"></i>Verified</span>';
+            verificationBadge = '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.4rem;" title="Email Verified (MX Valid)"><i class="icon-base ti tabler-mail-check me-1"></i>Verified</span>';
         }
 
         return `
@@ -359,13 +359,15 @@
                 </div>
 
                 <div class="extractor-lead-footer">
-                    ${(lead.is_saved || lead.status === 'saved')
-                        ? '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;" title="Lead saved in database"><i class="icon-base ti tabler-device-floppy me-1"></i>Saved</span>'
-                        : '<span class="badge bg-label-info" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;">Discovered</span>'
-                    }
-                    ${verificationBadge}
+                    <div class="extractor-lead-footer-status">
+                        ${(lead.is_saved || lead.status === 'saved')
+                            ? '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.4rem;" title="Lead saved in database"><i class="icon-base ti tabler-device-floppy me-1"></i>Saved</span>'
+                            : '<span class="badge bg-label-info" style="font-size: 0.68rem; padding: 0.2rem 0.4rem;">Discovered</span>'
+                        }
+                        ${verificationBadge}
+                    </div>
                     <div class="extractor-lead-btn-group">
-                        ${emails.length > 0 ? `<button type="button" class="btn btn-xs btn-primary btn-lead-send-email" title="Send Outreach Email" data-key="${escapeAttr(key)}"><i class="icon-base ti tabler-send"></i></button>` : ''}
+                        ${emails.length > 0 ? `<button type="button" class="btn btn-xs btn-label-primary btn-lead-send-email d-inline-flex align-items-center" title="Send Outreach Email" data-key="${escapeAttr(key)}"><i class="icon-base ti tabler-send"></i></button>` : ''}
                         ${mapsBtn}
                         ${websiteBtn}
                     </div>
@@ -1175,11 +1177,28 @@
     }
 
     async function stopExtraction() {
-        if (!state.jobId) return;
-        try {
-            await fetch(jobUrl(cfg.stopUrl), { method: 'POST', headers: headers() });
-        } catch (error) {
-            setAlert('danger', error.message || 'Unable to stop extraction.', true);
+        const currentJobId = state.jobId;
+
+        // Immediately halt live stream and transition UI to stopped state
+        closeStream();
+        setRunning(false);
+        setStatus('cancelled', 'Extraction stopped.');
+        setAlert('secondary', 'Extraction stopped. Previously extracted leads have been preserved.', true);
+        showVerification(false);
+        showSummary({
+            leads_extracted: state.leads.size,
+            businesses_seen: els.kpiSeen ? els.kpiSeen.textContent : '0',
+            emails_found: els.kpiEmails ? els.kpiEmails.textContent : '0',
+            websites_found: els.kpiWebsites ? els.kpiWebsites.textContent : '0',
+        });
+        saveStateToStorage();
+
+        if (currentJobId) {
+            try {
+                await fetch(jobUrl(cfg.stopUrl), { method: 'POST', headers: headers() });
+            } catch (error) {
+                console.warn('Stop signal notification:', error);
+            }
         }
     }
 

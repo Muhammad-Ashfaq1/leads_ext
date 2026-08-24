@@ -171,17 +171,39 @@ class ExtractorController extends Controller
 
     public function stop(ExtractionJob $job): JsonResponse
     {
+        if ($job->mode === 'google_api' || $job->mode === 'mock') {
+            if (! $job->isTerminal()) {
+                $job->forceFill([
+                    'status' => ExtractionJob::STATUS_CANCELLED,
+                    'completed_at' => $job->completed_at ?? now(),
+                    'current_activity' => 'Extraction stopped.',
+                ])->save();
+            }
+
+            Log::info('job stopped', ['job_id' => $job->uuid, 'mode' => $job->mode]);
+
+            return response()->json($job->fresh()->toStatusArray());
+        }
+
         try {
             $remote = $this->client->stop($job->uuid);
             $this->syncJob($job, $remote);
         } catch (Throwable $exception) {
-            Log::error('Python service errors', [
+            Log::warning('Python service offline during stop, cancelling job locally', [
                 'action' => 'stop',
                 'job_id' => $job->uuid,
                 'error' => $exception->getMessage(),
             ]);
 
-            return response()->json(['message' => $exception->getMessage()], 503);
+            if (! $job->isTerminal()) {
+                $job->forceFill([
+                    'status' => ExtractionJob::STATUS_CANCELLED,
+                    'completed_at' => $job->completed_at ?? now(),
+                    'current_activity' => 'Extraction stopped.',
+                ])->save();
+            }
+
+            return response()->json($job->fresh()->toStatusArray());
         }
 
         $job->refresh();

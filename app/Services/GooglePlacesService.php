@@ -270,6 +270,11 @@ class GooglePlacesService
                                 break 2;
                             }
 
+                            $job->refresh();
+                            if ($job->isTerminal()) {
+                                break 2;
+                            }
+
                             $seenCount++;
                             $name = $place['displayName']['text'] ?? null;
                             if (! $name) {
@@ -341,14 +346,11 @@ class GooglePlacesService
                                 continue;
                             }
 
-                            // Avatar image resolution
+                            // Avatar image resolution (use verified Google Place photo if present)
                             $avatarUrl = null;
                             if (! empty($place['photos'][0]['name'])) {
                                 $photoName = $place['photos'][0]['name'];
                                 $avatarUrl = "https://places.googleapis.com/v1/{$photoName}/media?maxHeightPx=160&maxWidthPx=160&key={$key}";
-                            } elseif (! empty($website)) {
-                                $domain = parse_url($website, PHP_URL_HOST) ?: $website;
-                                $avatarUrl = "https://www.google.com/s2/favicons?domain=".urlencode($domain)."&sz=128";
                             }
 
                             $leadData = [
@@ -443,29 +445,58 @@ class GooglePlacesService
                 }
             }
 
-                $job->forceFill([
-                    'status' => ExtractionJob::STATUS_COMPLETED,
-                    'businesses_seen' => $seenCount,
-                    'leads_extracted' => $extractedCount,
-                    'emails_found' => $emailsCount,
-                    'websites_found' => $websitesCount,
-                    'current_activity' => 'Extraction completed.',
-                    'completed_at' => now(),
-                ])->save();
+                $job->refresh();
+                $isCancelled = ($job->status === ExtractionJob::STATUS_CANCELLED || connection_aborted());
 
-                if ($job->tenant_id && $extractedCount > 0) {
-                    $job->tenant?->incrementLeadsCount($extractedCount);
+                if ($isCancelled) {
+                    $job->forceFill([
+                        'status' => ExtractionJob::STATUS_CANCELLED,
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                        'current_activity' => 'Extraction stopped.',
+                        'completed_at' => $job->completed_at ?? now(),
+                    ])->save();
+
+                    if ($job->tenant_id && $extractedCount > 0) {
+                        $job->tenant?->incrementLeadsCount($extractedCount);
+                    }
+
+                    $this->sendSseEvent('cancelled', [
+                        'type' => 'cancelled',
+                        'status' => ExtractionJob::STATUS_CANCELLED,
+                        'message' => 'Extraction stopped. Previously extracted leads have been preserved.',
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
+                } else {
+                    $job->forceFill([
+                        'status' => ExtractionJob::STATUS_COMPLETED,
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                        'current_activity' => 'Extraction completed.',
+                        'completed_at' => now(),
+                    ])->save();
+
+                    if ($job->tenant_id && $extractedCount > 0) {
+                        $job->tenant?->incrementLeadsCount($extractedCount);
+                    }
+
+                    $this->sendSseEvent('completed', [
+                        'type' => 'completed',
+                        'status' => ExtractionJob::STATUS_COMPLETED,
+                        'message' => "Extraction completed. Extracted {$extractedCount} leads.",
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
                 }
-
-                $this->sendSseEvent('completed', [
-                    'type' => 'completed',
-                    'status' => ExtractionJob::STATUS_COMPLETED,
-                    'message' => "Extraction completed. Extracted {$extractedCount} leads.",
-                    'businesses_seen' => $seenCount,
-                    'leads_extracted' => $extractedCount,
-                    'emails_found' => $emailsCount,
-                    'websites_found' => $websitesCount,
-                ]);
 
             } catch (Throwable $e) {
                 Log::error('Google Places Service stream error', ['error' => $e->getMessage()]);
