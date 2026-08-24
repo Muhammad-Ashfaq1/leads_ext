@@ -121,3 +121,4 @@ sequenceDiagram
     Laravel->>DB: Update ExtractionJob (status: completed)
     Laravel-->>User: SSE event: "completed"
 ```
+

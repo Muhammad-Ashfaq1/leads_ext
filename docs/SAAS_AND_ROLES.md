@@ -61,3 +61,4 @@ For testing and local development, the database seeder (`DatabaseSeeder.php`) pr
 
 > [!IMPORTANT]
 > Change the default passwords immediately upon deploying to production.
+

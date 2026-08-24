@@ -118,3 +118,4 @@ If you want the Python Chromium crawler available in production:
    ```dotenv
    EXTRACTOR_SERVICE_URL=http://<YOUR_VPS_IP>:8001
    ```
+

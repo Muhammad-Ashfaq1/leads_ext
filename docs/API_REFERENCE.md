@@ -132,3 +132,4 @@ Streams a formatted Microsoft Excel (`.xlsx`) spreadsheet containing all leads e
 `GET /leads/export/excel?category=Dentist&has_email=yes&min_rating=4.0`
 
 Streams a filtered Excel spreadsheet of leads across all completed tasks for the current organization.
+

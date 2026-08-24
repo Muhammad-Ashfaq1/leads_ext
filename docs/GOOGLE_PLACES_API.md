@@ -58,3 +58,4 @@ Leads Engine supports both **Global API Keys** and **Tenant-Specific API Keys**:
 - Google provides a **$200 monthly free credit** on Google Cloud Platform for every billing account.
 - **Places Text Search (New)** costs approximately $0.032 per request.
 - With the $200 free credit, you can perform thousands of lead extraction queries monthly at zero out-of-pocket cost.
+
