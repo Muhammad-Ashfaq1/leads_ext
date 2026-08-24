@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
 use App\Support\PromptNormalizer;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -149,8 +150,8 @@ class GooglePlacesService
                         break;
                     }
 
+                    $cellNum = $cellIdx + 1;
                     if ($totalCells > 1 && $cell !== null) {
-                        $cellNum = $cellIdx + 1;
                         $this->sendSseEvent('progress', [
                             'type' => 'progress',
                             'status' => ExtractionJob::STATUS_EXTRACTING,
@@ -164,61 +165,93 @@ class GooglePlacesService
 
                     $pageToken = null;
 
-                    do {
-                        if ($extractedCount >= $limit) {
-                            break 2;
-                        }
-
-                        $payload = [
-                            'textQuery' => $searchTerm ?: $job->query,
-                            'pageSize' => min(20, max(20, $limit - $extractedCount)),
-                        ];
-
-                        if ($pageToken) {
-                            $payload['pageToken'] = $pageToken;
-                        }
-
-                        if ($cell !== null) {
-                            $payload['locationRestriction'] = [
-                                'rectangle' => [
-                                    'low' => $cell['low'],
-                                    'high' => $cell['high'],
-                                ],
-                            ];
-                        }
-
-                        $response = Http::withHeaders([
-                            'Content-Type' => 'application/json',
-                            'X-Goog-Api-Key' => $key,
-                            'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.photos,places.location,nextPageToken',
-                        ])->timeout(15)->post(self::PLACES_API_URL, $payload);
-
-                        if ($response->failed()) {
-                            $errorBody = $response->json();
-                            $errorMessage = $errorBody['error']['message'] ?? 'Google Places API request failed with HTTP '.$response->status();
-                            Log::error('Google Places API error', ['status' => $response->status(), 'body' => $errorBody]);
-
-                            // If single cell or auth error, terminate with error
-                            if ($totalCells === 1 || in_array($response->status(), [401, 403], true)) {
-                                $this->sendSseEvent('error', [
-                                    'type' => 'error',
-                                    'status' => ExtractionJob::STATUS_ERROR,
-                                    'message' => 'Google Maps API Error: '.$errorMessage,
-                                ]);
-
-                                $job->forceFill([
-                                    'status' => ExtractionJob::STATUS_ERROR,
-                                    'error' => $errorMessage,
-                                    'completed_at' => now(),
-                                ])->save();
-
-                                return;
+                    try {
+                        do {
+                            if ($extractedCount >= $limit) {
+                                break 2;
                             }
 
-                            // Otherwise log warning and proceed to next cell
-                            Log::warning("Grid cell {$cellIdx} request failed, skipping to next cell", ['error' => $errorMessage]);
-                            break;
-                        }
+                            $payload = [
+                                'textQuery' => $searchTerm ?: $job->query,
+                                'pageSize' => min(20, max(20, $limit - $extractedCount)),
+                            ];
+
+                            if ($pageToken) {
+                                $payload['pageToken'] = $pageToken;
+                            }
+
+                            if ($cell !== null) {
+                                $payload['locationRestriction'] = [
+                                    'rectangle' => [
+                                        'low' => $cell['low'],
+                                        'high' => $cell['high'],
+                                    ],
+                                ];
+                            }
+
+                            $response = Http::withHeaders([
+                                'Content-Type' => 'application/json',
+                                'X-Goog-Api-Key' => $key,
+                                'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.primaryTypeDisplayName,nextPageToken',
+                            ])
+                                ->timeout(35)
+                                ->connectTimeout(10)
+                                ->retry(3, 500, function ($exception, $request) {
+                                    return $exception instanceof ConnectionException;
+                                })
+                                ->post(self::PLACES_API_URL, $payload);
+
+                            if ($response->failed()) {
+                                $errorBody = $response->json();
+                                $errorMessage = $errorBody['error']['message'] ?? 'Google Places API request failed with HTTP '.$response->status();
+                                Log::error('Google Places API error', ['status' => $response->status(), 'body' => $errorBody]);
+
+                                // If auth error, terminate with error
+                                if (in_array($response->status(), [401, 403], true)) {
+                                    $this->sendSseEvent('error', [
+                                        'type' => 'error',
+                                        'status' => ExtractionJob::STATUS_ERROR,
+                                        'message' => 'Google Maps API Error: '.$errorMessage,
+                                    ]);
+
+                                    $job->forceFill([
+                                        'status' => ExtractionJob::STATUS_ERROR,
+                                        'error' => $errorMessage,
+                                        'completed_at' => now(),
+                                    ])->save();
+
+                                    return;
+                                }
+
+                                if ($totalCells === 1) {
+                                    $this->sendSseEvent('error', [
+                                        'type' => 'error',
+                                        'status' => ExtractionJob::STATUS_ERROR,
+                                        'message' => 'Google Maps API Error: '.$errorMessage,
+                                    ]);
+
+                                    $job->forceFill([
+                                        'status' => ExtractionJob::STATUS_ERROR,
+                                        'error' => $errorMessage,
+                                        'completed_at' => now(),
+                                    ])->save();
+
+                                    return;
+                                }
+
+                                // Otherwise log warning, emit non-fatal SSE event and proceed to next cell
+                                Log::warning("Grid cell {$cellNum} request failed with HTTP {$response->status()}, skipping to next cell", ['error' => $errorMessage]);
+                                $this->sendSseEvent('warning', [
+                                    'type' => 'warning',
+                                    'status' => ExtractionJob::STATUS_EXTRACTING,
+                                    'message' => "Grid cell {$cellNum} request failed (HTTP {$response->status()}), continuing to next area...",
+                                    'businesses_seen' => $seenCount,
+                                    'leads_extracted' => $extractedCount,
+                                    'emails_found' => $emailsCount,
+                                    'websites_found' => $websitesCount,
+                                ]);
+                                break;
+                            }
 
                         $data = $response->json();
                         $places = $data['places'] ?? [];
@@ -327,7 +360,7 @@ class GooglePlacesService
                                 'email_verification_status' => $emailVerificationStatus,
                                 'avatar_url' => $avatarUrl,
                                 'website' => $website,
-                                'google_maps_url' => $place['googleMapsUri'] ?? null,
+                                'google_maps_url' => $place['googleMapsUri'] ?? ($placeId ? "https://www.google.com/maps/place/?q=place_id:{$placeId}" : null),
                                 'place_id' => $placeId,
                                 'category' => $place['primaryTypeDisplayName']['text'] ?? null,
                                 'rating' => $rating,
@@ -385,7 +418,28 @@ class GooglePlacesService
                             usleep(1000000);
                         }
                     } while ($pageToken && $extractedCount < $limit);
+                } catch (Throwable $cellException) {
+                    Log::warning("Grid cell {$cellNum} request failed or timed out: {$cellException->getMessage()}", [
+                        'cell_index' => $cellIdx,
+                        'cell' => $cell,
+                        'error' => $cellException->getMessage(),
+                    ]);
+
+                    $warningMessage = $totalCells > 1
+                        ? "Grid cell {$cellNum} timed out, continuing to next area..."
+                        : 'Grid cell timed out, continuing to next area...';
+
+                    $this->sendSseEvent('warning', [
+                        'type' => 'warning',
+                        'status' => ExtractionJob::STATUS_EXTRACTING,
+                        'message' => $warningMessage,
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
                 }
+            }
 
                 $job->forceFill([
                     'status' => ExtractionJob::STATUS_COMPLETED,
