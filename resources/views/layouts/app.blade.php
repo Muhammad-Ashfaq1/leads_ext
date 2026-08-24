@@ -336,19 +336,6 @@
                         @yield('content')
                     </div>
                     <!-- / Content -->
-
-                    <!-- Footer -->
-                    <footer class="content-footer footer bg-footer-theme border-top py-3">
-                        <div class="container-xxl d-flex flex-wrap justify-content-between align-items-center py-2 flex-md-row flex-column">
-                            <div class="mb-2 mb-md-0 text-muted small">
-                                © 2026 <strong>Leads Engine</strong> — SaaS Lead Generation &amp; Enrichment Platform
-                            </div>
-                            <div class="d-none d-lg-inline-block text-muted small">
-                                <span class="badge bg-label-secondary">v2.5.0</span>
-                            </div>
-                        </div>
-                    </footer>
-                    <!-- / Footer -->
                 </div>
                 <!-- / Content wrapper -->
             </div>

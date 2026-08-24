@@ -844,8 +844,7 @@
             }
 
             if (action === 'save' || action === 'save_all') {
-                if (action === 'save_all') {
-                    for (const lead of state.leads.values()) {
+                if (action === 'save_all' || selectedLeads.length === state.leads.size) {
                         lead.status = 'saved';
                         lead.is_saved = true;
                     }
@@ -856,9 +855,9 @@
                     }
                 }
                 renderLeads();
-                showToast(data.message || `Saved ${data.affected ?? targetLeadIds.length} lead(s) to master database.`);
+                saveStateToStorage();
             } else if (action === 'discard') {
-                showToast(data.message || `Discarded lead(s).`);
+                saveStateToStorage();
             } else if (action === 'delete') {
                 const keysToDelete = Array.from(state.selectedKeys);
                 for (const key of keysToDelete) {
@@ -867,7 +866,7 @@
                 }
                 renderLeads();
                 updateSelectionUi();
-                showToast(data.message || `Deleted lead(s).`);
+                saveStateToStorage();
             }
         } catch (err) {
             showToast(err.message || 'Action failed.', true);
@@ -1096,7 +1095,7 @@
         setStatus('starting', 'Starting extraction');
         setRunning(true);
 
-        try {
+        state.leads.clear();
             const payloadData = {
                 prompt,
                 limit: Number(els.limit.value || 100),
@@ -1124,7 +1123,7 @@
             }
             state.jobId = payload.job_id;
             els.searchLabel.textContent = `Search: ${payload.query || prompt}`;
-            connectStream();
+            saveStateToStorage();
         } catch (error) {
             setRunning(false);
             setStatus('error', error.message);
@@ -1158,11 +1157,11 @@
 
     function clearResults() {
         closeStream();
-        state.jobId = null;
+        try {
         state.leads.clear();
         state.selectedKeys.clear();
         state.leadCounter = 0;
-        resetFilterValues();
+        state.isSaved = false;
         renderLeads();
 
         els.kpiLeads.textContent = '0';
@@ -1488,6 +1487,6 @@
         els.completeMock.addEventListener('click', completeMockVerification);
     }
 
-    // Init UI state
-    updateEngineModeUi();
+    function saveStateToStorage() {
+        try {
 })();
