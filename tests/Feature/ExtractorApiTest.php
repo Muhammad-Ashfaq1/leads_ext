@@ -262,7 +262,7 @@ class ExtractorApiTest extends TestCase
                     ],
                 ],
             ], 200),
-            'https://beverlydental.example' => Http::response('<html>Contact us at info@beverlydental.example</html>', 200),
+            'https://beverlydental.example' => Http::response('<html>Contact us at info@beverlydental.example <a href="https://facebook.com/beverlydental">Facebook</a></html>', 200),
         ]);
 
         $job = ExtractionJob::create([
@@ -280,6 +280,7 @@ class ExtractorApiTest extends TestCase
 
         $this->assertStringContainsString('Beverly Hills Dental', $streamContent);
         $this->assertStringContainsString('info@beverlydental.example', $streamContent);
+        $this->assertStringContainsString('https://www.facebook.com/beverlydental', $streamContent);
 
         $this->assertDatabaseHas('extracted_leads', [
             'extraction_job_id' => $job->id,
@@ -287,6 +288,13 @@ class ExtractorApiTest extends TestCase
             'phone' => '(310) 555-0199',
             'source' => 'Google Places API',
         ]);
+
+        $lead = ExtractedLead::where('extraction_job_id', $job->id)->first();
+        $this->assertNotNull($lead);
+        $this->assertArrayHasKey('facebook', $lead->social_links ?? []);
+        $this->assertSame('https://www.facebook.com/beverlydental', $lead->social_links['facebook']);
+        $this->assertArrayHasKey('info@beverlydental.example', $lead->email_verification_status ?? []);
+        $this->assertTrue($lead->email_verification_status['info@beverlydental.example']['is_valid']);
     }
 
     public function test_google_api_pre_filters_skip_non_matching_places(): void

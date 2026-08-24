@@ -271,6 +271,25 @@
                <span class="extractor-lead-avatar-fallback" style="display:none;">${escapeHtml(initials(lead.business_name))}</span>`
             : `<span class="extractor-lead-avatar-fallback">${escapeHtml(initials(lead.business_name))}</span>`;
 
+        const socialLinks = lead.social_links && typeof lead.social_links === 'object' ? lead.social_links : {};
+        let socialsHtml = '';
+        const socialIcons = [];
+        if (socialLinks.linkedin) socialIcons.push(`<a href="${escapeAttr(socialLinks.linkedin)}" target="_blank" rel="noopener" class="text-primary me-2 fs-6" title="LinkedIn"><i class="icon-base ti tabler-brand-linkedin"></i></a>`);
+        if (socialLinks.facebook) socialIcons.push(`<a href="${escapeAttr(socialLinks.facebook)}" target="_blank" rel="noopener" class="text-info me-2 fs-6" title="Facebook"><i class="icon-base ti tabler-brand-facebook"></i></a>`);
+        if (socialLinks.instagram) socialIcons.push(`<a href="${escapeAttr(socialLinks.instagram)}" target="_blank" rel="noopener" class="text-danger me-2 fs-6" title="Instagram"><i class="icon-base ti tabler-brand-instagram"></i></a>`);
+        if (socialLinks.twitter) socialIcons.push(`<a href="${escapeAttr(socialLinks.twitter)}" target="_blank" rel="noopener" class="text-dark me-2 fs-6" title="Twitter / X"><i class="icon-base ti tabler-brand-x"></i></a>`);
+        if (socialLinks.youtube) socialIcons.push(`<a href="${escapeAttr(socialLinks.youtube)}" target="_blank" rel="noopener" class="text-danger me-2 fs-6" title="YouTube"><i class="icon-base ti tabler-brand-youtube"></i></a>`);
+        if (socialIcons.length > 0) {
+            socialsHtml = `<div class="extractor-lead-detail-row has-value mt-1"><i class="icon-base ti tabler-share"></i><span class="extractor-lead-detail-text">${socialIcons.join('')}</span></div>`;
+        }
+
+        let verificationBadge = '';
+        const vStatus = lead.email_verification_status && typeof lead.email_verification_status === 'object' ? lead.email_verification_status : {};
+        const hasVerifiedEmail = Object.values(vStatus).some((v) => v && v.is_valid);
+        if (hasVerifiedEmail) {
+            verificationBadge = '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;" title="Email Verified (MX Valid)"><i class="icon-base ti tabler-mail-check me-1"></i>Verified</span>';
+        }
+
         return `
             <article class="extractor-lead-card ${isSelected ? 'is-selected' : ''}" data-key="${escapeAttr(key)}">
                 <div class="extractor-lead-header">
@@ -308,10 +327,12 @@
                         <i class="icon-base ti tabler-mail"></i>
                         <span class="extractor-lead-detail-text">${emailHtml}</span>
                     </div>
+                    ${socialsHtml}
                 </div>
 
                 <div class="extractor-lead-footer">
                     <span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.45rem;">Extracted</span>
+                    ${verificationBadge}
                     <div class="extractor-lead-btn-group">
                         ${mapsBtn}
                         ${websiteBtn}
@@ -551,18 +572,26 @@
         }
 
         if (window.XLSX && window.XLSX.utils) {
-            const dataRows = leadsList.map((lead) => ({
-                'Business Name': lead.business_name || '',
-                'Address': lead.address || '',
-                'Email(s)': Array.isArray(lead.emails) ? lead.emails.join('; ') : '',
-                'Phone': lead.phone || '',
-                'Website': lead.website || '',
-                'Category': lead.category || '',
-                'Rating': lead.rating != null ? Number(lead.rating) : '',
-                'Reviews': lead.review_count != null ? Number(lead.review_count) : '',
-                'Google Maps URL': lead.google_maps_url || '',
-                'Source': lead.source || 'Google Maps',
-            }));
+            const dataRows = leadsList.map((lead) => {
+                const s = lead.social_links && typeof lead.social_links === 'object' ? lead.social_links : {};
+                return {
+                    'Business Name': lead.business_name || '',
+                    'Address': lead.address || '',
+                    'Email(s)': Array.isArray(lead.emails) ? lead.emails.join('; ') : '',
+                    'Phone': lead.phone || '',
+                    'Website': lead.website || '',
+                    'LinkedIn': s.linkedin || '',
+                    'Facebook': s.facebook || '',
+                    'Instagram': s.instagram || '',
+                    'Twitter / X': s.twitter || '',
+                    'YouTube': s.youtube || '',
+                    'Category': lead.category || '',
+                    'Rating': lead.rating != null ? Number(lead.rating) : '',
+                    'Reviews': lead.review_count != null ? Number(lead.review_count) : '',
+                    'Google Maps URL': lead.google_maps_url || '',
+                    'Source': lead.source || 'Google Maps',
+                };
+            });
 
             const ws = window.XLSX.utils.json_to_sheet(dataRows);
             ws['!cols'] = [
@@ -571,6 +600,11 @@
                 { wch: 28 }, // Email(s)
                 { wch: 18 }, // Phone
                 { wch: 28 }, // Website
+                { wch: 25 }, // LinkedIn
+                { wch: 25 }, // Facebook
+                { wch: 25 }, // Instagram
+                { wch: 25 }, // Twitter / X
+                { wch: 25 }, // YouTube
                 { wch: 20 }, // Category
                 { wch: 10 }, // Rating
                 { wch: 10 }, // Reviews

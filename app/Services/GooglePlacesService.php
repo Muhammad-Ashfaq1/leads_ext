@@ -16,6 +16,8 @@ class GooglePlacesService
 
     public function __construct(
         private readonly GeospatialGridService $gridService,
+        private readonly SocialMediaExtractor $socialExtractor,
+        private readonly EmailVerifier $emailVerifier,
     ) {}
 
     public function stream(ExtractionJob $job, ?string $apiKey = null, array $filters = [], ?string $location = null): StreamedResponse
@@ -286,9 +288,16 @@ class GooglePlacesService
                             }
 
                             $emails = [];
+                            $socialLinks = [];
+                            $emailVerificationStatus = [];
+
                             if ($website) {
                                 $websitesCount++;
-                                $emails = $this->quickEnrichWebsiteEmails($website);
+                                $enrichment = $this->quickEnrichWebsite($website);
+                                $emails = $enrichment['emails'];
+                                $socialLinks = $enrichment['social_links'];
+                                $emailVerificationStatus = $enrichment['email_verification_status'];
+
                                 if (! empty($emails)) {
                                     $emailsCount += count($emails);
                                 }
@@ -314,6 +323,8 @@ class GooglePlacesService
                                 'address' => $address,
                                 'phone' => $phone,
                                 'emails' => $emails,
+                                'social_links' => $socialLinks,
+                                'email_verification_status' => $emailVerificationStatus,
                                 'avatar_url' => $avatarUrl,
                                 'website' => $website,
                                 'google_maps_url' => $place['googleMapsUri'] ?? null,
@@ -459,21 +470,34 @@ class GooglePlacesService
     }
 
     /**
-     * Quickly scan the homepage and contact page of a website for emails.
+     * Single-pass website enrichment: extracts emails and social media links from HTML,
+     * and validates discovered emails with multi-tier verification (RFC, disposable, DNS MX cache).
      * Safe, non-intrusive, 2.5 second timeout.
+     *
+     * @return array{emails: array<string>, social_links: array<string, string>, email_verification_status: array<string, array>}
      */
-    private function quickEnrichWebsiteEmails(string $websiteUrl): array
+    public function quickEnrichWebsite(string $websiteUrl): array
     {
         if (empty($websiteUrl) || ! filter_var($websiteUrl, FILTER_VALIDATE_URL)) {
-            return [];
+            return [
+                'emails' => [],
+                'social_links' => [],
+                'email_verification_status' => [],
+            ];
         }
 
         $host = parse_url($websiteUrl, PHP_URL_HOST);
         if (! $host || in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
-            return [];
+            return [
+                'emails' => [],
+                'social_links' => [],
+                'email_verification_status' => [],
+            ];
         }
 
         $foundEmails = [];
+        $socialLinks = [];
+        $verificationStatus = [];
 
         try {
             $resp = Http::timeout(2.5)
@@ -483,12 +507,28 @@ class GooglePlacesService
             if ($resp->successful()) {
                 $html = $resp->body();
                 $foundEmails = $this->extractEmailsFromHtml($html);
+                $socialLinks = $this->socialExtractor->extract($html);
+                $verificationStatus = $this->emailVerifier->verifyBatch($foundEmails);
             }
         } catch (Throwable) {
             // Non-blocking enrichment
         }
 
-        return array_values(array_unique($foundEmails));
+        return [
+            'emails' => array_values(array_unique($foundEmails)),
+            'social_links' => $socialLinks,
+            'email_verification_status' => $verificationStatus,
+        ];
+    }
+
+    /**
+     * Convenience method to extract emails from a website.
+     *
+     * @return array<string>
+     */
+    public function quickEnrichWebsiteEmails(string $websiteUrl): array
+    {
+        return $this->quickEnrichWebsite($websiteUrl)['emails'];
     }
 
     private function extractEmailsFromHtml(string $html): array
@@ -520,7 +560,7 @@ class GooglePlacesService
 
     private function sendSseEvent(string $event, array $data): void
     {
-        echo 'data: '.json_encode($data)."\n\n";
+        echo 'data: '.json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n\n";
         $this->flush();
     }
 
