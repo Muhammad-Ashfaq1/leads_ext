@@ -375,4 +375,127 @@ class ExtractorApiTest extends TestCase
         $this->assertStringContainsString('Super Dental Clinic', $content);
         $this->assertStringContainsString('urn:schemas-microsoft-com:office:spreadsheet', $content);
     }
+
+    public function test_google_places_geocodes_and_performs_grid_search_extraction(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response([
+                'status' => 'OK',
+                'results' => [
+                    [
+                        'formatted_address' => 'Dallas, TX, USA',
+                        'geometry' => [
+                            'bounds' => [
+                                'northeast' => ['lat' => 33.0237, 'lng' => -96.5368],
+                                'southwest' => ['lat' => 32.6183, 'lng' => -97.0004],
+                            ],
+                            'location' => ['lat' => 32.7767, 'lng' => -96.7970],
+                        ],
+                    ],
+                ],
+            ], 200),
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'places' => [
+                    [
+                        'id' => 'place_grid_1',
+                        'displayName' => ['text' => 'Dallas Master Plumber'],
+                        'formattedAddress' => 'Dallas, TX 75201',
+                        'nationalPhoneNumber' => '(214) 555-0100',
+                        'websiteUri' => 'https://dallasplumber.example',
+                        'rating' => 4.9,
+                        'userRatingCount' => 120,
+                        'location' => ['latitude' => 32.7801, 'longitude' => -96.7900],
+                        'primaryTypeDisplayName' => ['text' => 'Plumber'],
+                    ],
+                ],
+            ], 200),
+            'https://dallasplumber.example' => Http::response('<html>Contact: leads@dallasplumber.example</html>', 200),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => '99999999-9999-9999-9999-999999999999',
+            'prompt' => 'Plumbers (Dallas, TX)',
+            'query' => 'Plumbers in Dallas, TX',
+            'status' => 'starting',
+            'limit' => 200,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('Dallas Master Plumber', $streamContent);
+        $this->assertStringContainsString('leads@dallasplumber.example', $streamContent);
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Dallas Master Plumber',
+            'place_id' => 'place_grid_1',
+            'source' => 'Google Places API',
+        ]);
+    }
+
+    public function test_google_places_deduplicates_overlapping_grid_places(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response([
+                'status' => 'OK',
+                'results' => [
+                    [
+                        'formatted_address' => 'Dallas, TX, USA',
+                        'geometry' => [
+                            'bounds' => [
+                                'northeast' => ['lat' => 33.0237, 'lng' => -96.5368],
+                                'southwest' => ['lat' => 32.6183, 'lng' => -97.0004],
+                            ],
+                            'location' => ['lat' => 32.7767, 'lng' => -96.7970],
+                        ],
+                    ],
+                ],
+            ], 200),
+            'https://places.googleapis.com/v1/places:searchText' => Http::sequence()
+                ->push([
+                    'places' => [
+                        [
+                            'id' => 'duplicate_place_id',
+                            'displayName' => ['text' => 'Repeated Business'],
+                            'formattedAddress' => 'Dallas, TX',
+                            'nationalPhoneNumber' => '(214) 555-9999',
+                        ],
+                    ],
+                ], 200)
+                ->push([
+                    'places' => [
+                        [
+                            'id' => 'duplicate_place_id',
+                            'displayName' => ['text' => 'Repeated Business'],
+                            'formattedAddress' => 'Dallas, TX',
+                            'nationalPhoneNumber' => '(214) 555-9999',
+                        ],
+                    ],
+                ], 200)
+                ->whenEmpty(Http::response(['places' => []], 200)),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            'prompt' => 'Plumbers (Dallas, TX)',
+            'query' => 'Plumbers in Dallas, TX',
+            'status' => 'starting',
+            'limit' => 50,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('Repeated Business', $streamContent);
+        $this->assertEquals(1, ExtractedLead::where('extraction_job_id', $job->id)->count());
+    }
 }

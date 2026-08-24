@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
+use App\Support\PromptNormalizer;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -13,11 +14,19 @@ class GooglePlacesService
 {
     private const PLACES_API_URL = 'https://places.googleapis.com/v1/places:searchText';
 
-    public function stream(ExtractionJob $job, ?string $apiKey = null, array $filters = []): StreamedResponse
+    public function __construct(
+        private readonly GeospatialGridService $gridService,
+    ) {}
+
+    public function stream(ExtractionJob $job, ?string $apiKey = null, array $filters = [], ?string $location = null): StreamedResponse
     {
         $key = $apiKey ?: config('services.google.maps_api_key');
 
-        return response()->stream(function () use ($job, $key, $filters): void {
+        return response()->stream(function () use ($job, $key, $filters, $location): void {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+
             @ini_set('output_buffering', 'off');
             @ini_set('zlib.output_compression', '0');
             if (! app()->environment('testing')) {
@@ -55,6 +64,8 @@ class GooglePlacesService
                 'message' => 'Connected to Google Places API.',
             ]);
 
+            [$searchTerm, $resolvedLocation] = $this->resolveSearchQueryAndLocation($job, $location);
+
             $this->sendSseEvent('searching', [
                 'type' => 'searching',
                 'status' => ExtractionJob::STATUS_SEARCHING,
@@ -72,7 +83,6 @@ class GooglePlacesService
             $seenCount = 0;
             $emailsCount = 0;
             $websitesCount = 0;
-            $pageToken = null;
 
             $reqWebsite = (bool) ($filters['require_website'] ?? false);
             $reqPhone = (bool) ($filters['require_phone'] ?? false);
@@ -80,171 +90,291 @@ class GooglePlacesService
             $minRating = (float) ($filters['min_rating'] ?? 0);
             $minReviews = (int) ($filters['min_reviews'] ?? 0);
 
+            // In-memory deduplication tracking
+            $seenPlaceIds = [];
+            $seenSignatures = [];
+
+            // Attempt Geospatial Grid Subdivision
+            $gridCells = [];
+            if (! empty($resolvedLocation)) {
+                $this->sendSseEvent('progress', [
+                    'type' => 'progress',
+                    'status' => ExtractionJob::STATUS_SEARCHING,
+                    'current_activity' => "Geocoding location '{$resolvedLocation}' for geospatial grid partition...",
+                    'businesses_seen' => $seenCount,
+                    'leads_extracted' => $extractedCount,
+                    'emails_found' => $emailsCount,
+                    'websites_found' => $websitesCount,
+                ]);
+
+                $bounds = $this->gridService->geocode($resolvedLocation, $key);
+                if ($bounds) {
+                    $gridCells = $this->gridService->generateGrid($bounds, stepKm: 0.0, targetLimit: $limit);
+                    $cellCount = count($gridCells);
+
+                    $this->sendSseEvent('progress', [
+                        'type' => 'progress',
+                        'status' => ExtractionJob::STATUS_SEARCHING,
+                        'current_activity' => "Partitioned '{$resolvedLocation}' into {$cellCount} search grid cells.",
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
+                }
+            }
+
+            // Fallback to single unrestricted query if no grid cells generated
+            if (empty($gridCells)) {
+                $gridCells = [null];
+            }
+
             try {
-                do {
-                    $payload = [
-                        'textQuery' => $job->query,
-                        'pageSize' => min(20, max(20, $limit - $extractedCount)),
-                    ];
-                    if ($pageToken) {
-                        $payload['pageToken'] = $pageToken;
-                    }
+                $totalCells = count($gridCells);
 
-                    $response = Http::withHeaders([
-                        'Content-Type' => 'application/json',
-                        'X-Goog-Api-Key' => $key,
-                        'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.photos,places.iconMaskBaseUri,nextPageToken',
-                    ])->timeout(15)->post(self::PLACES_API_URL, $payload);
-
-                    if ($response->failed()) {
-                        $errorBody = $response->json();
-                        $errorMessage = $errorBody['error']['message'] ?? 'Google Places API request failed with HTTP '.$response->status();
-                        Log::error('Google Places API error', ['status' => $response->status(), 'body' => $errorBody]);
-
-                        $this->sendSseEvent('error', [
-                            'type' => 'error',
-                            'status' => ExtractionJob::STATUS_ERROR,
-                            'message' => 'Google Maps API Error: '.$errorMessage,
-                        ]);
-
-                        $job->forceFill([
-                            'status' => ExtractionJob::STATUS_ERROR,
-                            'error' => $errorMessage,
-                            'completed_at' => now(),
-                        ])->save();
-
-                        return;
-                    }
-
-                    $data = $response->json();
-                    $places = $data['places'] ?? [];
-                    $pageToken = $data['nextPageToken'] ?? null;
-
-                    if (empty($places)) {
+                foreach ($gridCells as $cellIdx => $cell) {
+                    if ($extractedCount >= $limit) {
                         break;
                     }
 
-                    foreach ($places as $place) {
+                    // Check if job was cancelled externally
+                    $job->refresh();
+                    if ($job->isTerminal()) {
+                        break;
+                    }
+
+                    if (connection_aborted()) {
+                        break;
+                    }
+
+                    if ($totalCells > 1 && $cell !== null) {
+                        $cellNum = $cellIdx + 1;
+                        $this->sendSseEvent('progress', [
+                            'type' => 'progress',
+                            'status' => ExtractionJob::STATUS_EXTRACTING,
+                            'current_activity' => "Scanning grid cell {$cellNum} of {$totalCells} in {$resolvedLocation}...",
+                            'businesses_seen' => $seenCount,
+                            'leads_extracted' => $extractedCount,
+                            'emails_found' => $emailsCount,
+                            'websites_found' => $websitesCount,
+                        ]);
+                    }
+
+                    $pageToken = null;
+
+                    do {
                         if ($extractedCount >= $limit) {
                             break 2;
                         }
 
-                        $seenCount++;
-                        $name = $place['displayName']['text'] ?? null;
-                        if (! $name) {
-                            continue;
-                        }
-
-                        $phone = $place['nationalPhoneNumber'] ?? ($place['internationalPhoneNumber'] ?? null);
-                        $website = $place['websiteUri'] ?? null;
-                        $rating = isset($place['rating']) ? (float) $place['rating'] : null;
-                        $reviews = isset($place['userRatingCount']) ? (int) $place['userRatingCount'] : null;
-
-                        // Pre-extraction filter: require website
-                        if ($reqWebsite && empty($website)) {
-                            continue;
-                        }
-
-                        // Pre-extraction filter: require phone
-                        if ($reqPhone && empty($phone)) {
-                            continue;
-                        }
-
-                        // Pre-extraction filter: min rating
-                        if ($minRating > 0 && ($rating === null || $rating < $minRating)) {
-                            continue;
-                        }
-
-                        // Pre-extraction filter: min reviews
-                        if ($minReviews > 0 && ($reviews === null || $reviews < $minReviews)) {
-                            continue;
-                        }
-
-                        $emails = [];
-                        if ($website) {
-                            $websitesCount++;
-                            $emails = $this->quickEnrichWebsiteEmails($website);
-                            if (! empty($emails)) {
-                                $emailsCount += count($emails);
-                            }
-                        }
-
-                        // Pre-extraction filter: require email
-                        if ($reqEmail && empty($emails)) {
-                            continue;
-                        }
-
-                        // Avatar image resolution
-                        $avatarUrl = null;
-                        if (! empty($place['photos'][0]['name'])) {
-                            $photoName = $place['photos'][0]['name'];
-                            $avatarUrl = "https://places.googleapis.com/v1/{$photoName}/media?maxHeightPx=160&maxWidthPx=160&key={$key}";
-                        } elseif (! empty($website)) {
-                            $domain = parse_url($website, PHP_URL_HOST) ?: $website;
-                            $avatarUrl = "https://www.google.com/s2/favicons?domain=".urlencode($domain)."&sz=128";
-                        }
-
-                        $leadData = [
-                            'business_name' => $name,
-                            'address' => $place['formattedAddress'] ?? null,
-                            'phone' => $phone,
-                            'emails' => $emails,
-                            'avatar_url' => $avatarUrl,
-                            'website' => $website,
-                            'google_maps_url' => $place['googleMapsUri'] ?? null,
-                            'place_id' => $place['id'] ?? null,
-                            'category' => $place['primaryTypeDisplayName']['text'] ?? null,
-                            'rating' => $rating,
-                            'review_count' => $reviews,
-                            'source' => 'Google Places API',
-                            'metadata' => [
-                                'place_id' => $place['id'] ?? null,
-                                'business_status' => $place['businessStatus'] ?? null,
-                            ],
-                            'extracted_at' => now(),
-                            'tenant_id' => $job->tenant_id,
-                            'user_id' => $job->user_id,
+                        $payload = [
+                            'textQuery' => $searchTerm ?: $job->query,
+                            'pageSize' => min(20, max(20, $limit - $extractedCount)),
                         ];
 
-                        $exists = $job->leads()
-                            ->when(! empty($leadData['place_id']), fn ($q) => $q->where('place_id', $leadData['place_id']))
-                            ->when(empty($leadData['place_id']), fn ($q) => $q->where('business_name', $name)->where('address', $leadData['address']))
-                            ->exists();
-
-                        if (! $exists) {
-                            $createdLead = $job->leads()->create($leadData);
-                            $leadData['id'] = $createdLead->id;
-                            $extractedCount++;
+                        if ($pageToken) {
+                            $payload['pageToken'] = $pageToken;
                         }
 
-                        $job->forceFill([
-                            'status' => ExtractionJob::STATUS_EXTRACTING,
-                            'businesses_seen' => $seenCount,
-                            'leads_extracted' => $extractedCount,
-                            'emails_found' => $emailsCount,
-                            'websites_found' => $websitesCount,
-                            'current_activity' => $name,
-                        ])->save();
+                        if ($cell !== null) {
+                            $payload['locationRestriction'] = [
+                                'rectangle' => [
+                                    'low' => $cell['low'],
+                                    'high' => $cell['high'],
+                                ],
+                            ];
+                        }
 
-                        $this->sendSseEvent('lead', [
-                            'type' => 'lead',
-                            'status' => ExtractionJob::STATUS_EXTRACTING,
-                            'lead' => $leadData,
-                            'businesses_seen' => $seenCount,
-                            'leads_extracted' => $extractedCount,
-                            'emails_found' => $emailsCount,
-                            'websites_found' => $websitesCount,
-                        ]);
+                        $response = Http::withHeaders([
+                            'Content-Type' => 'application/json',
+                            'X-Goog-Api-Key' => $key,
+                            'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.photos,places.location,nextPageToken',
+                        ])->timeout(15)->post(self::PLACES_API_URL, $payload);
 
-                        // Micro-delay between stream yields for smooth visual streaming
-                        usleep(60000);
-                    }
+                        if ($response->failed()) {
+                            $errorBody = $response->json();
+                            $errorMessage = $errorBody['error']['message'] ?? 'Google Places API request failed with HTTP '.$response->status();
+                            Log::error('Google Places API error', ['status' => $response->status(), 'body' => $errorBody]);
 
-                    if ($pageToken) {
-                        // Google Places API recommends a short delay before querying nextPageToken
-                        usleep(1500000);
-                    }
-                } while ($pageToken && $extractedCount < $limit);
+                            // If single cell or auth error, terminate with error
+                            if ($totalCells === 1 || in_array($response->status(), [401, 403], true)) {
+                                $this->sendSseEvent('error', [
+                                    'type' => 'error',
+                                    'status' => ExtractionJob::STATUS_ERROR,
+                                    'message' => 'Google Maps API Error: '.$errorMessage,
+                                ]);
+
+                                $job->forceFill([
+                                    'status' => ExtractionJob::STATUS_ERROR,
+                                    'error' => $errorMessage,
+                                    'completed_at' => now(),
+                                ])->save();
+
+                                return;
+                            }
+
+                            // Otherwise log warning and proceed to next cell
+                            Log::warning("Grid cell {$cellIdx} request failed, skipping to next cell", ['error' => $errorMessage]);
+                            break;
+                        }
+
+                        $data = $response->json();
+                        $places = $data['places'] ?? [];
+                        $pageToken = $data['nextPageToken'] ?? null;
+
+                        if (empty($places)) {
+                            break;
+                        }
+
+                        foreach ($places as $place) {
+                            if ($extractedCount >= $limit) {
+                                break 2;
+                            }
+
+                            if (connection_aborted()) {
+                                break 2;
+                            }
+
+                            $seenCount++;
+                            $name = $place['displayName']['text'] ?? null;
+                            if (! $name) {
+                                continue;
+                            }
+
+                            $placeId = $place['id'] ?? null;
+                            $address = $place['formattedAddress'] ?? null;
+
+                            // In-memory deduplication check
+                            if ($placeId) {
+                                if (isset($seenPlaceIds[$placeId])) {
+                                    continue;
+                                }
+                                $seenPlaceIds[$placeId] = true;
+                            } else {
+                                $signature = strtolower(trim($name)).'|'.strtolower(trim((string) $address));
+                                if (isset($seenSignatures[$signature])) {
+                                    continue;
+                                }
+                                $seenSignatures[$signature] = true;
+                            }
+
+                            $phone = $place['nationalPhoneNumber'] ?? ($place['internationalPhoneNumber'] ?? null);
+                            $website = $place['websiteUri'] ?? null;
+                            $rating = isset($place['rating']) ? (float) $place['rating'] : null;
+                            $reviews = isset($place['userRatingCount']) ? (int) $place['userRatingCount'] : null;
+                            $lat = isset($place['location']['latitude']) ? (float) $place['location']['latitude'] : null;
+                            $lng = isset($place['location']['longitude']) ? (float) $place['location']['longitude'] : null;
+
+                            // Pre-extraction filter: require website
+                            if ($reqWebsite && empty($website)) {
+                                continue;
+                            }
+
+                            // Pre-extraction filter: require phone
+                            if ($reqPhone && empty($phone)) {
+                                continue;
+                            }
+
+                            // Pre-extraction filter: min rating
+                            if ($minRating > 0 && ($rating === null || $rating < $minRating)) {
+                                continue;
+                            }
+
+                            // Pre-extraction filter: min reviews
+                            if ($minReviews > 0 && ($reviews === null || $reviews < $minReviews)) {
+                                continue;
+                            }
+
+                            $emails = [];
+                            if ($website) {
+                                $websitesCount++;
+                                $emails = $this->quickEnrichWebsiteEmails($website);
+                                if (! empty($emails)) {
+                                    $emailsCount += count($emails);
+                                }
+                            }
+
+                            // Pre-extraction filter: require email
+                            if ($reqEmail && empty($emails)) {
+                                continue;
+                            }
+
+                            // Avatar image resolution
+                            $avatarUrl = null;
+                            if (! empty($place['photos'][0]['name'])) {
+                                $photoName = $place['photos'][0]['name'];
+                                $avatarUrl = "https://places.googleapis.com/v1/{$photoName}/media?maxHeightPx=160&maxWidthPx=160&key={$key}";
+                            } elseif (! empty($website)) {
+                                $domain = parse_url($website, PHP_URL_HOST) ?: $website;
+                                $avatarUrl = "https://www.google.com/s2/favicons?domain=".urlencode($domain)."&sz=128";
+                            }
+
+                            $leadData = [
+                                'business_name' => $name,
+                                'address' => $address,
+                                'phone' => $phone,
+                                'emails' => $emails,
+                                'avatar_url' => $avatarUrl,
+                                'website' => $website,
+                                'google_maps_url' => $place['googleMapsUri'] ?? null,
+                                'place_id' => $placeId,
+                                'category' => $place['primaryTypeDisplayName']['text'] ?? null,
+                                'rating' => $rating,
+                                'review_count' => $reviews,
+                                'latitude' => $lat,
+                                'longitude' => $lng,
+                                'source' => 'Google Places API',
+                                'metadata' => [
+                                    'place_id' => $placeId,
+                                    'business_status' => $place['businessStatus'] ?? null,
+                                    'grid_cell' => $cell ? ['row' => $cell['row'] ?? null, 'col' => $cell['col'] ?? null] : null,
+                                ],
+                                'extracted_at' => now(),
+                                'tenant_id' => $job->tenant_id,
+                                'user_id' => $job->user_id,
+                            ];
+
+                            // Database deduplication check for current job
+                            $exists = $job->leads()
+                                ->when(! empty($placeId), fn ($q) => $q->where('place_id', $placeId))
+                                ->when(empty($placeId), fn ($q) => $q->where('business_name', $name)->where('address', $address))
+                                ->exists();
+
+                            if (! $exists) {
+                                $createdLead = $job->leads()->create($leadData);
+                                $leadData['id'] = $createdLead->id;
+                                $extractedCount++;
+                            }
+
+                            $job->forceFill([
+                                'status' => ExtractionJob::STATUS_EXTRACTING,
+                                'businesses_seen' => $seenCount,
+                                'leads_extracted' => $extractedCount,
+                                'emails_found' => $emailsCount,
+                                'websites_found' => $websitesCount,
+                                'current_activity' => $name,
+                            ])->save();
+
+                            $this->sendSseEvent('lead', [
+                                'type' => 'lead',
+                                'status' => ExtractionJob::STATUS_EXTRACTING,
+                                'lead' => $leadData,
+                                'businesses_seen' => $seenCount,
+                                'leads_extracted' => $extractedCount,
+                                'emails_found' => $emailsCount,
+                                'websites_found' => $websitesCount,
+                            ]);
+
+                            // Micro-delay between stream yields for smooth visual streaming
+                            usleep(60000);
+                        }
+
+                        if ($pageToken && $extractedCount < $limit) {
+                            // Google Places API recommends a short delay before querying nextPageToken
+                            usleep(1000000);
+                        }
+                    } while ($pageToken && $extractedCount < $limit);
+                }
 
                 $job->forceFill([
                     'status' => ExtractionJob::STATUS_COMPLETED,
@@ -291,6 +421,41 @@ class GooglePlacesService
             'Connection' => 'keep-alive',
             'X-Accel-Buffering' => 'no',
         ]);
+    }
+
+    /**
+     * Resolve search query keyword and location from ExtractionJob and optional explicit location.
+     *
+     * @return array{0: string, 1: string|null} [searchTerm, location]
+     */
+    public function resolveSearchQueryAndLocation(ExtractionJob $job, ?string $explicitLocation = null): array
+    {
+        $location = $explicitLocation ? trim($explicitLocation) : null;
+        $searchTerm = null;
+
+        // If location not explicitly passed, try extracting from prompt or query
+        if (empty($location)) {
+            if (preg_match('/^(.*?)\s*\((.*?)\)$/', $job->prompt, $matches)) {
+                $searchTerm = trim($matches[1]);
+                $location = trim($matches[2]);
+            } elseif (preg_match('/^(.*?)\s+in\s+(.*)$/i', $job->query, $matches)) {
+                $searchTerm = trim($matches[1]);
+                $location = trim($matches[2]);
+            }
+        }
+
+        if (empty($searchTerm)) {
+            if (! empty($location) && preg_match('/^(.*?)\s+in\s+'.preg_quote($location, '/').'$/i', $job->query, $matches)) {
+                $searchTerm = trim($matches[1]);
+            } else {
+                $searchTerm = PromptNormalizer::toSearchQuery($job->prompt);
+            }
+        }
+
+        return [
+            PromptNormalizer::toSearchQuery($searchTerm ?: $job->query),
+            $location ?: null,
+        ];
     }
 
     /**

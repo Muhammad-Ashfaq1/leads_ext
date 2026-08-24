@@ -85,6 +85,9 @@ class ExtractorController extends Controller
             if (! empty($filters)) {
                 session(['google_maps_filters_'.$jobUuid => $filters]);
             }
+            if (! empty($location)) {
+                session(['google_maps_location_'.$jobUuid => $location]);
+            }
 
             $job = ExtractionJob::create([
                 'tenant_id' => $tenantId,
@@ -217,8 +220,9 @@ class ExtractorController extends Controller
         if ($job->mode === 'google_api') {
             $apiKey = $request->query('api_key') ?: session('google_maps_api_key_'.$job->uuid);
             $filters = session('google_maps_filters_'.$job->uuid, []);
+            $location = session('google_maps_location_'.$job->uuid);
 
-            return $this->googlePlacesService->stream($job, $apiKey, $filters);
+            return $this->googlePlacesService->stream($job, $apiKey, $filters, $location);
         }
 
         $url = $this->client->streamUrl($job->uuid);
