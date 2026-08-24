@@ -90,6 +90,10 @@
     font-weight: 600;
 }
 
+.account-settings-panel[hidden] {
+    display: none !important;
+}
+
 .account-settings-header {
     display: flex;
     align-items: center;
@@ -98,29 +102,161 @@
 }
 
 .account-settings-avatar {
-    width: 4.5rem;
-    height: 4.5rem;
-    min-width: 4.5rem;
-    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    border-radius: 999px;
     background: var(--as-avatar-bg);
-    color: var(--as-avatar-initial);
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
-    font-weight: 700;
+    overflow: hidden;
+    cursor: pointer;
+    margin: 0;
+    border: 1px solid var(--as-card-border);
+    flex-shrink: 0;
 }
 
-.account-settings-title {
-    margin: 0 0 0.25rem;
-    font-size: 1.25rem;
+.account-settings-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.account-settings-avatar span#account-avatar-initial,
+.account-settings-avatar .avatar-initial {
+    font-size: 2.25rem;
     font-weight: 700;
+    color: var(--as-avatar-initial);
+}
+
+.account-settings-header-text {
+    min-width: 0;
+}
+
+.account-settings-title,
+.account-settings-password-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
     color: var(--as-title-color);
+    line-height: 1.25;
+}
+
+.account-settings-password-title {
+    margin-bottom: 1.5rem;
 }
 
 .account-settings-subtitle {
     margin: 0;
-    font-size: 0.875rem;
     color: var(--as-subtitle-color);
+    font-size: 0.92rem;
 }
 
+.account-settings-form .form-label {
+    font-weight: 500;
+    color: var(--as-label-color);
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.account-settings-form .required-mark {
+    color: #ef4444;
+}
+
+.account-settings-form .form-control {
+    background-color: var(--as-control-bg);
+    border: 1px solid var(--as-control-border);
+    border-radius: 8px;
+    min-height: 44px;
+    box-shadow: none !important;
+    color: var(--as-control-color);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.account-settings-form .form-control:focus {
+    border-color: var(--as-control-focus-border);
+    box-shadow: 0 0 0 0.15rem var(--as-control-focus-ring) !important;
+}
+
+.account-settings-form .form-control:disabled {
+    background-color: var(--as-control-disabled-bg);
+    color: var(--as-control-disabled-color);
+}
+
+.account-settings-form .form-control::placeholder {
+    color: var(--as-control-placeholder);
+}
+
+/* Password fields (input-group-merge) */
+.account-settings-form .input-group {
+    border: 1px solid var(--as-control-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--as-control-bg);
+    min-height: 44px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.account-settings-form .input-group:focus-within {
+    border-color: var(--as-control-focus-border);
+    box-shadow: 0 0 0 0.15rem var(--as-control-focus-ring);
+}
+
+.account-settings-form .input-group .form-control,
+.account-settings-form .input-group .input-group-text {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent;
+    min-height: 42px;
+    color: var(--as-control-color);
+}
+
+.account-settings-form .input-group .input-group-text {
+    color: var(--as-subtitle-color);
+    padding-left: 0.75rem;
+    padding-right: 0.85rem;
+}
+
+.account-settings-form .form-password-toggle .input-group-text {
+    cursor: pointer;
+}
+
+.account-settings-fields {
+    margin-top: 0.25rem;
+}
+
+.account-settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.75rem;
+}
+
+.account-settings-actions .btn-primary,
+.account-settings-save-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.6rem 1.35rem;
+    min-height: 42px;
+    box-shadow: none;
+}
+
+@media (max-width: 767.98px) {
+    .account-settings-card {
+        padding: 1.25rem;
+    }
+
+    .account-settings-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .account-settings-actions {
+        justify-content: stretch;
+    }
+
+    .account-settings-actions .btn {
+        width: 100%;
+    }
+}

@@ -9,6 +9,19 @@
     data-template="vertical-menu-template">
 <head>
     <meta charset="utf-8" />
+    <script>
+      (function () {
+        const templateName = 'vertical-menu-template';
+        const collapsed = localStorage.getItem('templateCustomizer-' + templateName + '--LayoutCollapsed');
+        if (collapsed !== null) {
+          if (collapsed === 'true') {
+            document.documentElement.classList.add('layout-menu-collapsed');
+          } else {
+            document.documentElement.classList.remove('layout-menu-collapsed');
+          }
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>@yield('title', 'Dashboard') | Leads Engine</title>
@@ -91,11 +104,17 @@
             <!-- Sidebar / Vertical Menu -->
             <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
                 <div class="app-brand demo py-3">
+                <div class="app-brand demo">
                     <a href="{{ route('dashboard') }}" class="app-brand-link text-decoration-none d-flex align-items-center gap-2">
                         <span class="app-brand-logo-custom">
                             <i class="icon-base ti tabler-radar"></i>
                         </span>
                         <span class="app-brand-text demo menu-text fw-bold fs-5 text-heading">Leads Engine</span>
+                    </a>
+
+                    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                        <i class="icon-base ti menu-toggle-icon d-none d-xl-block"></i>
+                        <i class="icon-base ti tabler-x d-block d-xl-none"></i>
                     </a>
                 </div>
 
@@ -216,19 +235,23 @@
                                 </a>
                             </li>
 
-                            <li class="nav-item navbar-dropdown dropdown-user dropdown">
-                                <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <div class="user-avatar-badge">
-                                        {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
+                            <li class="nav-item dropdown pos-navbar-account">
+                                <a class="nav-link dropdown-toggle hide-arrow p-0 pos-navbar-avatar-trigger" href="javascript:void(0);" data-bs-toggle="dropdown" aria-label="Account menu" aria-expanded="false">
+                                    <div class="avatar avatar-online pos-navbar-avatar">
+                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                            {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
+                                        </span>
                                     </div>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 14rem;">
+                                <ul class="dropdown-menu dropdown-menu-end pos-navbar-dropdown">
                                     <li>
                                         <div class="pos-navbar-dropdown-head">
-                                            <div class="user-avatar-badge" style="width: 2.75rem; height: 2.75rem; font-size: 1.1rem;">
-                                                {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
+                                            <div class="avatar avatar-online pos-navbar-avatar pos-navbar-avatar--lg">
+                                                <span class="avatar-initial rounded-circle bg-label-primary">
+                                                    {{ strtoupper(substr($authUser->name ?? 'U', 0, 1)) }}
+                                                </span>
                                             </div>
-                                            <div class="min-w-0">
+                                            <div class="pos-navbar-dropdown-meta min-w-0">
                                                 <div class="pos-navbar-dropdown-name text-truncate">{{ $authUser->name }}</div>
                                                 <small class="pos-navbar-dropdown-email text-truncate">{{ $authUser->email }}</small>
                                                 <div class="mt-1">
@@ -239,11 +262,21 @@
                                             </div>
                                         </div>
                                     </li>
+                                    @unless ($isSuperAdmin)
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <div class="pos-navbar-dropdown-org px-3 py-1">
+                                                <span class="pos-navbar-org-name" title="{{ $contextLabel }}">{{ $contextLabel }}</span>
+                                            </div>
+                                        </li>
+                                    @endunless
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('profile.index') }}">
                                             <i class="icon-base ti tabler-user me-2"></i>
-                                            <span class="align-middle">My Profile</span>
+                                            <span class="align-middle">Profile</span>
                                         </a>
                                     </li>
                                     <li>
@@ -266,7 +299,7 @@
                                             @csrf
                                             <button type="submit" class="dropdown-item text-danger">
                                                 <i class="icon-base ti tabler-logout me-2"></i>
-                                                <span class="align-middle">Sign Out</span>
+                                                <span class="align-middle">Sign out</span>
                                             </button>
                                         </form>
                                     </li>
@@ -322,11 +355,17 @@
             </div>
             <!-- / Layout Page -->
         </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+        <div class="drag-target"></div>
     </div>
 
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
+    <script src="{{ asset('assets/js/main.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

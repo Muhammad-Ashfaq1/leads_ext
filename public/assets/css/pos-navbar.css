@@ -1,5 +1,12 @@
 /*
- * pos-navbar.css — Glass detached navbar matching POS application.
+ * pos-navbar.css — Glass detached navbar (shell kit).
+ *
+ * Dresses Vuexy's .layout-navbar.navbar-detached to match pos-glass surfaces
+ * and the AWT org-name treatment: the business name is loud (caps, tracked,
+ * heading colour), not a muted secondary label.
+ *
+ * Loaded by the app layout unconditionally. Pages do not push this sheet.
+ * Overflow stays visible so avatar / theme dropdowns are not clipped.
  */
 
 .layout-navbar.navbar-detached.pos-navbar {
@@ -50,21 +57,247 @@
     line-height: 1.2;
 }
 
+/* Theme / menu icon chips — soft primary glass, same family as listing tools */
+.pos-navbar .layout-menu-toggle .nav-link,
+.pos-navbar #nav-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border-radius: 0.625rem;
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.pos-navbar .layout-menu-toggle .nav-link:hover,
+.pos-navbar #nav-theme:hover,
+.pos-navbar #nav-theme[aria-expanded='true'] {
+    background-color: rgba(var(--bs-primary-rgb), 0.18);
+    color: var(--bs-primary);
+}
+
+.pos-navbar .navbar-nav-right > ul.navbar-nav {
+    gap: 0.75rem;
+}
+
+/* Avatar — Vuexy circular, matching POS */
+.pos-navbar-avatar-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    line-height: 0;
+}
+
+.pos-navbar-avatar-trigger:hover,
+.pos-navbar-avatar-trigger[aria-expanded='true'] {
+    background: transparent;
+}
+
+.pos-navbar-avatar,
+.pos-navbar-avatar img,
+.pos-navbar-avatar .avatar-initial {
+    border-radius: 50% !important;
+}
+
+.pos-navbar-avatar {
+    width: 2.375rem;
+    height: 2.375rem;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.95),
+        0 0 0 3px rgba(var(--bs-primary-rgb), 0.28);
+}
+
+.pos-navbar-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pos-navbar-avatar--lg {
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+}
+
+.pos-navbar-avatar.avatar-online {
+    overflow: visible;
+}
+
+.pos-navbar-avatar.avatar-online img,
+.pos-navbar-avatar.avatar-online .avatar-initial {
+    overflow: hidden;
+    border-radius: 50% !important;
+}
+
+/* Account dropdown — glass rim, matching POS */
+.pos-navbar-dropdown {
+    --pos-tone-rgb: var(--bs-primary-rgb);
+    min-width: 16.5rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: var(--pos-glass-radius, 1rem);
+    background-color: rgba(255, 255, 255, 0.96);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--pos-tone-rgb), 0.08) 0%,
+        rgba(255, 255, 255, 0.98) 48%,
+        rgba(255, 255, 255, 1) 100%
+    );
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow:
+        0 16px 36px -14px rgba(var(--pos-tone-rgb), 0.38),
+        0 2px 6px rgba(47, 43, 61, 0.08),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+}
+
+.pos-navbar-dropdown .dropdown-divider {
+    margin: 0.4rem 0.25rem;
+    opacity: 0.12;
+}
+
 .pos-navbar-dropdown-head {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    padding: 0.55rem 0.65rem 0.45rem;
+}
+
+.pos-navbar-dropdown-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    line-height: 1.25;
 }
 
 .pos-navbar-dropdown-name {
     font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--bs-heading-color);
+    font-size: 0.9375rem;
+    color: var(--bs-heading-color, #2f3349);
 }
 
 .pos-navbar-dropdown-email {
+    color: var(--bs-secondary-color, #6f6b7d);
     font-size: 0.75rem;
-    color: var(--bs-secondary-color);
 }
 
+.pos-navbar-dropdown-org {
+    min-width: 0;
+}
+
+.pos-navbar-dropdown-org .pos-navbar-org-name {
+    max-width: 100%;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--bs-primary);
+}
+
+.pos-navbar-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    border-radius: 0.625rem;
+    padding: 0.55rem 0.75rem;
+    color: var(--bs-heading-color, #2f3349);
+    font-weight: 500;
+}
+
+.pos-navbar-dropdown .dropdown-item i {
+    color: var(--bs-primary);
+    opacity: 0.9;
+}
+
+.pos-navbar-dropdown .dropdown-item:hover,
+.pos-navbar-dropdown .dropdown-item:focus,
+.pos-navbar-dropdown .dropdown-item.active {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+}
+
+.pos-navbar-dropdown .dropdown-item:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.16);
+    color: var(--bs-primary);
+}
+
+[data-bs-theme='dark'] .layout-navbar.navbar-detached.pos-navbar {
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.045);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--pos-tone-rgb), 0.18) 0%,
+        rgba(var(--pos-tone-rgb), 0.05) 45%,
+        rgba(var(--pos-tone-rgb), 0) 74%
+    );
+    box-shadow:
+        0 10px 28px -14px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme='dark'] .pos-navbar-org-name {
+    color: var(--bs-heading-color, #e7e3fc);
+}
+
+[data-bs-theme='dark'] .pos-navbar .layout-menu-toggle .nav-link,
+[data-bs-theme='dark'] .pos-navbar #nav-theme {
+    background-color: rgba(var(--bs-primary-rgb), 0.18);
+    color: rgba(var(--bs-primary-rgb), 1);
+}
+
+[data-bs-theme='dark'] .pos-navbar-avatar-trigger {
+    background: transparent;
+}
+
+[data-bs-theme='dark'] .pos-navbar-avatar {
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.08),
+        0 0 0 3px rgba(var(--bs-primary-rgb), 0.35);
+}
+
+[data-bs-theme='dark'] .pos-navbar-dropdown {
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(37, 41, 60, 0.98);
+    background-image: linear-gradient(
+        135deg,
+        rgba(var(--pos-tone-rgb), 0.16) 0%,
+        rgba(37, 41, 60, 0.98) 50%,
+        rgba(37, 41, 60, 1) 100%
+    );
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow:
+        0 16px 40px -16px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme='dark'] .pos-navbar-dropdown-name,
+[data-bs-theme='dark'] .pos-navbar-dropdown .dropdown-item {
+    color: var(--bs-heading-color, #e7e3fc);
+}
+
+[data-bs-theme='dark'] .pos-navbar-dropdown-org .pos-navbar-org-name {
+    color: rgba(var(--bs-primary-rgb), 1);
+}
+
+[data-bs-theme='dark'] .pos-navbar-dropdown .dropdown-item:hover,
+[data-bs-theme='dark'] .pos-navbar-dropdown .dropdown-item:focus,
+[data-bs-theme='dark'] .pos-navbar-dropdown .dropdown-item.active {
+    background-color: rgba(var(--bs-primary-rgb), 0.18);
+    color: #fff;
+}
+
+@media (max-width: 575.98px) {
+    .pos-navbar-org-name {
+        max-width: 16ch;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+    }
+}

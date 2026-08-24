@@ -1,0 +1,112 @@
+/*
+ * Navigation chrome: sidebar sub-item icons, and the billing sub-tab strip.
+ *
+ * Two small things that belong together because both are about finding your way
+ * around rather than about any one screen, and both are loaded by BOTH layouts
+ * (admin and tenant) — a page-level @push would miss the sidebar, which the
+ * layout renders itself.
+ *
+ * Everything reads the theme's own variables, so a sub-item icon is the same
+ * colour as the label beside it on every variant, light through dark. No new
+ * palette, and no !important: each selector is more specific than the template
+ * rule it adjusts.
+ */
+
+/* ── Sidebar sub-item icons ─────────────────────────────────────────── */
+
+/*
+ * The template gives a submenu item a small ring bullet (::before) and pads the
+ * link past it. An icon says more than a bullet, so where one is present the
+ * bullet is dropped and the icon takes its place — otherwise the two would sit
+ * side by side and the row would read as indented twice.
+ *
+ * Opt-in per item (.pos-subicon) rather than :has(), so this cannot change a
+ * submenu somebody adds later without meaning to.
+ */
+.menu .menu-sub > .menu-item.pos-subicon > .menu-link::before {
+    display: none;
+}
+
+.menu-vertical .menu-sub > .menu-item.pos-subicon > .menu-link {
+    padding-inline-start: 1.1rem;
+}
+
+/* Smaller than a top-level icon: it is one level down, and the eye should
+   still find the parent first. */
+.menu .menu-sub > .menu-item.pos-subicon > .menu-link > .menu-icon {
+    inline-size: 1.25rem;
+    font-size: 1.125rem;
+    margin-inline-end: 0.5rem;
+    opacity: 0.85;
+}
+
+.menu .menu-sub > .menu-item.pos-subicon.active > .menu-link > .menu-icon {
+    opacity: 1;
+}
+
+/* Collapsed rail: the flyout submenu keeps the icons, but the extra indent it
+   inherits from the vertical menu is wrong once the parent is a popup. */
+.menu-collapsed:not(:hover) .menu-sub > .menu-item.pos-subicon > .menu-link {
+    padding-inline-start: 1rem;
+}
+
+/* ── Billing sub-tabs ───────────────────────────────────────────────── */
+
+/*
+ * One strip across Overview / Rate cards / Service rates / Add-on pricing /
+ * Invoices. Built on the theme's .nav-pills, so the active fill is the theme's
+ * primary and nothing here has to know what colour that is.
+ */
+.pos-billing-tabs {
+    margin-block-end: 1rem;
+    /* Five pills do not fit a phone; scroll them rather than wrapping into a
+       block that pushes the page content down by three rows. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.pos-billing-tabs > .nav {
+    flex-wrap: nowrap;
+    gap: 0.375rem;
+    padding-block-end: 0.125rem;
+}
+
+.pos-billing-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.875rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: nowrap;
+    /* The template capitalises .nav-link, which turned "Add-on Pricing" into
+       "Add-On Pricing" — a hyphenated word is one word. */
+    text-transform: none;
+    color: var(--bs-secondary-color);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.pos-billing-tabs .nav-link i {
+    font-size: 1rem;
+}
+
+.pos-billing-tabs .nav-link:not(.active):hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+    color: rgb(var(--bs-primary-rgb));
+}
+
+/* The active pill keeps the template's own fill; only its weight is ours, so
+   the current section reads first in a row of five. */
+.pos-billing-tabs .nav-link.active {
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos-billing-tabs .nav-link {
+        transition: none;
+    }
+}
