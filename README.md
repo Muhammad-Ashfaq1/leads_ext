@@ -1,225 +1,102 @@
-# leads_ext
+# Leads Engine — SaaS Lead Generation & Enrichment Platform
 
-# AWT Phone — Google Maps Lead Extractor
+A modern, multi-tenant SaaS application that discovers, enriches, and exports verified B2B leads from Google Maps using **Google Places Platform API** and an optional **Playwright Chromium browser crawler**.
 
-A local AWT Phone tool that turns a natural-language prompt into a Google Maps search, extracts publicly listed business information, and **streams each lead to the browser as soon as it is found**.
+Built with **Laravel 12**, **PHP 8.3**, **MySQL**, and styled with the **Vuexy / POS Glass Surface System**.
 
-Open:
+---
 
-```text
-http://extractor.test
-```
+## 🚀 Key Features
 
-There is no login in this first version.
+- **⚡ Dual Extraction Engines**:
+  - **Google Places Platform API (Default)**: Instant, high-volume lead discovery worldwide directly via HTTPS with **zero Python or VPS required**.
+  - **Browser Crawler (Chromium / Playwright)**: Headless browser automation for free local scraping with human-verification pause/resume.
+- **🏢 Multi-Tenant Architecture**: Strict client organization isolation (`tenant_id`), custom lead discovery quotas, and plan tiers (`starter`, `pro`, `enterprise`).
+- **👥 Role-Based Access Control**:
+  - 👑 **Super Admin**: Platform-wide tenant management, global analytics, and quota provisioning.
+  - 🏢 **Tenant Admin**: Team management, custom API keys, lead extraction, and Excel exports.
+  - 👤 **Team Member**: Extraction tasks, lead searching, and downloads.
+- **🔍 Contact & Email Discovery**: Automatic background inspection of business websites to extract public contact emails.
+- **📊 Real-time SSE Streaming**: Leads appear live on screen the instant they are found via Server-Sent Events.
+- **📁 Universal Excel Export**: Instant 1-click Microsoft Excel (`.xlsx`) and JSON exports for search sessions or the master lead database.
+- **🎨 POS UI Design System**: Glass panels, stat cards, live metric pills, and clean sidebar navigation matching `Projects/pos`.
+- **🚀 CI/CD Ready**: Automated GitHub Actions deployment pipeline for **Hostinger Shared Hosting** (`leads.obtainsolutions.com`).
 
-## Architecture
+---
 
-```text
-Browser (extractor.test)
-   │
-   ▼
-Laravel 12  — page, API, SSE proxy, persistence, CSV export
-   │
-   ▼
-Python FastAPI (127.0.0.1:8001)
-   │
-   ▼
-Playwright Chromium  →  Google Maps
-```
+## 📚 Complete Documentation
 
-Laravel owns the UI and job records. Python owns browser automation, parsing, enrichment, cancellation, and human-verification pause/resume. Events flow:
+Comprehensive guides are organized in the [`docs/`](file:///Users/macbookpro2019/Projects/leads-info/docs/) directory:
 
-```text
-Python SSE  →  Laravel /api/extractor/{job}/stream  →  EventSource in the page
-```
+- 🏗️ [**Architecture & System Design**](docs/ARCHITECTURE.md) — Dual engine pipeline, SSE lifecycle, and database schema.
+- 🏢 [**SaaS Multi-Tenancy & Roles**](docs/SAAS_AND_ROLES.md) — Super Admin, Tenant Admin, team permissions, and quotas.
+- 🌐 [**Google Places API Guide**](docs/GOOGLE_PLACES_API.md) — API keys hierarchy, pricing, free tiers, and pre-filtering criteria.
+- 🕷️ [**Python Chromium Crawler Service**](docs/PYTHON_CRAWLER.md) — FastAPI / Playwright crawler setup and optional VPS hosting.
+- 🚀 [**Production Deployment Guide**](docs/DEPLOYMENT_GUIDE.md) — Hostinger shared hosting setup, GitHub Actions CI/CD, and `.htaccess` routing.
+- 📡 [**REST & SSE API Reference**](docs/API_REFERENCE.md) — Complete endpoint specifications and JSON/SSE payload schemas.
 
-Existing AWT Phone realtime (Reverb) is not required. This tool uses Server-Sent Events so leads appear immediately without polling.
+---
 
-## Requirements
+## 🛠️ Local Development Quickstart
 
-Already expected on this MacBook:
+### 1. Requirements
+- PHP 8.2 or 8.3
+- Composer
+- MySQL 8.0+ / SQLite
+- Node.js & NPM (for frontend builds if modifying CSS/JS)
 
-- PHP 8.2+ / Composer / Laravel
-- MySQL or SQLite
-- Laravel Valet
-- Python 3.14
-
-Do not reinstall PHP, Composer, Laravel, MySQL, or Valet.
-
-## Laravel setup
-
+### 2. Installation
 ```bash
-cd /Users/macbookpro2019/Projects/leads-info
+# Clone the repository
+git clone https://github.com/Muhammad-Ashfaq1/leads_ext.git leads-info
+cd leads-info
+
+# Install dependencies
+composer install
+
+# Configure environment
 cp .env.example .env
 php artisan key:generate
+
+# Configure database in .env and run migrations & seeders
+php artisan migrate --seed
 ```
 
-`.env` essentials:
-
+### 3. Google Places API Key Configuration
+Add your Google Cloud Places API key to `.env`:
 ```dotenv
-APP_NAME="AWT Phone"
-APP_URL=http://extractor.test
-EXTRACTOR_SERVICE_URL=http://127.0.0.1:8001
-EXTRACTOR_ALLOW_MOCK=true
+GOOGLE_MAPS_API_KEY=AIzaSyYourActualGoogleApiKey
 ```
 
-Create the database (MySQL) or keep SQLite:
+### 4. Serve the Application
+```bash
+# Start Laravel server (or use Laravel Valet: http://extractor.test)
+php artisan serve
+```
+
+---
+
+## 🔑 Default Seeded Accounts
+
+| Role | Email | Password | Organization | Plan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Super Admin** | `superadmin@leads.test` | `password` | *Global Platform Owner* | Enterprise |
+| **Tenant Admin** | `admin@acme.com` | `password` | Acme Corporation | Enterprise |
+| **Tenant Admin** | `admin@nexus.com` | `password` | Nexus Digital Marketing | Pro |
+
+---
+
+## 🧪 Testing
+
+Run the full automated test suite:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS leads_extractor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-php artisan migrate
+php artisan test
 ```
 
-The site is already available at:
+All 28 tests covering Authentication, Multi-Tenancy, Role Authorization, Google Places API streaming, Pre-filters, and Excel export run in under 2 seconds.
 
-```text
-http://extractor.test
-```
+---
 
-(and also `http://leads-info.test` if `~/Projects` is parked).
-
-To register the HTTPS Valet link yourself:
-
-```bash
-cd /Users/macbookpro2019/Projects/leads-info
-sudo valet link extractor
-sudo valet secure extractor
-```
-
-If SSE events look buffered, the Laravel stream already sends `X-Accel-Buffering: no`.
-
-## Python setup
-
-```bash
-cd extractor
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
-cp .env.example .env
-```
-
-Python `.env`:
-
-```dotenv
-HOST=127.0.0.1
-PORT=8001
-HEADLESS=false
-HUMAN_VERIFICATION_TIMEOUT=300
-ALLOW_MOCK=true
-```
-
-`HEADLESS=false` is required so you can complete Google human verification in the same Playwright window.
-
-## Run
-
-Terminal 1 — Python extractor:
-
-```bash
-cd extractor
-source .venv/bin/activate
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
-```
-
-Laravel / Valet continues to serve `http://extractor.test`.
-
-## How to extract leads
-
-1. Open `http://extractor.test`.
-2. Enter a prompt such as `Find dentists in Lahore`.
-3. Choose a maximum (100 / 500 / 1000).
-4. Click **Start Extraction**.
-5. Playwright opens Google Maps and searches `dentists in Lahore`.
-6. Each discovered business appears in the table immediately.
-7. Counters update live.
-8. Click **Stop Extraction** at any time. Already-found leads stay on the page and in the database.
-9. When the job finishes, export CSV.
-
-The extractor never invents missing emails, phones, or ratings. Empty values stay empty.
-
-## Human verification
-
-Google may show CAPTCHA / unusual-traffic / “I’m not a robot” screens.
-
-This tool **does not** solve, bypass, OCR, token-inject, stealth, fingerprint, or proxy-rotate around those screens.
-
-Instead:
-
-1. Extraction pauses in `WAITING_FOR_HUMAN_VERIFICATION`.
-2. The Playwright browser and session stay alive.
-3. The page shows **Human Verification Required**.
-4. Click **Open Verification** to focus the same Playwright window.
-5. Complete the challenge yourself.
-6. The extractor notices Maps is usable again, emits `verification_completed`, and continues from the current session.
-7. This can happen more than once in one job.
-8. If verification is not finished within `HUMAN_VERIFICATION_TIMEOUT` (default 300 seconds), the job stops safely and keeps already extracted leads.
-
-## Development mock stream
-
-Because Google may not show a CAPTCHA while you are building, local/dev mode can simulate the full event sequence:
-
-```text
-started → searching → lead → lead → lead
-→ human_verification_required
-→ verification_completed
-→ lead → lead → completed
-```
-
-On `extractor.test` (only when `APP_ENV` is not `production` and `EXTRACTOR_ALLOW_MOCK=true`):
-
-1. Enable **Development mock stream**.
-2. Optionally enable **Simulate human verification**.
-3. Start extraction.
-4. Leads appear in real time without opening Google Maps.
-5. When verification is simulated, click **Mark Verification Complete** to resume.
-
-This toggle is not available in production.
-
-## Website enrichment
-
-If a public website is listed, Python may fetch only:
-
-```text
-/
-/contact
-/contact-us
-/about
-/about-us
-```
-
-It respects `robots.txt`, blocks private/loopback URLs (SSRF), and never crawls the rest of the site. A failed enrichment does not fail the lead.
-
-## Tests
-
-Laravel:
-
-```bash
-php artisan test --filter=Extractor
-```
-
-Python:
-
-```bash
-cd extractor
-source .venv/bin/activate
-pytest
-```
-
-Unit tests do not call live Google Maps.
-
-## Troubleshooting
-
-| Symptom | What to check |
-|---|---|
-| “Extractor service is unavailable” | Python is not running on port 8001 |
-| Page loads but no live rows | Confirm EventSource is hitting `/api/extractor/{id}/stream` and Python `/jobs/{id}/events` |
-| Browser does not open | `HEADLESS=false` and `playwright install chromium` |
-| Verification never resumes | Stay in the same Playwright window; do not open a separate Maps tab |
-| MySQL connection error | Create `leads_extractor` or switch `.env` to `DB_CONNECTION=sqlite` |
-| Mock toggle missing | `APP_ENV=local` and `EXTRACTOR_ALLOW_MOCK=true` |
-
-## Safety
-
-Allowed: search public Google Maps results, extract publicly displayed business fields, pause for a person to complete Google’s own verification, resume afterwards.
-
-Not allowed and not implemented: CAPTCHA solving, token extraction/injection, stealth plugins, fingerprint spoofing, proxy rotation to evade blocks, or using Google account credentials.
+## 📄 License
+This software is proprietary and confidential. All rights reserved.
