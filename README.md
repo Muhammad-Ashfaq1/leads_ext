@@ -29,6 +29,7 @@ Built with **Laravel 12**, **PHP 8.3**, **MySQL**, and styled with the **Vuexy /
 Comprehensive guides are organized in the [`docs/`](file:///Users/macbookpro2019/Projects/leads-info/docs/) directory:
 
 - 🏗️ [**Architecture & System Design**](docs/ARCHITECTURE.md) — Dual engine pipeline, SSE lifecycle, and database schema.
+- 📐 [**Scaling & Feature Roadmap**](docs/SCALING_AND_ROADMAP.md) — Hostinger shared hosting audit, SSE hardening, Socials/MX extraction, and OpenSpout exports.
 - 🏢 [**SaaS Multi-Tenancy & Roles**](docs/SAAS_AND_ROLES.md) — Super Admin, Tenant Admin, team permissions, and quotas.
 - 🌐 [**Google Places API Guide**](docs/GOOGLE_PLACES_API.md) — API keys hierarchy, pricing, free tiers, and pre-filtering criteria.
 - 🕷️ [**Python Chromium Crawler Service**](docs/PYTHON_CRAWLER.md) — FastAPI / Playwright crawler setup and optional VPS hosting.
