@@ -94,7 +94,6 @@
                     <i class="icon-base ti tabler-send me-1"></i>Send Email
                 </button>
                 <button type="button" class="btn btn-sm btn-success" id="exportSelectedExcelBtn">
-                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export Selected (Excel)
                     <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export (Excel)
                 </button>
                 <button type="button" class="btn btn-sm btn-info text-white" id="exportSelectedCsvBtn">
