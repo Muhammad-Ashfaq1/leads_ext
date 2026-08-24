@@ -102,6 +102,7 @@
         selectAllFilteredBtn: document.getElementById('selectAllFilteredBtn'),
         bulkFilteredCount: document.getElementById('bulkFilteredCount'),
         bulkDeselectBtn: document.getElementById('bulkDeselectBtn'),
+        bulkSendEmailBtn: document.getElementById('bulkSendEmailBtn'),
         bulkSaveBtn: document.getElementById('bulkSaveBtn'),
         bulkExportDropdownBtn: document.getElementById('bulkExportDropdownBtn'),
         bulkExportExcelBtn: document.getElementById('bulkExportExcelBtn'),
@@ -110,6 +111,15 @@
         bulkCopyEmailsBtn: document.getElementById('bulkCopyEmailsBtn'),
         bulkCopyPhonesBtn: document.getElementById('bulkCopyPhonesBtn'),
         bulkDiscardBtn: document.getElementById('bulkDiscardBtn'),
+
+        // Email Modal Elements
+        extractorSendEmailModalEl: document.getElementById('extractorSendEmailModal'),
+        extractorModalRecipients: document.getElementById('extractorModalRecipients'),
+        extractorModalEmailBadge: document.getElementById('extractorModalEmailBadge'),
+        extractorTemplateSelect: document.getElementById('extractorTemplateSelect'),
+        extractorModalSubject: document.getElementById('extractorModalSubject'),
+        extractorModalEditor: document.getElementById('extractorModalEditor'),
+        btnExtractorConfirmSend: document.getElementById('btnExtractorConfirmSend'),
 
         // Export Dropdown
         exportDropdownBtn: document.getElementById('exportDropdownBtn'),
@@ -347,6 +357,7 @@
                     }
                     ${verificationBadge}
                     <div class="extractor-lead-btn-group">
+                        ${emails.length > 0 ? `<button type="button" class="btn btn-xs btn-primary btn-lead-send-email" title="Send Outreach Email" data-key="${escapeAttr(key)}"><i class="icon-base ti tabler-send"></i></button>` : ''}
                         ${mapsBtn}
                         ${websiteBtn}
                     </div>
@@ -845,6 +856,8 @@
 
             if (action === 'save' || action === 'save_all') {
                 if (action === 'save_all' || selectedLeads.length === state.leads.size) {
+                    state.isSaved = true;
+                    for (const lead of state.leads.values()) {
                         lead.status = 'saved';
                         lead.is_saved = true;
                     }
@@ -856,6 +869,7 @@
                 }
                 renderLeads();
                 saveStateToStorage();
+                showToast(data.message || `Saved ${data.affected ?? targetLeadIds.length} lead(s) to master database.`);
             } else if (action === 'discard') {
                 saveStateToStorage();
             } else if (action === 'delete') {
@@ -1487,6 +1501,309 @@
         els.completeMock.addEventListener('click', completeMockVerification);
     }
 
+    // ==========================================
+    // Extractor Email Outreach System
+    // ==========================================
+    let extractorLoadedTemplates = [];
+    let activeExtractorTargetLeads = [];
+    let extractorModalObj = null;
+
+    async function loadExtractorTemplates() {
+        try {
+            const resp = await fetch(cfg.emailTemplatesUrl || '/api/email-templates/list');
+            if (resp.ok) {
+                extractorLoadedTemplates = await resp.json();
+                if (els.extractorTemplateSelect) {
+                    els.extractorTemplateSelect.innerHTML = '<option value="">-- Choose a template (optional) --</option>';
+                    extractorLoadedTemplates.forEach((t) => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.textContent = `${t.name} (${t.category || 'Outreach'})${t.is_default ? ' ★ Default' : ''}`;
+                        els.extractorTemplateSelect.appendChild(opt);
+                    });
+                }
+            }
+        } catch (_) {}
+    }
+
+    if (els.extractorTemplateSelect) {
+        els.extractorTemplateSelect.addEventListener('change', () => {
+            const selectedId = parseInt(els.extractorTemplateSelect.value, 10);
+            const tmpl = extractorLoadedTemplates.find((t) => t.id === selectedId);
+            if (tmpl) {
+                if (els.extractorModalSubject) els.extractorModalSubject.value = tmpl.subject;
+                if (els.extractorModalEditor) els.extractorModalEditor.innerHTML = tmpl.body;
+            }
+        });
+    }
+
+    function openExtractorEmailModal(leads) {
+        if (!els.extractorSendEmailModalEl) return;
+        if (!extractorModalObj && window.bootstrap && window.bootstrap.Modal) {
+            extractorModalObj = new window.bootstrap.Modal(els.extractorSendEmailModalEl);
+        }
+
+        activeExtractorTargetLeads = leads;
+
+        if (leads.length === 1) {
+            const l = leads[0];
+            const email = (Array.isArray(l.emails) ? l.emails[0] : '') || '';
+            if (els.extractorModalRecipients) {
+                els.extractorModalRecipients.textContent = `${l.business_name || 'Business'} <${email}>`;
+            }
+            if (els.extractorModalEmailBadge) {
+                els.extractorModalEmailBadge.textContent = '1 recipient';
+            }
+        } else {
+            if (els.extractorModalRecipients) {
+                els.extractorModalRecipients.textContent = `Sending outreach to ${leads.length} selected lead(s)`;
+            }
+            if (els.extractorModalEmailBadge) {
+                els.extractorModalEmailBadge.textContent = `${leads.length} with email`;
+            }
+        }
+
+        const defaultTmpl = extractorLoadedTemplates.find((t) => t.is_default) || extractorLoadedTemplates[0];
+        if (defaultTmpl) {
+            if (els.extractorTemplateSelect) els.extractorTemplateSelect.value = defaultTmpl.id;
+            if (els.extractorModalSubject) els.extractorModalSubject.value = defaultTmpl.subject;
+            if (els.extractorModalEditor) els.extractorModalEditor.innerHTML = defaultTmpl.body;
+        } else {
+            if (els.extractorModalSubject) els.extractorModalSubject.value = `Quick inquiry regarding {{business_name}}`;
+            if (els.extractorModalEditor) {
+                els.extractorModalEditor.innerHTML = `
+                    <p>Hi <strong>{{business_name}}</strong> Team,</p>
+                    <p>I came across your business in {{city}} and wanted to reach out regarding our lead generation and growth services.</p>
+                    <p>Would you have 5 minutes this week for a brief call?</p>
+                    <p>Best regards,<br><strong>{{sender_name}}</strong></p>
+                `;
+            }
+        }
+
+        if (extractorModalObj) extractorModalObj.show();
+    }
+
+    if (els.bulkSendEmailBtn) {
+        els.bulkSendEmailBtn.addEventListener('click', () => {
+            const selected = getSelectedLeadsList().filter((l) => {
+                const emails = Array.isArray(l.emails) ? l.emails : [];
+                return emails.length > 0 && emails[0];
+            });
+
+            if (selected.length === 0) {
+                showToast('None of the selected leads have an email address.', true);
+                return;
+            }
+
+            openExtractorEmailModal(selected);
+        });
+    }
+
+    if (els.btnExtractorConfirmSend) {
+        els.btnExtractorConfirmSend.addEventListener('click', async () => {
+            const subject = (els.extractorModalSubject ? els.extractorModalSubject.value : '').trim();
+            const body = els.extractorModalEditor ? els.extractorModalEditor.innerHTML.trim() : '';
+
+            if (!subject) {
+                showToast('Please enter an email subject.', true);
+                if (els.extractorModalSubject) els.extractorModalSubject.focus();
+                return;
+            }
+            if (!body || body === '<p><br></p>') {
+                showToast('Please enter an email body message.', true);
+                if (els.extractorModalEditor) els.extractorModalEditor.focus();
+                return;
+            }
+
+            els.btnExtractorConfirmSend.disabled = true;
+            els.btnExtractorConfirmSend.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+
+            try {
+                // Ensure unsaved leads are saved to obtain IDs
+                const unsaved = activeExtractorTargetLeads.filter((l) => !l.id);
+                if (unsaved.length > 0) {
+                    await fetch(cfg.bulkActionUrl || '/api/leads/bulk-action', {
+                        method: 'POST',
+                        headers: headers(),
+                        body: JSON.stringify({
+                            action: 'save',
+                            leads: unsaved,
+                            job_id: state.jobId || undefined,
+                        }),
+                    });
+                }
+
+                let ids = activeExtractorTargetLeads.map((l) => l.id).filter(Boolean);
+
+                const sendResp = await fetch(cfg.sendEmailUrl || '/api/leads/send-email', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({
+                        lead_ids: ids.length > 0 ? ids : undefined,
+                        lead_id: ids.length === 1 ? ids[0] : undefined,
+                        template_id: els.extractorTemplateSelect && els.extractorTemplateSelect.value ? parseInt(els.extractorTemplateSelect.value, 10) : null,
+                        subject,
+                        body,
+                    }),
+                });
+
+                const sendData = await sendResp.json();
+                if (sendResp.ok && sendData.success) {
+                    if (extractorModalObj) extractorModalObj.hide();
+                    showToast(sendData.message || `Dispatched ${sendData.sent_count} email(s) successfully!`);
+                } else {
+                    showToast(sendData.message || 'Failed to dispatch email.', true);
+                }
+            } catch (err) {
+                showToast('Network error while sending email.', true);
+            } finally {
+                els.btnExtractorConfirmSend.disabled = false;
+                els.btnExtractorConfirmSend.innerHTML = '<i class="icon-base ti tabler-send me-1"></i> Send Outreach Email';
+            }
+        });
+    }
+
+    // Grid Delegation for card email button
+    els.leadsGrid.addEventListener('click', (event) => {
+        const sendBtn = event.target.closest('.btn-lead-send-email');
+        if (sendBtn) {
+            event.stopPropagation();
+            const key = sendBtn.dataset.key;
+            if (key && state.leads.has(key)) {
+                openExtractorEmailModal([state.leads.get(key)]);
+            }
+        }
+    });
+
+    window.formatExtractorDoc = function (cmd, val = null) {
+        document.execCommand(cmd, false, val);
+        if (els.extractorModalEditor) els.extractorModalEditor.focus();
+    };
+
+    window.insertExtractorVariable = function (tag) {
+        if (els.extractorModalEditor) {
+            els.extractorModalEditor.focus();
+            document.execCommand('insertText', false, tag);
+        }
+    };
+
     function saveStateToStorage() {
         try {
+            if (!state.leads || state.leads.size === 0) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            const data = {
+                jobId: state.jobId,
+                prompt: els.prompt ? els.prompt.value : '',
+                location: els.locationInput ? els.locationInput.value : '',
+                limit: els.limit ? els.limit.value : '100',
+                engineGoogleApi: els.engineGoogleApi ? els.engineGoogleApi.checked : true,
+                leads: Array.from(state.leads.entries()),
+                selectedKeys: Array.from(state.selectedKeys),
+                leadCounter: state.leadCounter,
+                status: els.statusDot ? (els.statusDot.dataset.status || 'ready') : 'ready',
+                activity: els.activity ? els.activity.textContent : '',
+                searchLabel: els.searchLabel ? els.searchLabel.textContent : '',
+                kpi: {
+                    leads: els.kpiLeads ? els.kpiLeads.textContent : '0',
+                    seen: els.kpiSeen ? els.kpiSeen.textContent : '0',
+                    emails: els.kpiEmails ? els.kpiEmails.textContent : '0',
+                    websites: els.kpiWebsites ? els.kpiWebsites.textContent : '0',
+                },
+                isSaved: Boolean(state.isSaved),
+                running: Boolean(state.running),
+                timestamp: Date.now(),
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (err) {
+            console.warn('Unable to persist extractor session:', err);
+        }
+    }
+
+    async function restoreStateFromStorage() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+
+            const session = JSON.parse(raw);
+            if (!session || !Array.isArray(session.leads) || session.leads.length === 0) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            if (session.isSaved && !session.running) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            if (session.prompt && els.prompt) els.prompt.value = session.prompt;
+            if (session.location && els.locationInput) els.locationInput.value = session.location;
+            if (session.limit && els.limit) els.limit.value = session.limit;
+            if (els.engineGoogleApi && els.engineBrowser) {
+                els.engineGoogleApi.checked = session.engineGoogleApi !== false;
+                els.engineBrowser.checked = session.engineGoogleApi === false;
+                updateEngineModeUi();
+            }
+
+            state.jobId = session.jobId || null;
+            state.leadCounter = session.leadCounter || session.leads.length;
+            state.isSaved = Boolean(session.isSaved);
+
+            state.leads.clear();
+            for (const [key, lead] of session.leads) {
+                state.leads.set(key, lead);
+            }
+
+            state.selectedKeys.clear();
+            if (Array.isArray(session.selectedKeys)) {
+                for (const k of session.selectedKeys) {
+                    state.selectedKeys.add(k);
+                }
+            }
+
+            if (session.kpi) {
+                if (els.kpiLeads) els.kpiLeads.textContent = session.kpi.leads || String(state.leads.size);
+                if (els.kpiSeen) els.kpiSeen.textContent = session.kpi.seen || '0';
+                if (els.kpiEmails) els.kpiEmails.textContent = session.kpi.emails || '0';
+                if (els.kpiWebsites) els.kpiWebsites.textContent = session.kpi.websites || '0';
+            }
+
+            if (session.searchLabel && els.searchLabel) {
+                els.searchLabel.textContent = session.searchLabel;
+            }
+
+            if (session.status) {
+                const displayStatus = session.status === 'extracting' ? 'completed' : session.status;
+                const activityText = session.activity ? session.activity.replace(/^Current Activity:\s*/, '') : null;
+                setStatus(displayStatus, activityText);
+            }
+
+            renderLeads();
+            updateSelectionUi();
+
+            if (session.running && session.jobId) {
+                try {
+                    const statusUrl = jobUrl(cfg.statusUrl);
+                    const resp = await fetch(statusUrl, { headers: headers() });
+                    if (resp.ok) {
+                        const statusData = await resp.json();
+                        if (statusData.status === 'extracting' || statusData.status === 'searching' || statusData.status === 'starting') {
+                            setRunning(true);
+                            connectStream();
+                        }
+                    }
+                } catch (_) {}
+            }
+        } catch (err) {
+            console.warn('Unable to restore extractor session:', err);
+        }
+    }
+
+    // Init UI state & restore persisted session
+    updateEngineModeUi();
+    loadExtractorTemplates();
+    restoreStateFromStorage();
 })();

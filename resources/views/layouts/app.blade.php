@@ -146,6 +146,13 @@
                         </a>
                     </li>
 
+                    <li class="menu-item {{ request()->routeIs('email-templates.*') ? 'active' : '' }}">
+                        <a href="{{ route('email-templates.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base ti tabler-template"></i>
+                            <div data-i18n="Email Templates">Email Templates</div>
+                        </a>
+                    </li>
+
                     <li class="menu-item {{ request()->routeIs('jobs.index') ? 'active' : '' }}">
                         <a href="{{ route('jobs.index') }}" class="menu-link">
                             <i class="menu-icon icon-base ti tabler-history"></i>

@@ -17,8 +17,13 @@ Route::middleware(['web'])->group(function (): void {
         Route::post('/{job}/verify-complete', [ExtractorController::class, 'verifyComplete'])->name('verify-complete');
     });
 
+    Route::prefix('email-templates')->group(function (): void {
+        Route::get('/list', [\App\Http\Controllers\EmailTemplateController::class, 'listJson'])->name('email-templates.list');
+    });
+
     Route::prefix('leads')->name('leads.')->group(function (): void {
         Route::post('/bulk-action', [ExtractorController::class, 'bulkAction'])->name('bulk-action');
         Route::post('/export-selected', [ExtractorController::class, 'exportSelected'])->name('export-selected');
+        Route::post('/send-email', [ExtractorController::class, 'sendEmail'])->name('send-email');
     });
 });
