@@ -1,4 +1,4 @@
-# Leads Engine — Features & Product Value Proposition
+# VektorLeads — Features & Product Value Proposition
 
 > **The All-in-One Autonomous B2B Lead Generation, Verification & Direct Outreach Platform**  
 > *Discover high-value business leads in any city, verify deliverability in real-time, and launch personalized cold outreach directly from your own business email.*
@@ -7,7 +7,7 @@
 
 ## 🎯 Executive Overview
 
-**Leads Engine** is a proprietary all-in-one lead generation, intelligence enrichment, and automated outreach system built for sales teams, digital agencies, freelancers, and growth marketers. It eliminates the need for 4 to 5 separate expensive subscriptions (lead scrapers, data enrichers, email verification tools, spreadsheet formatters, and cold email senders) by combining everything into one seamless, high-velocity dashboard.
+**VektorLeads** is a proprietary all-in-one lead generation, intelligence enrichment, and automated outreach system built for sales teams, digital agencies, freelancers, and growth marketers. It eliminates the need for 4 to 5 separate expensive subscriptions (lead scrapers, data enrichers, email verification tools, spreadsheet formatters, and cold email senders) by combining everything into one seamless, high-velocity dashboard.
 
 ### Core Value Drivers:
 - **100% Proprietary Discovery Engine**: Discover fresh, real-time B2B contacts across any niche and geographic market on demand.
@@ -21,7 +21,7 @@
 ## ⚡ Complete Feature Breakdown
 
 ```
-Leads Engine
+VektorLeads
 ├── 1. Proprietary High-Density Lead Discovery Engine
 ├── 2. Autonomous Web Crawler & Contact Extraction
 ├── 3. Built-in 3-Tier Live Email Verification (Zero Bounces)
@@ -189,21 +189,21 @@ Automatically discovers and links directly to official company profiles across a
 
 ### 🎬 Ad Angle 1: For Agencies & B2B Freelancers (Client Acquisition)
 > **Hook**: "Stop paying \$200/month for scraped lists that bounce half the time."  
-> **Body**: Meet Leads Engine — the all-in-one lead generation platform. Search any city and niche to discover hundreds of fresh local businesses with verified emails, phone numbers, and social links. Connect your own business email, pick a proven outreach template, and start closing new clients in under 2 minutes.  
+> **Body**: Meet VektorLeads — the all-in-one lead generation platform. Search any city and niche to discover hundreds of fresh local businesses with verified emails, phone numbers, and social links. Connect your own business email, pick a proven outreach template, and start closing new clients in under 2 minutes.  
 > **CTA**: Start Finding Clients Now ➔
 
 ---
 
 ### 🎬 Ad Angle 2: For Cold Emailers (Zero Bounces & Custom Mailbox)
 > **Hook**: "100% Deliverable Leads. Sent Directly from Your Own Domain."  
-> **Body**: Tired of burnt domains and high bounce rates? Leads Engine checks every discovered email against live Mail Exchange (MX) servers before you reach out. Set up your custom business email (SMTP) in seconds, personalize your pitch with dynamic tags, and land directly in the primary inbox every single time.  
+> **Body**: Tired of burnt domains and high bounce rates? VektorLeads checks every discovered email against live Mail Exchange (MX) servers before you reach out. Set up your custom business email (SMTP) in seconds, personalize your pitch with dynamic tags, and land directly in the primary inbox every single time.  
 > **CTA**: Get Instant Access ➔
 
 ---
 
 ### 🎬 Ad Angle 3: For Web Designers & Digital Marketers (Local Search)
 > **Hook**: "How to find 500 business leads with bad websites in 60 seconds."  
-> **Body**: Type your target location + niche (*e.g., 'Roofers in Miami'*). Leads Engine automatically maps out the entire area, extracts their ratings, review counts, websites, socials, and verified emails, and lets you pitch them right inside the app with built-in templates.  
+> **Body**: Type your target location + niche (*e.g., 'Roofers in Miami'*). VektorLeads automatically maps out the entire area, extracts their ratings, review counts, websites, socials, and verified emails, and lets you pitch them right inside the app with built-in templates.  
 > **CTA**: Try the Lead Extractor Free ➔
 
 ---

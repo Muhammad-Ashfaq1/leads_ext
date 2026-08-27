@@ -1,7 +1,7 @@
 @php
     $authUser = Auth::user();
     $isSuperAdmin = $authUser?->isSuperAdmin();
-    $contextLabel = $isSuperAdmin ? 'Super Admin Console' : ($authUser?->tenant?->name ?? 'Leads Engine');
+    $contextLabel = $isSuperAdmin ? 'Super Admin Console' : ($authUser?->tenant?->name ?? 'VektorLeads');
     $contextSub = $isSuperAdmin ? 'Global SaaS Management' : (strtoupper($authUser?->tenant?->plan ?? 'STARTER').' Workspace');
 @endphp
 

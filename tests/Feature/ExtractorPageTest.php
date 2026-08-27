@@ -35,7 +35,7 @@ class ExtractorPageTest extends TestCase
         $this->actingAs($user)
             ->get('/extractor')
             ->assertOk()
-            ->assertSee('Leads Engine')
+            ->assertSee('VektorLeads')
             ->assertSee('Lead Extractor')
             ->assertSee('Industry / Business Category')
             ->assertSee('Start Extraction')
@@ -64,6 +64,6 @@ class ExtractorPageTest extends TestCase
             ->assertSee('Total Leads')
             ->assertSee('Email Discovery')
             ->assertSee('Phone Coverage')
-            ->assertSee('Leads Engine');
+            ->assertSee('VektorLeads');
     }
 }

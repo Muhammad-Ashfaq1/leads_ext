@@ -16,7 +16,7 @@ class AuthTest extends TestCase
     {
         $response = $this->get('/login');
         $response->assertOk();
-        $response->assertSee('Leads Engine');
+        $response->assertSee('VektorLeads');
         $response->assertSee('Sign In');
     }
 

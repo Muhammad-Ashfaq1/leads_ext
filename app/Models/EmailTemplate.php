@@ -70,7 +70,7 @@ class EmailTemplate extends Model
             '{{rating}}' => $lead->rating ? (string) $lead->rating : '',
             '{{reviews}}' => $lead->review_count ? (string) $lead->review_count : '',
             '{{sender_name}}' => $sender?->name ?? 'Our Team',
-            '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'Leads Engine'),
+            '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'VektorLeads'),
         ];
 
         $renderedSubject = str_replace(array_keys($vars), array_values($vars), $this->subject);

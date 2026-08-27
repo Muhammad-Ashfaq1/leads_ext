@@ -165,25 +165,35 @@
             <div class="form-text small text-muted">Enter your dedicated Platform API key or configure it in your workspace settings.</div>
         </div>
 
-        <div class="d-flex flex-wrap align-items-end gap-3 mt-4">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mt-4 pt-3 border-top">
             <div style="min-width: 180px;">
-                <label class="form-label mb-1 fw-semibold" for="limitInput">
-                    <i class="icon-base ti tabler-list-numbers me-1 text-primary"></i>Maximum Leads
+                <label class="form-label mb-1 fw-semibold small" for="limitInput">
+                    <i class="icon-base ti tabler-list-numbers me-1 text-primary"></i>Maximum Leads Target
                 </label>
-                <select id="limitInput" class="form-select">
+                <select id="limitInput" class="form-select form-select-sm">
                     @foreach ($allowedLimits as $limit)
                         <option value="{{ $limit }}" @selected($limit === $defaultLimit)>{{ number_format($limit) }} leads</option>
                     @endforeach
                 </select>
             </div>
-            <button type="button" class="btn btn-primary" id="startBtn">
-                <i class="icon-base ti tabler-player-play me-1"></i>
-                Start Extraction
-            </button>
-            <button type="button" class="btn btn-outline-secondary d-none" id="newExtractionBtn">
-                <i class="icon-base ti tabler-plus me-1"></i>
-                New Extraction
-            </button>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-primary" id="startBtn">
+                    <i class="icon-base ti tabler-player-play me-1"></i>
+                    Start Extraction
+                </button>
+                <button type="button" class="btn btn-danger d-none" id="inlineStopBtn">
+                    <i class="icon-base ti tabler-player-stop me-1"></i>
+                    Stop Extraction
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="clearAllResultsBtn" title="Clear all searched leads from screen">
+                    <i class="icon-base ti tabler-trash me-1"></i>
+                    Clear Results
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="newExtractionBtn" title="Reset search inputs and prepare new query">
+                    <i class="icon-base ti tabler-rotate me-1"></i>
+                    New Search
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -221,10 +231,16 @@
                 </div>
                 <p class="small text-muted mb-0 mt-1" id="searchLabel">Search: —</p>
             </div>
-            <button type="button" class="btn btn-outline-danger d-none" id="stopBtn">
-                <i class="icon-base ti tabler-player-stop me-1"></i>
-                Stop Extraction
-            </button>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-danger d-none" id="stopBtn">
+                    <i class="icon-base ti tabler-player-stop me-1"></i>
+                    Stop Extraction
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="statusClearBtn" title="Clear searched leads and reset counters">
+                    <i class="icon-base ti tabler-trash me-1"></i>
+                    Clear Results
+                </button>
+            </div>
         </div>
         <p class="mb-3" id="activityLabel">Current Activity: Waiting for a search.</p>
         <div class="alert d-none" id="statusAlert" role="alert"></div>
@@ -266,8 +282,8 @@
                 <i class="icon-base ti tabler-file-spreadsheet me-1"></i>
                 Download Excel (.xlsx)
             </a>
-            <button type="button" class="btn btn-outline-secondary" id="clearBtn">Clear Results</button>
-            <button type="button" class="btn btn-outline-primary" id="summaryNewBtn">New Extraction</button>
+            <button type="button" class="btn btn-outline-danger" id="clearBtn">Clear Results</button>
+            <button type="button" class="btn btn-outline-primary" id="summaryNewBtn">New Search</button>
         </div>
     </div>
 </div>
@@ -276,7 +292,7 @@
     <div class="card-header border-bottom py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <h5 class="mb-0">Leads</h5>
+                <h5 class="mb-0">Discovered Leads</h5>
                 <span class="badge bg-label-primary" id="leadCountBadge" title="Total leads extracted">0 total</span>
                 <span class="badge bg-label-info d-none" id="leadFilterBadge" title="Currently visible filtered leads">0 shown</span>
                 <span class="badge bg-label-success d-none" id="leadSelectedBadge" title="Currently selected leads">
@@ -284,6 +300,9 @@
                 </span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="leadsClearBtn" title="Clear all searched leads from screen">
+                    <i class="icon-base ti tabler-trash me-1"></i>Clear Results
+                </button>
                 <button type="button" class="btn btn-sm btn-success d-none" id="saveAllDiscoveredBtn">
                     <i class="icon-base ti tabler-device-floppy me-1"></i>Save All (<span id="saveAllCount">0</span>)
                 </button>

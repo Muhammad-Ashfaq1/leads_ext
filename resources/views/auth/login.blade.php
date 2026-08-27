@@ -11,7 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>Login - Leads Engine</title>
+    <title>Login - VektorLeads</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,23 +31,11 @@
         .authentication-wrapper.authentication-basic {
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at 10% 20%, rgba(105, 108, 255, 0.08) 0%, rgba(248, 249, 250, 0.96) 90%);
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, rgba(248, 249, 250, 0.96) 90%);
         }
         .authentication-wrapper .authentication-inner {
             max-width: 440px;
             width: 100%;
-        }
-        .app-brand-logo-custom {
-            width: 2.8rem;
-            height: 2.8rem;
-            border-radius: 0.75rem;
-            background: linear-gradient(135deg, #696cff, #4338ca);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 1.45rem;
-            box-shadow: 0 4px 12px rgba(105, 108, 255, 0.35);
         }
     </style>
 </head>
@@ -61,10 +49,8 @@
                         <!-- Logo -->
                         <div class="app-brand justify-content-center mb-6 text-center">
                             <a href="{{ url('/') }}" class="app-brand-link text-decoration-none d-inline-flex align-items-center gap-2">
-                                <span class="app-brand-logo-custom">
-                                    <i class="icon-base ti tabler-radar"></i>
-                                </span>
-                                <span class="app-brand-text text-heading fw-bold fs-4">Leads Engine</span>
+                                @include('layouts.partials.brand-logo', ['size' => 42])
+                                <span class="app-brand-text text-heading fw-bold fs-4">Vektor<span class="text-primary">Leads</span></span>
                             </a>
                         </div>
                         <!-- /Logo -->

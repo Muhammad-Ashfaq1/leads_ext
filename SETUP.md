@@ -1,6 +1,6 @@
-# Leads Engine — Installation & Setup Guide
+# VektorLeads — Installation & Setup Guide
 
-This guide walks you through setting up and running **Leads Engine** locally for development or in production on your server.
+This guide walks you through setting up and running **VektorLeads** locally for development or in production on your server.
 
 ---
 

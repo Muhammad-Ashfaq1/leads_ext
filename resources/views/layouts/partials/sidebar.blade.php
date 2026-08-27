@@ -61,7 +61,7 @@
     <div class="app-brand demo">
         <a href="{{ route($homeRoute) }}" class="app-brand-link text-decoration-none d-flex align-items-center gap-2">
             @include('layouts.partials.brand-logo', ['size' => 32])
-            <span class="app-brand-text demo menu-text fw-bold fs-5 text-heading">Leads Engine</span>
+            <span class="app-brand-text demo menu-text fw-bold fs-5 text-heading">Vektor<span class="text-primary">Leads</span></span>
         </a>
 
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -137,7 +137,7 @@
 
         <li class="menu-item menu-copyright">
             <div class="menu-link">
-                <div>&copy; {{ date('Y') }} Leads Engine</div>
+                <div>&copy; {{ date('Y') }} VektorLeads</div>
             </div>
         </li>
     </ul>

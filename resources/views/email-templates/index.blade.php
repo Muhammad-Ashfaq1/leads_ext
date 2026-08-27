@@ -513,7 +513,7 @@ function renderMockPlaceholders(text) {
         '@{{rating}}': '4.9',
         '@{{reviews}}': '128',
         '@{{sender_name}}': '{{ Auth::user()?->name ?? "Obtain Team" }}',
-        '@{{sender_company}}': '{{ Auth::user()?->tenant?->name ?? "Leads Engine" }}',
+        '@{{sender_company}}': '{{ Auth::user()?->tenant?->name ?? "VektorLeads" }}',
     };
     let out = text;
     for (const [k, v] of Object.entries(mock)) {

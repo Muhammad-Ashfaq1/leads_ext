@@ -28,7 +28,7 @@ class EmailOutreachService
             '{{rating}}' => $lead->rating ? (string) $lead->rating : '',
             '{{reviews}}' => $lead->review_count ? (string) $lead->review_count : '',
             '{{sender_name}}' => $sender?->name ?? 'Our Team',
-            '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'Leads Engine'),
+            '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'VektorLeads'),
         ];
 
         return str_replace(array_keys($vars), array_values($vars), $text);
@@ -71,8 +71,8 @@ class EmailOutreachService
 
         try {
             Mail::html($renderedBody, function ($message) use ($recipientEmail, $recipientName, $renderedSubject, $sender): void {
-                $fromEmail = config('mail.from.address', 'hello@leadsengine.io');
-                $fromName = $sender?->tenant?->name ?? config('mail.from.name', 'Leads Engine');
+                $fromEmail = config('mail.from.address', 'hello@vektorleads.io');
+                $fromName = $sender?->tenant?->name ?? config('mail.from.name', 'VektorLeads');
 
                 $message->to($recipientEmail, $recipientName)
                     ->from($fromEmail, $fromName)

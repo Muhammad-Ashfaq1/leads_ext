@@ -48,10 +48,14 @@
         limit: document.getElementById('limitInput'),
         start: document.getElementById('startBtn'),
         stop: document.getElementById('stopBtn'),
+        inlineStopBtn: document.getElementById('inlineStopBtn'),
         stopVerify: document.getElementById('stopFromVerifyBtn'),
         newExtraction: document.getElementById('newExtractionBtn'),
         summaryNew: document.getElementById('summaryNewBtn'),
         clear: document.getElementById('clearBtn'),
+        clearAllResultsBtn: document.getElementById('clearAllResultsBtn'),
+        statusClearBtn: document.getElementById('statusClearBtn'),
+        leadsClearBtn: document.getElementById('leadsClearBtn'),
         exportSummary: document.getElementById('exportBtn'),
         mock: document.getElementById('mockToggle'),
         verify: document.getElementById('verifyToggle'),
@@ -205,18 +209,25 @@
 
     function setRunning(running) {
         state.running = running;
-        els.start.disabled = running;
-        els.prompt.disabled = running;
+        if (els.start) {
+            els.start.disabled = running;
+            els.start.innerHTML = running
+                ? '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Extracting...'
+                : '<i class="icon-base ti tabler-player-play me-1"></i>Start Extraction';
+        }
+        if (els.prompt) els.prompt.disabled = running;
         if (els.locationInput) els.locationInput.disabled = running;
-        els.limit.disabled = running;
+        if (els.limit) els.limit.disabled = running;
         if (els.engineGoogleApi) els.engineGoogleApi.disabled = running;
         if (els.engineBrowser) els.engineBrowser.disabled = running;
-        if (els.preReqWebsite) els.preReqWebsite.disabled = running;
+        if (els.preWebsiteFilter) els.preWebsiteFilter.disabled = running;
         if (els.preReqPhone) els.preReqPhone.disabled = running;
         if (els.preReqEmail) els.preReqEmail.disabled = running;
         if (els.preMinRating) els.preMinRating.disabled = running;
-        els.stop.classList.toggle('d-none', !running);
-        els.newExtraction.classList.toggle('d-none', running);
+
+        if (els.stop) els.stop.classList.toggle('d-none', !running);
+        if (els.inlineStopBtn) els.inlineStopBtn.classList.toggle('d-none', !running);
+        if (els.newExtraction) els.newExtraction.classList.toggle('d-none', running);
     }
 
     function showVerification(show) {
@@ -1225,8 +1236,8 @@
         await fetch(jobUrl(cfg.verifyCompleteUrl), { method: 'POST', headers: headers() });
     }
 
-    async function clearResults() {
-        if (state.leads && state.leads.size > 0 && !state.isSaved) {
+    async function clearResults(skipPrompt = false) {
+        if (!skipPrompt && state.leads && state.leads.size > 0 && !state.isSaved) {
             if (typeof window.showConfirm === 'function') {
                 const confirmed = await window.showConfirm(
                     'Clear Discovered Leads?',
@@ -1245,7 +1256,9 @@
         state.leads.clear();
         state.selectedKeys.clear();
         state.leadCounter = 0;
+        state.jobId = null;
         state.isSaved = false;
+        resetFilterValues();
         renderLeads();
 
         if (els.kpiLeads) els.kpiLeads.textContent = '0';
@@ -1257,13 +1270,31 @@
         setAlert('info', '', false);
         setStatus('ready', 'Waiting for a search.');
         if (els.searchLabel) els.searchLabel.textContent = 'Search: —';
+        if (els.activity) els.activity.textContent = 'Current Activity: Waiting for a search.';
         if (els.exportSummary) {
             els.exportSummary.classList.add('disabled');
             els.exportSummary.href = '#';
         }
+        if (els.exportDropdownBtn) {
+            els.exportDropdownBtn.classList.add('disabled');
+        }
         setRunning(false);
         if (typeof window.showToast === 'function') {
-            window.showToast('info', 'Extraction results cleared.', 'Extractor');
+            window.showToast('info', 'Extraction workspace and results cleared.', 'VektorLeads');
+        }
+    }
+
+    async function newSearch() {
+        await clearResults(true);
+        if (els.prompt) {
+            els.prompt.value = '';
+            els.prompt.focus();
+        }
+        if (els.locationInput) {
+            els.locationInput.value = '';
+        }
+        if (typeof window.showToast === 'function') {
+            window.showToast('success', 'Ready for a new search query.', 'VektorLeads');
         }
     }
 
@@ -1558,18 +1589,16 @@
             if (event.key === 'Enter') startExtraction();
         });
     }
-    els.stop.addEventListener('click', stopExtraction);
-    els.stopVerify.addEventListener('click', stopExtraction);
-    els.openVerification.addEventListener('click', openVerification);
-    els.clear.addEventListener('click', clearResults);
-    els.newExtraction.addEventListener('click', () => {
-        clearResults();
-        els.prompt.focus();
-    });
-    els.summaryNew.addEventListener('click', () => {
-        clearResults();
-        els.prompt.focus();
-    });
+    if (els.stop) els.stop.addEventListener('click', stopExtraction);
+    if (els.inlineStopBtn) els.inlineStopBtn.addEventListener('click', stopExtraction);
+    if (els.stopVerify) els.stopVerify.addEventListener('click', stopExtraction);
+    if (els.openVerification) els.openVerification.addEventListener('click', openVerification);
+    if (els.clear) els.clear.addEventListener('click', () => clearResults(false));
+    if (els.clearAllResultsBtn) els.clearAllResultsBtn.addEventListener('click', () => clearResults(false));
+    if (els.statusClearBtn) els.statusClearBtn.addEventListener('click', () => clearResults(false));
+    if (els.leadsClearBtn) els.leadsClearBtn.addEventListener('click', () => clearResults(false));
+    if (els.newExtraction) els.newExtraction.addEventListener('click', newSearch);
+    if (els.summaryNew) els.summaryNew.addEventListener('click', newSearch);
     if (els.completeMock) {
         els.completeMock.addEventListener('click', completeMockVerification);
     }
