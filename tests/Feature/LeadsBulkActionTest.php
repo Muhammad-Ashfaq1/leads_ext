@@ -430,5 +430,71 @@ class LeadsBulkActionTest extends TestCase
             ->assertSee('Verified Law Chambers')
             ->assertDontSee('Unverified Law Firm');
     }
+
+    public function test_leads_can_be_filtered_by_no_email_and_has_email(): void
+    {
+        $job = $this->makeJob($this->tenant1, $this->user1, 'Accountants in Denver');
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Email Ready CPA',
+            'emails' => ['cpa@denver.com'],
+        ]);
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Offline Accountant No Email',
+            'emails' => [],
+        ]);
+
+        // Filter: No Email (has_email=no)
+        $responseNo = $this->actingAs($this->user1)->get('/leads?has_email=no');
+        $responseNo->assertOk()
+            ->assertSee('Offline Accountant No Email')
+            ->assertDontSee('Email Ready CPA');
+
+        // Filter: Has Email (has_email=yes)
+        $responseYes = $this->actingAs($this->user1)->get('/leads?has_email=yes');
+        $responseYes->assertOk()
+            ->assertSee('Email Ready CPA')
+            ->assertDontSee('Offline Accountant No Email');
+    }
+
+    public function test_leads_can_be_filtered_by_no_phone_and_sorted(): void
+    {
+        $job = $this->makeJob($this->tenant1, $this->user1, 'Gyms in Seattle');
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Alpha Fitness Gym',
+            'phone' => '+1-555-0100',
+            'rating' => 4.8,
+            'review_count' => 120,
+        ]);
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Beta Crossfit No Phone',
+            'phone' => null,
+            'rating' => 3.2,
+            'review_count' => 5,
+        ]);
+
+        // Filter: Without Phone (has_phone=no)
+        $responseNo = $this->actingAs($this->user1)->get('/leads?has_phone=no');
+        $responseNo->assertOk()
+            ->assertSee('Beta Crossfit No Phone')
+            ->assertDontSee('Alpha Fitness Gym');
+
+        // Filter: Min Rating & Sort
+        $responseRating = $this->actingAs($this->user1)->get('/leads?min_rating=4.5&sort=reviews_desc');
+        $responseRating->assertOk()
+            ->assertSee('Alpha Fitness Gym')
+            ->assertDontSee('Beta Crossfit No Phone');
+    }
 }
 

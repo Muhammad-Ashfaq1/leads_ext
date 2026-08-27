@@ -27,7 +27,11 @@ class LeadsController extends Controller
         $verifiedEmail = $request->input('verified_email');
         $hasPhone = $request->input('has_phone');
         $hasWebsite = $request->input('has_website');
+        $hasSocial = $request->input('has_social');
+        $status = $request->input('status');
         $minRating = $request->input('min_rating');
+        $minReviews = $request->input('min_reviews');
+        $sort = $request->input('sort', 'newest');
         $source = $request->input('source');
         $jobId = $request->input('job_id');
 
@@ -45,31 +49,104 @@ class LeadsController extends Controller
                         ->orWhere('address', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")
                         ->orWhere('category', 'like', "%{$search}%")
-                        ->orWhere('city', 'like', "%{$search}%");
+                        ->orWhere('city', 'like', "%{$search}%")
+                        ->orWhere('emails', 'like', "%{$search}%");
                 });
             })
             ->when($category, fn ($q) => $q->where('category', $category))
-            ->when($hasEmail === 'yes', fn ($q) => $q->whereNotNull('emails')->where('emails', '!=', '[]'))
-            ->when($hasEmail === 'no', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('emails')->orWhere('emails', '[]')))
+            ->when($hasEmail === 'yes', function ($q): void {
+                $q->whereNotNull('emails')
+                    ->where('emails', 'like', '%@%');
+            })
+            ->when($hasEmail === 'no', function ($q): void {
+                $q->where(function ($sub): void {
+                    $sub->whereNull('emails')
+                        ->orWhere('emails', 'not like', '%@%')
+                        ->orWhere('emails', '[]')
+                        ->orWhere('emails', 'null')
+                        ->orWhere('emails', '')
+                        ->orWhere('emails', '[""]');
+                });
+            })
             ->when($hasEmail === 'verified' || $verifiedEmail === 'yes', function ($q): void {
                 $q->whereNotNull('emails')
-                    ->where('emails', '!=', '[]')
+                    ->where('emails', 'like', '%@%')
                     ->where(function ($sub): void {
                         $sub->where('email_verification_status', 'like', '%"is_valid":true%')
                             ->orWhere('email_verification_status', 'like', '%"is_valid": true%');
                     });
             })
-            ->when($hasPhone === 'yes', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
-            ->when($hasPhone === 'no', fn ($q) => $q->whereNull('phone')->orWhere('phone', ''))
-            ->when($hasWebsite === 'yes', fn ($q) => $q->whereNotNull('website')->where('website', '!=', ''))
-            ->when($hasWebsite === 'no', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('website')->orWhere('website', '')))
-            ->when($minRating, fn ($q) => $q->where('rating', '>=', (float) $minRating))
+            ->when($hasPhone === 'yes', function ($q): void {
+                $q->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+                    ->where('phone', '!=', 'null');
+            })
+            ->when($hasPhone === 'no', function ($q): void {
+                $q->where(function ($sub): void {
+                    $sub->whereNull('phone')
+                        ->orWhere('phone', '')
+                        ->orWhere('phone', 'null');
+                });
+            })
+            ->when($hasWebsite === 'yes', function ($q): void {
+                $q->whereNotNull('website')
+                    ->where('website', '!=', '')
+                    ->where('website', '!=', 'null');
+            })
+            ->when($hasWebsite === 'no', function ($q): void {
+                $q->where(function ($sub): void {
+                    $sub->whereNull('website')
+                        ->orWhere('website', '')
+                        ->orWhere('website', 'null');
+                });
+            })
+            ->when($hasSocial === 'yes', function ($q): void {
+                $q->whereNotNull('social_links')
+                    ->where(function ($sub): void {
+                        $sub->where('social_links', 'like', '%http%')
+                            ->orWhere('social_links', 'like', '%linkedin%')
+                            ->orWhere('social_links', 'like', '%facebook%')
+                            ->orWhere('social_links', 'like', '%instagram%')
+                            ->orWhere('social_links', 'like', '%twitter%')
+                            ->orWhere('social_links', 'like', '%youtube%');
+                    });
+            })
+            ->when($hasSocial === 'no', function ($q): void {
+                $q->where(function ($sub): void {
+                    $sub->whereNull('social_links')
+                        ->orWhere('social_links', 'not like', '%http%')
+                        ->orWhere('social_links', '[]')
+                        ->orWhere('social_links', '{}')
+                        ->orWhere('social_links', 'null')
+                        ->orWhere('social_links', '');
+                });
+            })
+            ->when($status === 'saved', fn ($q) => $q->where(fn ($sub) => $sub->where('status', 'saved')->orWhere('is_saved', true)))
+            ->when($status === 'discarded', fn ($q) => $q->where('status', 'discarded'))
+            ->when($status === 'new', fn ($q) => $q->where('status', 'new'))
+            ->when($minRating === 'unrated', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('rating')->orWhere('rating', '<=', 0)))
+            ->when(is_numeric($minRating), fn ($q) => $q->where('rating', '>=', (float) $minRating))
+            ->when($minReviews === '0', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('review_count')->orWhere('review_count', 0)))
+            ->when($minReviews === '1', fn ($q) => $q->where('review_count', '>=', 1))
+            ->when($minReviews === '10', fn ($q) => $q->where('review_count', '>=', 10))
+            ->when($minReviews === '50', fn ($q) => $q->where('review_count', '>=', 50))
+            ->when($minReviews === '100', fn ($q) => $q->where('review_count', '>=', 100))
             ->when($source, fn ($q) => $q->where('source', $source))
-            ->when($jobId, fn ($q) => $q->where('extraction_job_id', $jobId))
-            ->latest('id');
+            ->when($jobId, fn ($q) => $q->where('extraction_job_id', $jobId));
+
+        // Sorting
+        match ($sort) {
+            'oldest' => $query->oldest('id'),
+            'rating_desc' => $query->orderByDesc('rating')->latest('id'),
+            'rating_asc' => $query->orderBy('rating')->latest('id'),
+            'reviews_desc' => $query->orderByDesc('review_count')->latest('id'),
+            'name_asc' => $query->orderBy('business_name'),
+            'name_desc' => $query->orderByDesc('business_name'),
+            default => $query->latest('id'),
+        };
 
         $perPage = (int) $request->input('per_page', 10);
-        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+        if (! in_array($perPage, [10, 25, 50, 100, 250], true)) {
             $perPage = 10;
         }
 
@@ -100,9 +177,14 @@ class LeadsController extends Controller
                 'verified_email' => $verifiedEmail,
                 'has_phone' => $hasPhone,
                 'has_website' => $hasWebsite,
+                'has_social' => $hasSocial,
+                'status' => $status,
                 'min_rating' => $minRating,
+                'min_reviews' => $minReviews,
+                'sort' => $sort,
                 'source' => $source,
                 'job_id' => $jobId,
+                'per_page' => $perPage,
             ],
         ]);
     }

@@ -37,7 +37,7 @@
                 <div class="col-12 col-md-3">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="icon-base ti tabler-search"></i></span>
-                        <input type="text" name="search" class="form-control" placeholder="Search name, phone, address..." value="{{ $filters['search'] }}">
+                        <input type="text" name="search" class="form-control" placeholder="Search name, phone, email, city..." value="{{ $filters['search'] }}">
                     </div>
                 </div>
 
@@ -51,19 +51,19 @@
                 </div>
 
                 <div class="col-6 col-sm-4 col-md-2">
-                    <select name="has_website" class="form-select form-select-sm">
-                        <option value="">Website: All</option>
-                        <option value="yes" @selected($filters['has_website'] === 'yes')>Has Website</option>
-                        <option value="no" @selected($filters['has_website'] === 'no')>Without Website (No Site)</option>
+                    <select name="has_email" class="form-select form-select-sm">
+                        <option value="">Email: All</option>
+                        <option value="verified" @selected(($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes')>Verified Email (MX Valid)</option>
+                        <option value="yes" @selected(($filters['has_email'] ?? '') === 'yes')>Has Email (Any)</option>
+                        <option value="no" @selected(($filters['has_email'] ?? '') === 'no')>No Email (Without Email)</option>
                     </select>
                 </div>
 
                 <div class="col-6 col-sm-4 col-md-2">
-                    <select name="has_email" class="form-select form-select-sm">
-                        <option value="">Email: All</option>
-                        <option value="verified" @selected(($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes')>Verified Email (MX Valid)</option>
-                        <option value="yes" @selected(($filters['has_email'] ?? '') === 'yes')>Has Email (All)</option>
-                        <option value="no" @selected(($filters['has_email'] ?? '') === 'no')>No Email</option>
+                    <select name="has_website" class="form-select form-select-sm">
+                        <option value="">Website: All</option>
+                        <option value="yes" @selected($filters['has_website'] === 'yes')>Has Website</option>
+                        <option value="no" @selected($filters['has_website'] === 'no')>Without Website (No Site)</option>
                     </select>
                 </div>
 
@@ -75,26 +75,82 @@
                     </select>
                 </div>
 
-                <div class="col-6 col-sm-4 col-md-1">
+                <div class="col-6 col-sm-4 col-md-2">
+                    <select name="sort" class="form-select form-select-sm">
+                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Sort: Newest First</option>
+                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Sort: Oldest First</option>
+                        <option value="rating_desc" @selected(($filters['sort'] ?? '') === 'rating_desc')>Sort: Highest Rating</option>
+                        <option value="reviews_desc" @selected(($filters['sort'] ?? '') === 'reviews_desc')>Sort: Most Reviews</option>
+                        <option value="name_asc" @selected(($filters['sort'] ?? '') === 'name_asc')>Sort: Name (A-Z)</option>
+                        <option value="name_desc" @selected(($filters['sort'] ?? '') === 'name_desc')>Sort: Name (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Secondary Filter Row -->
+            <div class="row g-2 align-items-center mt-1">
+                <div class="col-6 col-sm-4 col-md-2">
                     <select name="min_rating" class="form-select form-select-sm">
                         <option value="">Rating: All</option>
-                        <option value="4.5" @selected($filters['min_rating'] === '4.5')>★ 4.5+</option>
-                        <option value="4.0" @selected($filters['min_rating'] === '4.0')>★ 4.0+</option>
-                        <option value="3.5" @selected($filters['min_rating'] === '3.5')>★ 3.5+</option>
+                        <option value="4.5" @selected(($filters['min_rating'] ?? '') === '4.5')>★ 4.5+ (Top Rated)</option>
+                        <option value="4.0" @selected(($filters['min_rating'] ?? '') === '4.0')>★ 4.0+</option>
+                        <option value="3.5" @selected(($filters['min_rating'] ?? '') === '3.5')>★ 3.5+</option>
+                        <option value="3.0" @selected(($filters['min_rating'] ?? '') === '3.0')>★ 3.0+</option>
+                        <option value="unrated" @selected(($filters['min_rating'] ?? '') === 'unrated')>Unrated (0 Rating)</option>
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-4 col-md-1 d-flex gap-1">
-                    <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
+                <div class="col-6 col-sm-4 col-md-2">
+                    <select name="min_reviews" class="form-select form-select-sm">
+                        <option value="">Reviews: All</option>
+                        <option value="50" @selected(($filters['min_reviews'] ?? '') === '50')>50+ Reviews</option>
+                        <option value="10" @selected(($filters['min_reviews'] ?? '') === '10')>10+ Reviews</option>
+                        <option value="1" @selected(($filters['min_reviews'] ?? '') === '1')>Has Reviews (1+)</option>
+                        <option value="0" @selected(($filters['min_reviews'] ?? '') === '0')>0 Reviews (No Reviews)</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-sm-4 col-md-2">
+                    <select name="has_social" class="form-select form-select-sm">
+                        <option value="">Socials: All</option>
+                        <option value="yes" @selected(($filters['has_social'] ?? '') === 'yes')>Has Social Profiles</option>
+                        <option value="no" @selected(($filters['has_social'] ?? '') === 'no')>No Social Profiles</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-sm-4 col-md-2">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">Status: All</option>
+                        <option value="saved" @selected(($filters['status'] ?? '') === 'saved')>Saved Leads</option>
+                        <option value="discarded" @selected(($filters['status'] ?? '') === 'discarded')>Discarded Leads</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-sm-4 col-md-2">
+                    <select name="per_page" class="form-select form-select-sm">
+                        <option value="10" @selected(($filters['per_page'] ?? 10) == 10)>10 per page</option>
+                        <option value="25" @selected(($filters['per_page'] ?? 10) == 25)>25 per page</option>
+                        <option value="50" @selected(($filters['per_page'] ?? 10) == 50)>50 per page</option>
+                        <option value="100" @selected(($filters['per_page'] ?? 10) == 100)>100 per page</option>
+                        <option value="250" @selected(($filters['per_page'] ?? 10) == 250)>250 per page</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-sm-4 col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="icon-base ti tabler-filter me-1"></i>Apply
+                    </button>
                     @if (array_filter($filters))
-                        <a href="{{ route('leads.index') }}" class="btn btn-sm btn-outline-secondary leads-quick-chip" title="Clear Filters"><i class="icon-base ti tabler-x"></i></a>
+                        <a href="{{ route('leads.index') }}" class="btn btn-sm btn-outline-secondary" title="Reset All Filters">
+                            <i class="icon-base ti tabler-rotate"></i>
+                        </a>
                     @endif
                 </div>
             </div>
         </form>
 
         <!-- Quick filter chips / shortcut pills -->
-        <div class="d-flex flex-wrap align-items-center gap-1 mt-2 pt-2 border-top">
+        <div class="d-flex flex-wrap align-items-center gap-1.5 mt-2 pt-2 border-top">
             <small class="text-muted fw-semibold me-1"><i class="icon-base ti tabler-filter me-1"></i>Quick Filters:</small>
             @if (!empty($filters['job_id']))
                 <a href="{{ route('leads.index', request()->except(['job_id', 'page'])) }}" class="badge bg-primary text-white leads-quick-chip text-decoration-none py-1 px-2" title="Filtering by Task #{{ $filters['job_id'] }} (Click to clear)">
@@ -104,20 +160,32 @@
             <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'verified'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with MX verified email">
                 <i class="icon-base ti tabler-rosette-discount-check-filled me-1"></i>Verified Email
             </a>
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'no'])) }}" class="badge {{ $filters['has_website'] === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no website">
-                <i class="icon-base ti tabler-world-off me-1"></i>Without Website
-            </a>
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'yes'])) }}" class="badge {{ $filters['has_website'] === 'yes' ? 'bg-info text-white' : 'bg-label-info' }} leads-quick-chip text-decoration-none py-1 px-2">
-                <i class="icon-base ti tabler-world me-1"></i>Has Website
-            </a>
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'yes'])) }}" class="badge {{ $filters['has_email'] === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2">
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'yes'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with email">
                 <i class="icon-base ti tabler-mail me-1"></i>Has Email
             </a>
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_phone' => 'yes'])) }}" class="badge {{ $filters['has_phone'] === 'yes' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2">
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'no'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with NO email (easy cleanup)">
+                <i class="icon-base ti tabler-mail-off me-1"></i>No Email
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'no'])) }}" class="badge {{ ($filters['has_website'] ?? '') === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no website">
+                <i class="icon-base ti tabler-world-off me-1"></i>Without Website
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'yes'])) }}" class="badge {{ ($filters['has_website'] ?? '') === 'yes' ? 'bg-info text-white' : 'bg-label-info' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-world me-1"></i>Has Website
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_phone' => 'yes'])) }}" class="badge {{ ($filters['has_phone'] ?? '') === 'yes' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2">
                 <i class="icon-base ti tabler-phone me-1"></i>Has Phone
             </a>
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['min_rating' => '4.5'])) }}" class="badge {{ $filters['min_rating'] === '4.5' ? 'bg-warning text-white' : 'bg-label-warning' }} leads-quick-chip text-decoration-none py-1 px-2">
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_phone' => 'no'])) }}" class="badge {{ ($filters['has_phone'] ?? '') === 'no' ? 'bg-secondary text-white' : 'bg-label-secondary' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no phone">
+                <i class="icon-base ti tabler-phone-off me-1"></i>No Phone
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_social' => 'yes'])) }}" class="badge {{ ($filters['has_social'] ?? '') === 'yes' ? 'bg-info text-white' : 'bg-label-info' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-brand-linkedin me-1"></i>Has Social
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['min_rating' => '4.5'])) }}" class="badge {{ ($filters['min_rating'] ?? '') === '4.5' ? 'bg-warning text-white' : 'bg-label-warning' }} leads-quick-chip text-decoration-none py-1 px-2">
                 <i class="icon-base ti tabler-star me-1"></i>Top Rated (4.5+ ★)
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['min_reviews' => '50'])) }}" class="badge {{ ($filters['min_reviews'] ?? '') === '50' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-messages me-1"></i>50+ Reviews
             </a>
             @if (array_filter($filters))
                 <a href="{{ route('leads.index') }}" class="badge bg-label-secondary leads-quick-chip text-decoration-none py-1 px-2 ms-auto">
@@ -150,6 +218,9 @@
                 </button>
                 <button type="button" class="btn btn-sm btn-label-secondary" id="copySelectedPhonesBtn" title="Copy all phones from selected leads">
                     <i class="icon-base ti tabler-phone me-1"></i>Phones
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning" id="discardSelectedBtn" title="Mark selected leads as discarded">
+                    <i class="icon-base ti tabler-archive me-1"></i>Discard Selected
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn" title="Delete selected leads from database">
                     <i class="icon-base ti tabler-trash me-1"></i>Delete Selected
@@ -453,6 +524,7 @@ function initLeadsPageHandlers() {
     const exportSelectedCsvBtn = document.getElementById('exportSelectedCsvBtn');
     const copySelectedEmailsBtn = document.getElementById('copySelectedEmailsBtn');
     const copySelectedPhonesBtn = document.getElementById('copySelectedPhonesBtn');
+    const discardSelectedBtn = document.getElementById('discardSelectedBtn');
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
     function updateBulkBar() {
@@ -601,6 +673,44 @@ function initLeadsPageHandlers() {
         });
     }
 
+    if (discardSelectedBtn) {
+        discardSelectedBtn.addEventListener('click', async () => {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+
+            const confirmed = await window.showConfirm(
+                'Discard Selected Leads',
+                `Mark ${ids.length} selected lead(s) as discarded?`,
+                'Yes, Discard Leads',
+                false
+            );
+
+            if (!confirmed || !confirmed.isConfirmed) return;
+
+            try {
+                const resp = await fetch('{{ route("leads.bulk-action") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ lead_ids: ids, action: 'discard' })
+                });
+
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    if (window.showToast) window.showToast('success', data.message || `Discarded ${ids.length} leads.`);
+                    loadLeadsAjax(window.location.href);
+                } else {
+                    if (window.showToast) window.showToast('error', data.message || 'Failed to discard leads.', 'Error');
+                }
+            } catch (err) {
+                if (window.showToast) window.showToast('error', 'Network error while discarding leads.', 'Error');
+            }
+        });
+    }
+
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', async () => {
             const ids = getSelectedIds();
@@ -694,8 +804,16 @@ function initAjaxLeadsNavigation() {
         filterForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(filterForm);
-            const params = new URLSearchParams(formData).toString();
-            loadLeadsAjax('{{ route("leads.index") }}?' + params);
+            const params = new URLSearchParams();
+            for (const [key, value] of formData.entries()) {
+                const trimmed = typeof value === 'string' ? value.trim() : value;
+                if (trimmed !== '' && trimmed !== null && trimmed !== undefined) {
+                    params.append(key, trimmed);
+                }
+            }
+            const queryStr = params.toString();
+            const targetUrl = '{{ route("leads.index") }}' + (queryStr ? '?' + queryStr : '');
+            loadLeadsAjax(targetUrl);
         });
     }
 
@@ -708,14 +826,16 @@ function initAjaxLeadsNavigation() {
     document.querySelectorAll('.leads-quick-chip').forEach(chip => {
         chip.addEventListener('click', function(e) {
             e.preventDefault();
-            loadLeadsAjax(this.getAttribute('href'));
+            const href = this.getAttribute('href');
+            if (href) loadLeadsAjax(href);
         });
     });
 
     document.querySelectorAll('.pagination a').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            loadLeadsAjax(this.getAttribute('href'));
+            const href = this.getAttribute('href');
+            if (href) loadLeadsAjax(href);
         });
     });
 }
@@ -743,8 +863,7 @@ async function loadLeadsAjax(url) {
 
         if (newContent) {
             container.innerHTML = newContent.innerHTML;
-            // Clean browser address bar immediately so URL is always http://leads-info.test/leads
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState({}, document.title, url);
             initLeadsPageHandlers();
             initAjaxLeadsNavigation();
         } else {
