@@ -1080,16 +1080,8 @@ window.generateDemo = async function(leadId) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
     }
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Generating Spec Website...',
-            html: '<div class="text-muted small">Gemini AI is crafting a custom landing page from business data...</div>',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            willOpen: () => {
-                Swal.showLoading();
-            }
-        });
+    if (window.appNotify) {
+        window.appNotify('info', '✨ Generating custom AI spec website...');
     }
 
     try {
@@ -1115,66 +1107,19 @@ window.generateDemo = async function(leadId) {
                 dropdownLink.className = 'dropdown-item text-primary fw-semibold';
             }
 
-            if (typeof Swal !== 'undefined') {
-                Swal.close();
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 5000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                });
-
-                Toast.fire({
-                    icon: 'success',
-                    title: '✨ Spec Website Ready!',
-                    html: `
-                        <div class="mt-1 small">${data.message || 'AI Landing Page generated successfully.'}</div>
-                        <div class="mt-2 pt-1 border-top">
-                            <a href="${data.preview_url}" target="_blank" class="btn btn-xs btn-primary text-white w-100">
-                                <i class="icon-base ti tabler-world me-1"></i> View Live Demo Page
-                            </a>
-                        </div>
-                    `
-                });
-            } else if (window.showToast) {
-                window.showToast('success', data.message || 'Spec Website generated successfully!');
+            if (window.appNotify) {
+                window.appNotify('success', data.message || '✨ Spec website generated successfully!');
             }
         } else {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Generation Failed',
-                    text: data.message || 'Failed to generate demo website with Gemini AI.',
-                    customClass: {
-                        popup: 'pos-swal-popup pos-glass-card',
-                        confirmButton: 'btn btn-primary'
-                    },
-                    buttonsStyling: false
-                });
-            } else if (window.showToast) {
-                window.showToast('error', data.message || 'Failed to generate demo website.');
+            const errorMsg = data.message || 'Failed to generate demo website with Gemini AI.';
+            if (window.appNotify) {
+                window.appNotify('error', errorMsg);
             }
         }
     } catch (error) {
         console.error('generateDemo error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Network Error',
-                text: 'A connection error occurred while generating the demo website.',
-                customClass: {
-                    popup: 'pos-swal-popup pos-glass-card',
-                    confirmButton: 'btn btn-primary'
-                },
-                buttonsStyling: false
-            });
-        } else if (window.showToast) {
-            window.showToast('error', 'Network error occurred while generating demo website.');
+        if (window.appNotify) {
+            window.appNotify('error', 'A network error occurred while generating the demo website.');
         }
     } finally {
         if (btn) {
