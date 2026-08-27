@@ -351,7 +351,15 @@
                             </div>
                         </td>
                         <td class="pe-3 text-end">
-                            <div class="pos-lead-actions">
+                            <div class="pos-lead-actions d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-icon {{ $lead->generated_website_content ? 'btn-label-success' : 'btn-label-warning' }} rounded-pill btn-generate-demo-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $lead->generated_website_content ? 'AI Demo Website Ready (Click to Regenerate)' : 'Generate AI Demo Website' }}" onclick="generateDemo({{ $lead->id }})" id="btn-demo-{{ $lead->id }}">
+                                    <i class="icon-base ti tabler-sparkles"></i>
+                                </button>
+                                @if ($lead->uuid && $lead->generated_website_content)
+                                    <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-primary rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="View Spec Landing Page">
+                                        <i class="icon-base ti tabler-external-link"></i>
+                                    </a>
+                                @endif
                                 @if ($firstEmail)
                                     <button type="button" class="btn btn-sm btn-icon btn-label-primary rounded-pill btn-send-single-email" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Outreach Email ({{ $firstEmail }})" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
                                         <i class="icon-base ti tabler-send"></i>
@@ -367,9 +375,47 @@
                                         <i class="icon-base ti tabler-map-pin"></i>
                                     </a>
                                 @endif
-                                @if (! $firstEmail && ! $lead->website && ! $lead->google_maps_url)
-                                    <span class="text-muted small">—</span>
-                                @endif
+
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-sm btn-icon btn-text-secondary rounded-pill dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                                        <i class="icon-base ti tabler-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button type="button" class="dropdown-item" onClick="generateDemo({{ $lead->id }})">
+                                                <i class="icon-base ti tabler-sparkles me-2 text-warning"></i>✨ Generate AI Demo
+                                            </button>
+                                        </li>
+                                        @if ($lead->uuid)
+                                            <li>
+                                                <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" class="dropdown-item {{ $lead->generated_website_content ? 'text-primary fw-semibold' : 'text-muted' }}" id="dropdown-preview-{{ $lead->id }}">
+                                                    <i class="icon-base ti tabler-world-www me-2"></i>🌐 View Spec Website
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if ($firstEmail)
+                                            <li>
+                                                <button type="button" class="dropdown-item btn-send-single-email" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
+                                                    <i class="icon-base ti tabler-send me-2 text-primary"></i>Send Outreach Email
+                                                </button>
+                                            </li>
+                                        @endif
+                                        @if ($lead->website)
+                                            <li>
+                                                <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="dropdown-item">
+                                                    <i class="icon-base ti tabler-world me-2 text-secondary"></i>Visit Current Website
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if ($lead->google_maps_url)
+                                            <li>
+                                                <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="dropdown-item">
+                                                    <i class="icon-base ti tabler-map-pin me-2 text-danger"></i>View on Google Maps
+                                                </a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -454,6 +500,7 @@
                         <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{website}}')">@{{website}}</button>
                         <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{phone}}')">@{{phone}}</button>
                         <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{sender_name}}')">@{{sender_name}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-success" onclick="insertModalVariable('@{{demo_website_url}}')">✨ @{{demo_website_url}}</button>
                     </div>
                 </div>
 
@@ -1018,6 +1065,123 @@ function insertModalVariable(tag) {
         editor.focus();
         document.execCommand('insertText', false, tag);
     }
+}
+
+window.generateDemo = async function(leadId) {
+    const btn = document.getElementById(`btn-demo-${leadId}`);
+    let originalHtml = '';
+    if (btn) {
+        originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    }
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generating Spec Website...',
+            html: '<div class="text-muted small">Gemini AI is crafting a custom landing page from business data...</div>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
+
+    try {
+        const response = await fetch(`/api/leads/${leadId}/generate-demo`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            if (btn) {
+                btn.className = 'btn btn-sm btn-icon btn-label-success rounded-pill btn-generate-demo-icon';
+                btn.title = 'AI Demo Website Ready (Click to Regenerate)';
+            }
+            const dropdownLink = document.getElementById(`dropdown-preview-${leadId}`);
+            if (dropdownLink) {
+                dropdownLink.href = data.preview_url;
+                dropdownLink.className = 'dropdown-item text-primary fw-semibold';
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+
+                Toast.fire({
+                    icon: 'success',
+                    title: '✨ Spec Website Ready!',
+                    html: `
+                        <div class="mt-1 small">${data.message || 'AI Landing Page generated successfully.'}</div>
+                        <div class="mt-2 pt-1 border-top">
+                            <a href="${data.preview_url}" target="_blank" class="btn btn-xs btn-primary text-white w-100">
+                                <i class="icon-base ti tabler-world me-1"></i> View Live Demo Page
+                            </a>
+                        </div>
+                    `
+                });
+            } else if (window.showToast) {
+                window.showToast('success', data.message || 'Spec Website generated successfully!');
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Generation Failed',
+                    text: data.message || 'Failed to generate demo website with Gemini AI.',
+                    customClass: {
+                        popup: 'pos-swal-popup pos-glass-card',
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            } else if (window.showToast) {
+                window.showToast('error', data.message || 'Failed to generate demo website.');
+            }
+        }
+    } catch (error) {
+        console.error('generateDemo error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'A connection error occurred while generating the demo website.',
+                customClass: {
+                    popup: 'pos-swal-popup pos-glass-card',
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        } else if (window.showToast) {
+            window.showToast('error', 'Network error occurred while generating demo website.');
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml || '<i class="icon-base ti tabler-sparkles"></i>';
+        }
+    }
+};
+
+function generateDemo(leadId) {
+    return window.generateDemo(leadId);
 }
 </script>
 @endpush

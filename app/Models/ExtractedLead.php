@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class ExtractedLead extends Model
 {
     protected $fillable = [
+        'uuid',
         'tenant_id',
         'user_id',
         'extraction_job_id',
@@ -33,8 +35,18 @@ class ExtractedLead extends Model
         'status',
         'is_saved',
         'metadata',
+        'generated_website_content',
         'extracted_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (ExtractedLead $lead): void {
+            if (empty($lead->uuid)) {
+                $lead->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -43,6 +55,7 @@ class ExtractedLead extends Model
             'social_links' => 'array',
             'email_verification_status' => 'array',
             'metadata' => 'array',
+            'generated_website_content' => 'array',
             'is_saved' => 'boolean',
             'rating' => 'float',
             'review_count' => 'integer',
@@ -70,6 +83,7 @@ class ExtractedLead extends Model
     public static function fromPayload(array $lead, ?int $tenantId = null, ?int $userId = null): array
     {
         return [
+            'uuid' => $lead['uuid'] ?? (string) Str::uuid(),
             'tenant_id' => $tenantId ?? ($lead['tenant_id'] ?? null),
             'user_id' => $userId ?? ($lead['user_id'] ?? null),
             'business_name' => $lead['business_name'] ?? null,
@@ -94,6 +108,7 @@ class ExtractedLead extends Model
             'status' => $lead['status'] ?? 'saved',
             'is_saved' => $lead['is_saved'] ?? true,
             'metadata' => $lead['metadata'] ?? [],
+            'generated_website_content' => $lead['generated_website_content'] ?? null,
             'extracted_at' => $lead['extracted_at'] ?? now(),
         ];
     }

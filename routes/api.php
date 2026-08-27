@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ExtractorController;
+use App\Http\Controllers\LeadPreviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web'])->group(function (): void {
@@ -25,5 +26,6 @@ Route::middleware(['web'])->group(function (): void {
         Route::post('/bulk-action', [ExtractorController::class, 'bulkAction'])->name('bulk-action');
         Route::post('/export-selected', [ExtractorController::class, 'exportSelected'])->name('export-selected');
         Route::post('/send-email', [ExtractorController::class, 'sendEmail'])->name('send-email');
+        Route::post('/{id}/generate-demo', [LeadPreviewController::class, 'generate'])->name('generate-demo');
     });
 });

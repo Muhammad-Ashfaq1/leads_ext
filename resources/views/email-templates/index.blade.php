@@ -247,6 +247,7 @@
                                 <span class="badge bg-label-danger var-pill" onclick="insertVariable('@{{rating}}')">@{{rating}}</span>
                                 <span class="badge bg-label-primary var-pill" onclick="insertVariable('@{{sender_name}}')">@{{sender_name}}</span>
                                 <span class="badge bg-label-secondary var-pill" onclick="insertVariable('@{{sender_company}}')">@{{sender_company}}</span>
+                                <span class="badge bg-label-success var-pill" onclick="insertVariable('@{{demo_website_url}}')">✨ @{{demo_website_url}}</span>
                             </div>
                         </div>
 
@@ -514,6 +515,7 @@ function renderMockPlaceholders(text) {
         '@{{reviews}}': '128',
         '@{{sender_name}}': '{{ Auth::user()?->name ?? "Obtain Team" }}',
         '@{{sender_company}}': '{{ Auth::user()?->tenant?->name ?? "VektorLeads" }}',
+        '@{{demo_website_url}}': 'https://vektorleads.io/preview/demo-spec-preview-link',
     };
     let out = text;
     for (const [k, v] of Object.entries(mock)) {

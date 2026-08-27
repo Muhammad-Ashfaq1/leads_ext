@@ -17,6 +17,8 @@ class EmailOutreachService
         $emails = is_array($lead->emails) ? $lead->emails : (array) $lead->emails;
         $primaryEmail = $emails[0] ?? '';
 
+        $demoWebsiteUrl = $lead->uuid ? route('leads.preview', $lead->uuid) : '';
+
         $vars = [
             '{{business_name}}' => $lead->business_name ?? 'Business Owner',
             '{{email}}' => $primaryEmail,
@@ -29,6 +31,8 @@ class EmailOutreachService
             '{{reviews}}' => $lead->review_count ? (string) $lead->review_count : '',
             '{{sender_name}}' => $sender?->name ?? 'Our Team',
             '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'VektorLeads'),
+            '{{demo_website_url}}' => $demoWebsiteUrl,
+            '@{{demo_website_url}}' => $demoWebsiteUrl,
         ];
 
         return str_replace(array_keys($vars), array_values($vars), $text);

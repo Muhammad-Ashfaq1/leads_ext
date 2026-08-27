@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\ExtractorPageController;
 use App\Http\Controllers\JobsController;
+use App\Http\Controllers\LeadPreviewController;
 use App\Http\Controllers\LeadsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
@@ -14,6 +15,9 @@ use App\Http\Controllers\UsersController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Support\Facades\Route;
+
+// Public Spec Website Demo Preview Route
+Route::get('/preview/{uuid}', [LeadPreviewController::class, 'preview'])->name('leads.preview');
 
 // Guest / Authentication Routes
 Route::middleware('guest')->group(function (): void {
