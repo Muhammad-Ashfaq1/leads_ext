@@ -165,104 +165,33 @@
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.8/dist/notiflix-aio-3.2.8.min.js"></script>
 
     <script>
-        // Global Toastr Configuration (Matching POS Glass UI)
-        if (typeof toastr !== 'undefined') {
-            toastr.options = {
-                closeButton: true,
-                debug: false,
-                newestOnTop: true,
-                progressBar: true,
-                positionClass: 'toast-top-right',
-                preventDuplicates: false,
-                onclick: null,
-                showDuration: '300',
-                hideDuration: '1000',
-                timeOut: '4500',
-                extendedTimeOut: '1500',
-                showEasing: 'swing',
-                hideEasing: 'linear',
-                showMethod: 'fadeIn',
-                showMethod: 'fadeOut'
-            };
-        }
-
-        // Global Helper: showToast
-        window.showToast = function(type, message, title = '') {
-            if (typeof toastr === 'undefined') {
-                console.log(`[${type}] ${title}: ${message}`);
-                return;
-            }
-            const titles = {
-                success: title || 'Success',
-                error: title || 'Error',
-                warning: title || 'Warning',
-                info: title || 'Notice'
-            };
-            switch (type) {
-                case 'success':
-                    toastr.success(message, titles.success);
-                    break;
-                case 'error':
-                case 'danger':
-                    toastr.error(message, titles.error);
-                    break;
-                case 'warning':
-                    toastr.warning(message, titles.warning);
-                    break;
-                default:
-                    toastr.info(message, titles.info);
-                    break;
-            }
-        };
-
-        // Global Helper: showConfirm
-        window.showConfirm = function(title, text, confirmButtonText = 'Yes, Proceed', isDanger = true) {
-            if (typeof Swal === 'undefined') {
-                return Promise.resolve({ isConfirmed: window.confirm(`${title}\n\n${text}`) });
-            }
-            return Swal.fire({
-                title: title,
-                text: text,
-                icon: isDanger ? 'warning' : 'question',
-                showCancelButton: true,
-                confirmButtonText: confirmButtonText,
-                cancelButtonText: 'Cancel',
-                customClass: {
-                    popup: 'pos-swal-popup pos-glass-card',
-                    confirmButton: isDanger ? 'btn btn-danger me-2' : 'btn btn-primary me-2',
-                    cancelButton: 'btn btn-outline-secondary'
-                },
-                buttonsStyling: false
-            });
-        };
-
-        // Global Session Flash Alerts listener (Auto Toastr)
-        document.addEventListener('DOMContentLoaded', function () {
-            @if (session('success'))
-                showToast('success', {!! json_encode(session('success')) !!}, 'Success');
-            @endif
-
-            @if (session('error'))
-                showToast('error', {!! json_encode(session('error')) !!}, 'Error');
-            @endif
-
-            @if (session('warning'))
-                showToast('warning', {!! json_encode(session('warning')) !!}, 'Warning');
-            @endif
-
-            @if (session('info'))
-                showToast('info', {!! json_encode(session('info')) !!}, 'Information');
-            @endif
-
-            @if ($errors->any())
-                @foreach ($errors->all() as $error)
-                    showToast('error', {!! json_encode($error) !!}, 'Validation Error');
-                @endforeach
-            @endif
-        });
+      window.sessionMessages = window.sessionMessages || {};
+      @if (session('success'))
+        window.sessionMessages.success = @json(session('success'));
+      @endif
+      @if (session('error'))
+        window.sessionMessages.error = @json(session('error'));
+      @endif
+      @if (session('info'))
+        window.sessionMessages.info = @json(session('info'));
+      @endif
+      @if (session('warning'))
+        window.sessionMessages.warning = @json(session('warning'));
+      @endif
+      @if (session('status'))
+        window.sessionMessages.status = @json(session('status'));
+      @endif
+      @if (session('errors') && $errors->any())
+        window.sessionMessages.errors = @json($errors->all());
+      @endif
     </script>
+
+    <script src="{{ asset('assets/js/pos-confirm.js') }}?v={{ file_exists(public_path('assets/js/pos-confirm.js')) ? filemtime(public_path('assets/js/pos-confirm.js')) : time() }}"></script>
+    <script src="{{ asset('assets/js/app-helpers.js') }}?v={{ file_exists(public_path('assets/js/app-helpers.js')) ? filemtime(public_path('assets/js/app-helpers.js')) : time() }}"></script>
+    <script src="{{ asset('assets/js/session-notifications.js') }}?v={{ file_exists(public_path('assets/js/session-notifications.js')) ? filemtime(public_path('assets/js/session-notifications.js')) : time() }}"></script>
 
     @stack('page-script')
     @stack('scripts')
