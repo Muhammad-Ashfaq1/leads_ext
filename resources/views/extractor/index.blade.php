@@ -109,20 +109,22 @@
         <div class="mt-3 p-3 rounded-2 bg-light-subtle border" id="preFiltersContainer">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="fw-semibold small text-uppercase text-muted d-flex align-items-center">
-                    <i class="icon-base ti tabler-adjustments-horizontal me-1 text-primary"></i> Pre-Extraction Criteria (API Filters)
+                    <i class="icon-base ti tabler-adjustments-horizontal me-1 text-primary"></i> Pre-Extraction Criteria (Filter Before Query)
                 </span>
                 <span class="badge bg-label-info small" style="font-size: 0.72rem;">Filters before saving</span>
             </div>
             <div class="row g-2 align-items-center">
-                <div class="col-6 col-sm-4 col-md-3">
-                    <div class="form-check m-0">
-                        <input class="form-check-input" type="checkbox" id="preReqWebsite">
-                        <label class="form-check-label small fw-medium" for="preReqWebsite">
-                            <i class="icon-base ti tabler-world-www me-1 text-primary"></i>Require Website
-                        </label>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="icon-base ti tabler-world"></i></span>
+                        <select id="preWebsiteFilter" class="form-select form-select-sm">
+                            <option value="all">Website: All / Any</option>
+                            <option value="without_website">🚫 Without Website (No Site)</option>
+                            <option value="has_website">🌐 Must Have Website</option>
+                        </select>
                     </div>
                 </div>
-                <div class="col-6 col-sm-4 col-md-3">
+                <div class="col-6 col-sm-3 col-md-3">
                     <div class="form-check m-0">
                         <input class="form-check-input" type="checkbox" id="preReqPhone">
                         <label class="form-check-label small fw-medium" for="preReqPhone">
@@ -130,22 +132,22 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-6 col-sm-4 col-md-3">
+                <div class="col-6 col-sm-3 col-md-3">
                     <div class="form-check m-0">
                         <input class="form-check-input" type="checkbox" id="preReqEmail">
                         <label class="form-check-label small fw-medium" for="preReqEmail">
-                            <i class="icon-base ti tabler-mail me-1 text-danger"></i>Require Email
+                            <i class="icon-base ti tabler-shield-check me-1 text-success"></i>Require Email
                         </label>
                     </div>
                 </div>
-                <div class="col-6 col-sm-6 col-md-3">
-                    <div class="d-flex align-items-center gap-1">
-                        <label class="small text-muted mb-0 text-nowrap" for="preMinRating">Min Rating:</label>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="icon-base ti tabler-star text-warning"></i></span>
                         <select id="preMinRating" class="form-select form-select-sm">
-                            <option value="0">Any Rating</option>
-                            <option value="4.5">★ 4.5+</option>
-                            <option value="4.0">★ 4.0+</option>
-                            <option value="3.5">★ 3.5+</option>
+                            <option value="0">Rating: Any Rating</option>
+                            <option value="4.5">★ 4.5+ Rating</option>
+                            <option value="4.0">★ 4.0+ Rating</option>
+                            <option value="3.5">★ 3.5+ Rating</option>
                         </select>
                     </div>
                 </div>
@@ -183,18 +185,6 @@
                 New Extraction
             </button>
         </div>
-        @if ($allowMock)
-            <div class="extractor-dev mt-4">
-                <div class="form-check form-switch mb-2">
-                    <input class="form-check-input" type="checkbox" id="mockToggle">
-                    <label class="form-check-label" for="mockToggle">Development mock stream (simulated data)</label>
-                </div>
-                <div class="form-check form-switch" id="verifyToggleWrap">
-                    <input class="form-check-input" type="checkbox" id="verifyToggle">
-                    <label class="form-check-label" for="verifyToggle">Simulate human verification</label>
-                </div>
-            </div>
-        @endif
     </div>
 </div>
 
@@ -213,9 +203,6 @@
                         Open Verification
                     </button>
                     <button type="button" class="btn btn-outline-danger" id="stopFromVerifyBtn">Stop Extraction</button>
-                    @if ($allowMock)
-                        <button type="button" class="btn btn-outline-primary d-none" id="completeMockVerifyBtn">Mark Verification Complete</button>
-                    @endif
                 </div>
                 <p class="small text-muted mt-3 mb-0" id="verificationHint">Waiting for verification...</p>
             </div>

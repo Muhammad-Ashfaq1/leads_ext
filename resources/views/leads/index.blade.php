@@ -58,8 +58,9 @@
                 <div class="col-6 col-sm-4 col-md-2">
                     <select name="has_email" class="form-select form-select-sm">
                         <option value="">Email: All</option>
-                        <option value="yes" @selected($filters['has_email'] === 'yes')>Has Email</option>
-                        <option value="no" @selected($filters['has_email'] === 'no')>No Email</option>
+                        <option value="verified" @selected(($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes')>Verified Email (MX Valid)</option>
+                        <option value="yes" @selected(($filters['has_email'] ?? '') === 'yes')>Has Email (All)</option>
+                        <option value="no" @selected(($filters['has_email'] ?? '') === 'no')>No Email</option>
                     </select>
                 </div>
 
@@ -92,6 +93,9 @@
         <!-- Quick filter chips / shortcut pills -->
         <div class="d-flex flex-wrap align-items-center gap-1 mt-2 pt-2 border-top">
             <small class="text-muted fw-semibold me-1"><i class="icon-base ti tabler-filter me-1"></i>Quick Filters:</small>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'verified'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with MX verified email">
+                <i class="icon-base ti tabler-shield-check me-1"></i>Verified Email
+            </a>
             <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'no'])) }}" class="badge {{ $filters['has_website'] === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no website">
                 <i class="icon-base ti tabler-world-off me-1"></i>Without Website
             </a>
@@ -146,7 +150,7 @@
         </div>
     </div>
 
-    <!-- Table -->
+    <!-- Table of Extracted Leads -->
     <div class="table-responsive leads-table-responsive">
         <table class="table table-hover align-middle mb-0" id="leadsTable">
             <thead class="table-light">
@@ -154,13 +158,13 @@
                     <th class="ps-3" style="width: 40px;">
                         <input class="form-check-input" type="checkbox" id="masterTableCheckbox" style="cursor: pointer;" title="Select / Deselect all on this page">
                     </th>
-                    <th>Business Name</th>
-                    <th>Category</th>
-                    <th>Contact Info</th>
-                    <th>Social Profiles</th>
-                    <th>Rating</th>
-                    <th>Address</th>
-                    <th class="pe-3 text-end">Links</th>
+                    <th><i class="icon-base ti tabler-building me-1 text-primary"></i> Business Name</th>
+                    <th><i class="icon-base ti tabler-category me-1 text-primary"></i> Category</th>
+                    <th><i class="icon-base ti tabler-mail-opened me-1 text-success"></i> Contact Info</th>
+                    <th><i class="icon-base ti tabler-brand-linkedin me-1 text-info"></i> Social Profiles</th>
+                    <th><i class="icon-base ti tabler-star me-1 text-warning"></i> Rating</th>
+                    <th><i class="icon-base ti tabler-map-pin me-1 text-danger"></i> Address</th>
+                    <th class="pe-3 text-end"><i class="icon-base ti tabler-link me-1 text-muted"></i> Links</th>
                 </tr>
             </thead>
             <tbody>
@@ -200,17 +204,24 @@
                         <td>
                             <div class="small">
                                 @if ($firstEmail)
-                                    <div class="d-flex align-items-center gap-1 text-truncate" style="max-width: 190px;">
-                                        <a href="mailto:{{ $firstEmail }}" class="text-success text-decoration-none" title="{{ $firstEmail }}">
+                                    <div class="d-flex align-items-center gap-1 text-truncate" style="max-width: 200px;">
+                                        <a href="mailto:{{ $firstEmail }}" class="text-success text-decoration-none fw-medium text-truncate" title="{{ $firstEmail }}">
                                             <i class="icon-base ti tabler-mail me-1"></i>{{ $firstEmail }}
                                         </a>
                                         @if ($isValidEmail)
-                                            <span class="badge bg-label-success p-1" title="MX Validated"><i class="icon-base ti tabler-check"></i></span>
+                                            <span class="badge bg-success text-white rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.65rem; height: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Verified Deliverable Email (Passed DNS & MX Validation)">
+                                                <i class="icon-base ti tabler-shield-check" style="font-size: 0.75rem;"></i>
+                                                <span style="font-size: 0.62rem; font-weight: 600;">Verified</span>
+                                            </span>
+                                        @else
+                                            <span class="badge bg-label-secondary rounded-pill px-1 py-0 d-inline-flex align-items-center flex-shrink-0" style="font-size: 0.65rem; height: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Email Contact Found">
+                                                <i class="icon-base ti tabler-check" style="font-size: 0.7rem;"></i>
+                                            </span>
                                         @endif
                                     </div>
                                 @endif
                                 @if ($lead->phone)
-                                    <div class="text-truncate" style="max-width: 190px;">
+                                    <div class="text-truncate" style="max-width: 200px;">
                                         <a href="tel:{{ $lead->phone }}" class="text-info text-decoration-none">
                                             <i class="icon-base ti tabler-phone me-1"></i>{{ $lead->phone }}
                                         </a>

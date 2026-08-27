@@ -393,5 +393,42 @@ class LeadsBulkActionTest extends TestCase
             ->assertSee('Smile Dental Clinic')
             ->assertDontSee('Quick Fix Garage');
     }
+
+    public function test_leads_can_be_filtered_by_verified_email(): void
+    {
+        $job = $this->makeJob($this->tenant1, $this->user1, 'Lawyers in Austin');
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Verified Law Chambers',
+            'emails' => ['contact@verifiedlaw.com'],
+            'email_verification_status' => [
+                'contact@verifiedlaw.com' => [
+                    'is_valid' => true,
+                    'has_mx' => true,
+                ],
+            ],
+        ]);
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Unverified Law Firm',
+            'emails' => ['info@unverifiedfake123.com'],
+            'email_verification_status' => [
+                'info@unverifiedfake123.com' => [
+                    'is_valid' => false,
+                    'has_mx' => false,
+                ],
+            ],
+        ]);
+
+        // Filter: Verified Email (has_email=verified)
+        $response = $this->actingAs($this->user1)->get('/leads?has_email=verified');
+        $response->assertOk()
+            ->assertSee('Verified Law Chambers')
+            ->assertDontSee('Unverified Law Firm');
+    }
 }
 

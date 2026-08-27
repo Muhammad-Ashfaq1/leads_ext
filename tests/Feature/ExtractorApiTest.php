@@ -69,7 +69,7 @@ class ExtractorApiTest extends TestCase
         $this->postJson('/api/extractor/start', [
             'prompt' => 'Find dentists in Lahore',
         ])->assertStatus(503)->assertJsonFragment([
-            'message' => 'Extractor service is unavailable. Please start the Python extractor service.',
+            'message' => 'Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.',
         ]);
     }
 
@@ -128,7 +128,7 @@ class ExtractorApiTest extends TestCase
         $response = $this->get("/api/extractor/{$job->uuid}/stream");
         $response->assertOk();
         $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
-        $this->assertStringContainsString('Extractor service is unavailable', $response->streamedContent());
+        $this->assertStringContainsString('Lead Discovery Engine is temporarily unavailable', $response->streamedContent());
     }
 
     public function test_csv_export_uses_extracted_rows_only(): void
@@ -353,6 +353,62 @@ class ExtractorApiTest extends TestCase
         $this->assertDatabaseMissing('extracted_leads', [
             'extraction_job_id' => $job->id,
             'business_name' => 'Place Without Phone',
+        ]);
+    }
+
+    public function test_google_api_pre_filter_without_website_only_extracts_places_without_website(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'places' => [
+                    [
+                        'id' => 'place_with_site',
+                        'displayName' => ['text' => 'Has Site Dental'],
+                        'formattedAddress' => 'Lahore, Pakistan',
+                        'websiteUri' => 'https://hassite.example',
+                        'rating' => 4.8,
+                    ],
+                    [
+                        'id' => 'place_no_site',
+                        'displayName' => ['text' => 'No Site Workshop'],
+                        'formattedAddress' => 'Lahore, Pakistan',
+                        'nationalPhoneNumber' => '+92 42 3578000',
+                        'rating' => 4.9,
+                    ],
+                ],
+            ], 200),
+            'https://hassite.example' => Http::response('<html>Home</html>', 200),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => '99999999-9999-9999-9999-999999999999',
+            'prompt' => 'Workshops (Lahore)',
+            'query' => 'Workshops in Lahore',
+            'status' => 'starting',
+            'limit' => 10,
+            'mode' => 'google_api',
+        ]);
+
+        session(['google_maps_filters_'.$job->uuid => [
+            'without_website' => true,
+        ]]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('No Site Workshop', $streamContent);
+        $this->assertStringNotContainsString('Has Site Dental', $streamContent);
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'No Site Workshop',
+        ]);
+        $this->assertDatabaseMissing('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Has Site Dental',
         ]);
     }
 

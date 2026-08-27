@@ -43,6 +43,9 @@ class ExtractorController extends Controller
             'simulate_verification' => ['sometimes', 'boolean'],
             'filters' => ['nullable', 'array'],
             'filters.require_website' => ['nullable', 'boolean'],
+            'filters.without_website' => ['nullable', 'boolean'],
+            'filters.require_no_website' => ['nullable', 'boolean'],
+            'filters.website_status' => ['nullable', 'string', Rule::in(['all', 'has_website', 'without_website', 'no_website', 'yes', 'no'])],
             'filters.require_phone' => ['nullable', 'boolean'],
             'filters.require_email' => ['nullable', 'boolean'],
             'filters.min_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
@@ -477,11 +480,11 @@ class ExtractorController extends Controller
 
             $handle = @fopen($url, 'r');
             if ($handle === false) {
-                Log::error('stream errors', ['job_id' => $job->uuid, 'error' => 'Unable to open Python event stream']);
+                Log::error('stream errors', ['job_id' => $job->uuid, 'error' => 'Unable to connect to crawler cluster']);
                 echo 'data: '.json_encode([
                     'type' => 'error',
                     'job_id' => $job->uuid,
-                    'message' => 'Extractor service is unavailable. Please start the Python extractor service.',
+                    'message' => 'Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.',
                 ])."\n\n";
                 $this->flush();
 
@@ -571,7 +574,7 @@ class ExtractorController extends Controller
             ])->save(),
             'completed' => $this->complete($job, ExtractionJob::STATUS_COMPLETED, $event, 'job completed'),
             'cancelled' => $this->complete($job, ExtractionJob::STATUS_CANCELLED, $event, 'job stopped'),
-            'error' => $this->complete($job, ExtractionJob::STATUS_ERROR, $event, 'Python service errors'),
+            'error' => $this->complete($job, ExtractionJob::STATUS_ERROR, $event, 'Lead discovery engine error'),
             'verification_timeout' => $this->complete($job, ExtractionJob::STATUS_VERIFICATION_TIMEOUT, $event, 'job stopped'),
             default => null,
         };

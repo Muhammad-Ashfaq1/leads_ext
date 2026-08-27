@@ -24,6 +24,7 @@ class LeadsController extends Controller
         $search = trim($request->input('search', ''));
         $category = $request->input('category');
         $hasEmail = $request->input('has_email');
+        $verifiedEmail = $request->input('verified_email');
         $hasPhone = $request->input('has_phone');
         $hasWebsite = $request->input('has_website');
         $minRating = $request->input('min_rating');
@@ -50,6 +51,14 @@ class LeadsController extends Controller
             ->when($category, fn ($q) => $q->where('category', $category))
             ->when($hasEmail === 'yes', fn ($q) => $q->whereNotNull('emails')->where('emails', '!=', '[]'))
             ->when($hasEmail === 'no', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('emails')->orWhere('emails', '[]')))
+            ->when($hasEmail === 'verified' || $verifiedEmail === 'yes', function ($q): void {
+                $q->whereNotNull('emails')
+                    ->where('emails', '!=', '[]')
+                    ->where(function ($sub): void {
+                        $sub->where('email_verification_status', 'like', '%"is_valid":true%')
+                            ->orWhere('email_verification_status', 'like', '%"is_valid": true%');
+                    });
+            })
             ->when($hasPhone === 'yes', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
             ->when($hasPhone === 'no', fn ($q) => $q->whereNull('phone')->orWhere('phone', ''))
             ->when($hasWebsite === 'yes', fn ($q) => $q->whereNotNull('website')->where('website', '!=', ''))
@@ -88,6 +97,7 @@ class LeadsController extends Controller
                 'search' => $search,
                 'category' => $category,
                 'has_email' => $hasEmail,
+                'verified_email' => $verifiedEmail,
                 'has_phone' => $hasPhone,
                 'has_website' => $hasWebsite,
                 'min_rating' => $minRating,

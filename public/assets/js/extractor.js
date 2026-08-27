@@ -97,6 +97,12 @@
         resetFiltersBtn: document.getElementById('resetFiltersBtn'),
         noFilterResetBtn: document.getElementById('noFilterResetBtn'),
 
+        // Pre-extraction criteria controls
+        preWebsiteFilter: document.getElementById('preWebsiteFilter'),
+        preReqPhone: document.getElementById('preReqPhone'),
+        preReqEmail: document.getElementById('preReqEmail'),
+        preMinRating: document.getElementById('preMinRating'),
+
         // Bulk toolbar
         bulkBar: document.getElementById('bulkBar'),
         selectAllCheckbox: document.getElementById('selectAllCheckbox'),
@@ -311,9 +317,9 @@
 
         let verificationBadge = '';
         const vStatus = lead.email_verification_status && typeof lead.email_verification_status === 'object' ? lead.email_verification_status : {};
-        const hasVerifiedEmail = Object.values(vStatus).some((v) => v && v.is_valid);
+        const hasVerifiedEmail = Object.values(vStatus).some((v) => v && (v.is_valid || v === true));
         if (hasVerifiedEmail) {
-            verificationBadge = '<span class="badge bg-label-success" style="font-size: 0.68rem; padding: 0.2rem 0.4rem;" title="Email Verified (MX Valid)"><i class="icon-base ti tabler-mail-check me-1"></i>Verified</span>';
+            verificationBadge = '<span class="badge bg-success text-white rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; height: 18px;" title="Verified Deliverable Email (DNS & MX Passed)"><i class="icon-base ti tabler-shield-check" style="font-size: 0.75rem;"></i><span>Verified</span></span>';
         }
 
         return `
@@ -1118,8 +1124,11 @@
                 return;
             }
 
+            const webFilterVal = els.preWebsiteFilter ? els.preWebsiteFilter.value : 'all';
             filters = {
-                require_website: Boolean(els.preReqWebsite?.checked),
+                require_website: webFilterVal === 'has_website',
+                without_website: webFilterVal === 'without_website',
+                website_status: webFilterVal,
                 require_phone: Boolean(els.preReqPhone?.checked),
                 require_email: Boolean(els.preReqEmail?.checked),
                 min_rating: Number(els.preMinRating?.value || 0),
@@ -1171,7 +1180,7 @@
         } catch (error) {
             setRunning(false);
             setStatus('error', error.message);
-            setAlert('danger', error.message || 'Extractor service is unavailable.', true);
+            setAlert('danger', error.message || 'Lead Discovery Engine is temporarily unavailable.', true);
         }
     }
 

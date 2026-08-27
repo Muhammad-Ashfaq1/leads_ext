@@ -21,7 +21,7 @@ class ExtractorClient
             ]);
         } catch (ConnectionException $exception) {
             Log::error('Python service errors', ['action' => 'start', 'error' => $exception->getMessage()]);
-            throw new RuntimeException('Extractor service is unavailable. Please start the Python extractor service.');
+            throw new RuntimeException('Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.');
         }
 
         if ($response->failed()) {
@@ -43,7 +43,7 @@ class ExtractorClient
             $response = $this->http()->get("/jobs/{$jobId}");
         } catch (ConnectionException $exception) {
             Log::error('Python service errors', ['action' => 'status', 'error' => $exception->getMessage()]);
-            throw new RuntimeException('Extractor service is unavailable. Please start the Python extractor service.');
+            throw new RuntimeException('Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.');
         }
 
         if ($response->status() === 404) {
@@ -51,7 +51,7 @@ class ExtractorClient
         }
 
         if ($response->failed()) {
-            throw new RuntimeException('Extractor service is unavailable. Please start the Python extractor service.');
+            throw new RuntimeException('Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.');
         }
 
         return $response->json();
@@ -63,7 +63,7 @@ class ExtractorClient
             $response = $this->http()->post("/jobs/{$jobId}/stop");
         } catch (ConnectionException $exception) {
             Log::error('Python service errors', ['action' => 'stop', 'error' => $exception->getMessage()]);
-            throw new RuntimeException('Extractor service is unavailable. Please start the Python extractor service.');
+            throw new RuntimeException('Lead Discovery Engine is temporarily unavailable. Please try again or switch extraction mode.');
         }
 
         if ($response->failed()) {

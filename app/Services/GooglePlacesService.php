@@ -88,6 +88,16 @@ class GooglePlacesService
             $websitesCount = 0;
 
             $reqWebsite = (bool) ($filters['require_website'] ?? false);
+            $reqNoWebsite = (bool) ($filters['without_website'] ?? ($filters['require_no_website'] ?? false));
+            if (isset($filters['website_status'])) {
+                if (in_array($filters['website_status'], ['has_website', 'yes'], true)) {
+                    $reqWebsite = true;
+                    $reqNoWebsite = false;
+                } elseif (in_array($filters['website_status'], ['without_website', 'no_website', 'no'], true)) {
+                    $reqNoWebsite = true;
+                    $reqWebsite = false;
+                }
+            }
             $reqPhone = (bool) ($filters['require_phone'] ?? false);
             $reqEmail = (bool) ($filters['require_email'] ?? false);
             $minRating = (float) ($filters['min_rating'] ?? 0);
@@ -307,6 +317,11 @@ class GooglePlacesService
 
                             // Pre-extraction filter: require website
                             if ($reqWebsite && empty($website)) {
+                                continue;
+                            }
+
+                            // Pre-extraction filter: require NO website (without website only)
+                            if ($reqNoWebsite && ! empty($website)) {
                                 continue;
                             }
 
