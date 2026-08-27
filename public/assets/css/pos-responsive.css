@@ -1,0 +1,48 @@
+/* ============================================================================
+   pos-responsive.css — Shared responsive foundation (Matching POS)
+   ----------------------------------------------------------------------------
+   ONE stylesheet, loaded LAST in every layout (after @stack('styles')), so it
+   can adjust layout at small viewports without adding new !important rules and
+   without fighting the theme. It introduces NO new CSS framework — it only uses
+   the existing Bootstrap 5 breakpoint ladder (sm 576 / md 768 / lg 992 /
+   xl 1200 / xxl 1400) already shipped in vendor/css/core.css.
+   ========================================================================== */
+
+/* ── 1. Global safety ───────────────────────────────────────────────────── */
+.layout-wrapper {
+    max-width: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .layout-page,
+    .content-wrapper {
+        max-width: 100%;
+        overflow-x: clip;
+    }
+}
+
+/* ── 2. Responsive modals (app-wide) ──────────────────────────────────────
+   Cap EVERY dialog to the viewport on small screens and let scrollable
+   bodies keep header/footer reachable. Desktop (≥576px) is untouched. */
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin: 0.5rem auto;
+        max-width: calc(100% - 1rem);
+    }
+    .modal-dialog.modal-dialog-scrollable .modal-content {
+        max-height: calc(100dvh - 1rem);
+    }
+    .modal .dropdown-menu { max-width: calc(100vw - 2rem); }
+}
+
+/* ── Header rows: wrap title + actions on phones ────────────────────────── */
+@media (max-width: 575.98px) {
+    .card-header.d-flex.justify-content-between { flex-wrap: wrap; gap: 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.01ms !important;
+    }
+}
+
