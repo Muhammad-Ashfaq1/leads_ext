@@ -288,10 +288,10 @@
             ? `<span class="extractor-lead-tag extractor-lead-tag-muted">${escapeHtml(lead.source)}</span>`
             : '';
         const websiteBtn = lead.website
-            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-xs btn-primary d-inline-flex align-items-center" title="Visit Website"><i class="icon-base ti tabler-world-www me-1"></i>Web</a>`
+            ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-xs btn-label-info d-inline-flex align-items-center" title="Visit Website"><i class="icon-base ti tabler-world"></i></a>`
             : '';
         const mapsBtn = lead.google_maps_url
-            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-secondary d-inline-flex align-items-center" title="View on Google Maps"><i class="icon-base ti tabler-map-pin me-1"></i>Map</a>`
+            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-label-danger d-inline-flex align-items-center" title="View on Google Maps"><i class="icon-base ti tabler-map-pin"></i></a>`
             : '';
 
         const avatarImg = lead.avatar_url

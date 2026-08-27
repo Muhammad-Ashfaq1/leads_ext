@@ -36,3 +36,25 @@
     background-color: rgba(105, 108, 255, 0.08) !important;
 }
 
+/* Quick action links in lead listing table */
+.pos-lead-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.pos-lead-actions .btn-icon {
+    width: 2.125rem;
+    height: 2.125rem;
+    min-width: 2.125rem;
+    min-height: 2.125rem;
+    font-size: 1rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.pos-lead-actions .btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+

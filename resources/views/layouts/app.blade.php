@@ -163,16 +163,9 @@
                         </a>
                     </li>
 
-                    <!-- Administration Section -->
+                    <!-- Account Section -->
                     <li class="menu-header small text-uppercase mt-3">
-                        <span class="menu-header-text">Organization</span>
-                    </li>
-
-                    <li class="menu-item {{ request()->routeIs('users.index') ? 'active' : '' }}">
-                        <a href="{{ route('users.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-user-cog"></i>
-                            <div data-i18n="Team Members">Team Members</div>
-                        </a>
+                        <span class="menu-header-text">Account</span>
                     </li>
 
                     <li class="menu-item {{ request()->routeIs('profile.index') ? 'active' : '' }}">

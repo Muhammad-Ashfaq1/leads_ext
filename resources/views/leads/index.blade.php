@@ -229,21 +229,24 @@
                             </div>
                         </td>
                         <td class="pe-3 text-end">
-                            <div class="d-flex justify-content-end gap-1">
+                            <div class="pos-lead-actions">
                                 @if ($firstEmail)
-                                    <button type="button" class="btn btn-xs btn-primary btn-send-single-email" title="Send Email to {{ $firstEmail }}" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
+                                    <button type="button" class="btn btn-sm btn-icon btn-label-primary rounded-pill btn-send-single-email" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Outreach Email ({{ $firstEmail }})" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
                                         <i class="icon-base ti tabler-send"></i>
                                     </button>
                                 @endif
                                 @if ($lead->website)
-                                    <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-info" title="Visit Website">
+                                    <a href="{{ $lead->website }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-info rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="Visit Website">
                                         <i class="icon-base ti tabler-world"></i>
                                     </a>
                                 @endif
                                 @if ($lead->google_maps_url)
-                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-danger" title="Open Google Maps">
+                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-danger rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="Open Google Maps">
                                         <i class="icon-base ti tabler-map-pin"></i>
                                     </a>
+                                @endif
+                                @if (! $firstEmail && ! $lead->website && ! $lead->google_maps_url)
+                                    <span class="text-muted small">—</span>
                                 @endif
                             </div>
                         </td>
