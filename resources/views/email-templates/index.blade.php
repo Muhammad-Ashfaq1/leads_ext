@@ -306,6 +306,12 @@
                             <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
                             <th><i class="icon-base ti tabler-template me-1 text-primary"></i> Template</th>
                             <th class="pe-3 text-end"><i class="icon-base ti tabler-clock me-1 text-muted"></i> Sent At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($logs as $log)
+                            <tr>
+                                <td>
                                     <div class="fw-semibold small text-heading">
                                         <i class="icon-base ti tabler-mail me-1 text-muted"></i>{{ $log->recipient_email }}
                                     </div>

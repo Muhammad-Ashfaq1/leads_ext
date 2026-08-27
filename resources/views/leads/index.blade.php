@@ -101,8 +101,8 @@
                     <i class="icon-base ti tabler-history me-1"></i>Task #{{ $filters['job_id'] }} <i class="icon-base ti tabler-x ms-1"></i>
                 </a>
             @endif
-            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'verified'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with MX verified email">
-                <i class="icon-base ti tabler-shield-check me-1"></i>Verified Email
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'verified'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with MX verified email">
+                <i class="icon-base ti tabler-rosette-discount-check-filled me-1"></i>Verified Email
             </a>
             <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'no'])) }}" class="badge {{ $filters['has_website'] === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no website">
                 <i class="icon-base ti tabler-world-off me-1"></i>Without Website
@@ -217,9 +217,9 @@
                                             <i class="icon-base ti tabler-mail me-1"></i>{{ $firstEmail }}
                                         </a>
                                         @if ($isValidEmail)
-                                            <span class="badge bg-success text-white rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.65rem; height: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Verified Deliverable Email (Passed DNS & MX Validation)">
-                                                <i class="icon-base ti tabler-shield-check" style="font-size: 0.75rem;"></i>
-                                                <span style="font-size: 0.62rem; font-weight: 600;">Verified</span>
+                                            <span class="badge rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.65rem; height: 18px; background-color: rgba(29, 155, 240, 0.12); color: #1d9bf0; border: 1px solid rgba(29, 155, 240, 0.25);" data-bs-toggle="tooltip" data-bs-placement="top" title="Verified Deliverable Email (Passed DNS & MX Validation)">
+                                                <i class="icon-base ti tabler-rosette-discount-check-filled" style="font-size: 0.85rem; color: #1d9bf0;"></i>
+                                                <span style="font-size: 0.62rem; font-weight: 700;">Verified</span>
                                             </span>
                                         @else
                                             <span class="badge bg-label-secondary rounded-pill px-1 py-0 d-inline-flex align-items-center flex-shrink-0" style="font-size: 0.65rem; height: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Email Contact Found">

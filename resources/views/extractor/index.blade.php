@@ -136,7 +136,7 @@
                     <div class="form-check m-0">
                         <input class="form-check-input" type="checkbox" id="preReqEmail">
                         <label class="form-check-label small fw-medium" for="preReqEmail">
-                            <i class="icon-base ti tabler-shield-check me-1 text-success"></i>Require Email
+                            <i class="icon-base ti tabler-rosette-discount-check-filled me-1" style="color: #1d9bf0;"></i>Require Email
                         </label>
                     </div>
                 </div>
@@ -185,7 +185,7 @@
                     <i class="icon-base ti tabler-player-stop me-1"></i>
                     Stop Extraction
                 </button>
-                <button type="button" class="btn btn-outline-danger" id="clearAllResultsBtn" title="Clear all searched leads from screen">
+                <button type="button" class="btn btn-outline-danger disabled" id="clearAllResultsBtn" disabled title="Clear all searched leads from screen">
                     <i class="icon-base ti tabler-trash me-1"></i>
                     Clear Results
                 </button>
@@ -236,7 +236,7 @@
                     <i class="icon-base ti tabler-player-stop me-1"></i>
                     Stop Extraction
                 </button>
-                <button type="button" class="btn btn-outline-danger btn-sm" id="statusClearBtn" title="Clear searched leads and reset counters">
+                <button type="button" class="btn btn-outline-danger btn-sm disabled" id="statusClearBtn" disabled title="Clear searched leads and reset counters">
                     <i class="icon-base ti tabler-trash me-1"></i>
                     Clear Results
                 </button>
@@ -282,7 +282,7 @@
                 <i class="icon-base ti tabler-file-spreadsheet me-1"></i>
                 Download Excel (.xlsx)
             </a>
-            <button type="button" class="btn btn-outline-danger" id="clearBtn">Clear Results</button>
+            <button type="button" class="btn btn-outline-danger disabled" id="clearBtn" disabled>Clear Results</button>
             <button type="button" class="btn btn-outline-primary" id="summaryNewBtn">New Search</button>
         </div>
     </div>
@@ -300,7 +300,7 @@
                 </span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
-                <button type="button" class="btn btn-sm btn-outline-danger" id="leadsClearBtn" title="Clear all searched leads from screen">
+                <button type="button" class="btn btn-sm btn-outline-danger disabled" id="leadsClearBtn" disabled title="Clear all searched leads from screen">
                     <i class="icon-base ti tabler-trash me-1"></i>Clear Results
                 </button>
                 <button type="button" class="btn btn-sm btn-success d-none" id="saveAllDiscoveredBtn">

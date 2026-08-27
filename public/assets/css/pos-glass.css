@@ -263,3 +263,404 @@
     gap: 0.75rem 1rem;
 }
 
+/* ── Liquid Glass Button & Action Control System (AWT / POS Style) ──── */
+
+:root {
+    --glass-btn-radius: 0.625rem;
+    --glass-btn-pill-radius: 9999px;
+    --glass-btn-blur: blur(12px) saturate(180%);
+}
+
+.btn {
+    position: relative;
+    font-weight: 600;
+    border-radius: var(--glass-btn-radius, 0.625rem);
+    letter-spacing: 0.01em;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    -webkit-backdrop-filter: var(--glass-btn-blur);
+    backdrop-filter: var(--glass-btn-blur);
+}
+
+.btn:focus-visible {
+    outline: none;
+}
+
+/* Primary Glass Button (Start Extraction / Main CTA) */
+.btn-primary {
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    background-color: #4f46e5 !important;
+    background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%) !important;
+    box-shadow:
+        0 6px 16px -4px rgba(79, 70, 229, 0.48),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 1px rgba(255, 255, 255, 0.42),
+        inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    background-image: linear-gradient(135deg, #6d70ff 0%, #5850ec 50%, #4c40d6 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 22px -4px rgba(79, 70, 229, 0.58),
+        0 3px 6px rgba(0, 0, 0, 0.06),
+        inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+    box-shadow:
+        0 3px 8px -2px rgba(79, 70, 229, 0.4),
+        inset 0 1.5px 2.5px rgba(0, 0, 0, 0.2);
+}
+
+/* Danger Glass Button (Stop Extraction / High Alert Actions) */
+.btn-danger {
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    background-color: #dc2626 !important;
+    background-image: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+    box-shadow:
+        0 6px 16px -4px rgba(220, 38, 38, 0.48),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 1px rgba(255, 255, 255, 0.42),
+        inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
+}
+
+.btn-danger:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    background-image: linear-gradient(135deg, #f87171 0%, #e11d48 50%, #be123c 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 22px -4px rgba(220, 38, 38, 0.58),
+        0 3px 6px rgba(0, 0, 0, 0.06),
+        inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+.btn-danger:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+    box-shadow:
+        0 3px 8px -2px rgba(220, 38, 38, 0.4),
+        inset 0 1.5px 2.5px rgba(0, 0, 0, 0.2);
+}
+
+/* Success Glass Button (Save / Export Excel Actions) */
+.btn-success {
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    background-color: #059669 !important;
+    background-image: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+    box-shadow:
+        0 6px 16px -4px rgba(5, 150, 105, 0.48),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 1px rgba(255, 255, 255, 0.42),
+        inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
+}
+
+.btn-success:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    background-image: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 22px -4px rgba(5, 150, 105, 0.58),
+        0 3px 6px rgba(0, 0, 0, 0.06),
+        inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* Frosted Ruby Glass (Clear Results) */
+.btn-outline-danger {
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    background-color: rgba(239, 68, 68, 0.06) !important;
+    background-image: linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.12) 0%,
+        rgba(239, 68, 68, 0.03) 100%
+    ) !important;
+    box-shadow:
+        0 4px 12px -4px rgba(239, 68, 68, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+.btn-outline-danger:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(239, 68, 68, 0.85) !important;
+    background-color: #ef4444 !important;
+    background-image: linear-gradient(135deg, #f87171 0%, #ef4444 60%, #dc2626 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 20px -4px rgba(239, 68, 68, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.45);
+}
+
+.btn-outline-danger:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+}
+
+/* Frosted Crystal Glass Outline (New Search / Secondary CTAs) */
+.btn-outline-secondary {
+    color: var(--bs-heading-color, #334155) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+    background-color: rgba(255, 255, 255, 0.72) !important;
+    background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(255, 255, 255, 0.5) 100%
+    ) !important;
+    box-shadow:
+        0 3px 10px -3px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+.btn-outline-secondary:hover:not(:disabled) {
+    color: var(--bs-heading-color, #0f172a) !important;
+    border-color: rgba(100, 116, 139, 0.5) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 16px -4px rgba(0, 0, 0, 0.12),
+        inset 0 1px 1px #ffffff;
+}
+
+/* Frosted Primary Glass Outline */
+.btn-outline-primary {
+    color: #4f46e5 !important;
+    border: 1px solid rgba(79, 70, 229, 0.35) !important;
+    background-color: rgba(79, 70, 229, 0.06) !important;
+    background-image: linear-gradient(
+        135deg,
+        rgba(99, 102, 241, 0.12) 0%,
+        rgba(79, 70, 229, 0.02) 100%
+    ) !important;
+    box-shadow:
+        0 4px 12px -4px rgba(79, 70, 229, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(79, 70, 229, 0.9) !important;
+    background-color: #4f46e5 !important;
+    background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 20px -4px rgba(79, 70, 229, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Frosted Success Glass Outline */
+.btn-outline-success {
+    color: #059669 !important;
+    border: 1px solid rgba(5, 150, 105, 0.35) !important;
+    background-color: rgba(5, 150, 105, 0.06) !important;
+    background-image: linear-gradient(
+        135deg,
+        rgba(16, 185, 129, 0.12) 0%,
+        rgba(5, 150, 105, 0.02) 100%
+    ) !important;
+    box-shadow:
+        0 4px 12px -4px rgba(5, 150, 105, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.btn-outline-success:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(5, 150, 105, 0.9) !important;
+    background-color: #059669 !important;
+    background-image: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 20px -4px rgba(5, 150, 105, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Disabled Glass Button State */
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.42 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(25%);
+    pointer-events: none;
+}
+
+/* Frosted Glass Form Inputs & Selects */
+.form-control,
+.form-select {
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: var(--glass-btn-radius, 0.625rem);
+    background-color: rgba(255, 255, 255, 0.78);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.65) 100%);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.04),
+        0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: rgba(79, 70, 229, 0.65);
+    background-color: #ffffff;
+    box-shadow:
+        0 0 0 0.22rem rgba(79, 70, 229, 0.18),
+        inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.input-group-text {
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    background-color: rgba(255, 255, 255, 0.65);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* Glass Quick Chips & Filter Badges */
+.leads-quick-chip,
+.extractor-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background-color: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow:
+        0 2px 6px -1px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.85);
+    transition: all 0.2s ease;
+}
+
+.leads-quick-chip:hover,
+.extractor-filter-chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(79, 70, 229, 0.45);
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow:
+        0 4px 12px -2px rgba(79, 70, 229, 0.25),
+        inset 0 1px 1px #ffffff;
+}
+
+.extractor-filter-chip.active {
+    background-color: #4f46e5 !important;
+    background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow:
+        0 4px 12px -2px rgba(79, 70, 229, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Dark Mode Liquid Glass Overrides */
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover:not(:disabled) {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.32) !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .input-group-text {
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.05);
+    background-image: none;
+    color: #f1f5f9;
+}
+
+/* ── Liquid Glass Label Buttons (.btn-label-*) ──────────────────────── */
+.btn-label-primary {
+    color: #4f46e5 !important;
+    border: 1px solid rgba(79, 70, 229, 0.25) !important;
+    background-color: rgba(79, 70, 229, 0.1) !important;
+    box-shadow: 0 2px 6px -1px rgba(79, 70, 229, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.6);
+}
+.btn-label-primary:hover {
+    color: #ffffff !important;
+    background-color: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.4);
+}
+
+.btn-label-info {
+    color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    background-color: rgba(2, 132, 199, 0.1) !important;
+    box-shadow: 0 2px 6px -1px rgba(2, 132, 199, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.6);
+}
+.btn-label-info:hover {
+    color: #ffffff !important;
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.4);
+}
+
+.btn-label-danger {
+    color: #dc2626 !important;
+    border: 1px solid rgba(220, 38, 38, 0.25) !important;
+    background-color: rgba(220, 38, 38, 0.1) !important;
+    box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.6);
+}
+.btn-label-danger:hover {
+    color: #ffffff !important;
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(220, 38, 38, 0.4);
+}
+
+.btn-label-success {
+    color: #059669 !important;
+    border: 1px solid rgba(5, 150, 105, 0.25) !important;
+    background-color: rgba(5, 150, 105, 0.1) !important;
+    box-shadow: 0 2px 6px -1px rgba(5, 150, 105, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.6);
+}
+.btn-label-success:hover {
+    color: #ffffff !important;
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(5, 150, 105, 0.4);
+}
+
+.btn-label-secondary {
+    color: var(--bs-secondary-color) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    background-color: rgba(148, 163, 184, 0.1) !important;
+    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0.5px rgba(255, 255, 255, 0.6);
+}
+.btn-label-secondary:hover {
+    color: var(--bs-heading-color) !important;
+    background-color: rgba(148, 163, 184, 0.2) !important;
+    transform: translateY(-1px);
+}
+
+/* Glass Action Icon Buttons */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-icon:hover {
+    transform: translateY(-2px) scale(1.05);
+}
+

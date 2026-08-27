@@ -207,14 +207,52 @@
         }
     }
 
-    function setRunning(running) {
-        state.running = running;
+    function updateActionButtonsState() {
+        const isRunning = Boolean(state.running);
+        const hasResults = Boolean(state.leads && state.leads.size > 0);
+
+        // Start Button
         if (els.start) {
-            els.start.disabled = running;
-            els.start.innerHTML = running
+            els.start.disabled = isRunning;
+            els.start.innerHTML = isRunning
                 ? '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Extracting...'
                 : '<i class="icon-base ti tabler-player-play me-1"></i>Start Extraction';
         }
+
+        // Stop Buttons
+        if (els.stop) {
+            els.stop.classList.toggle('d-none', !isRunning);
+        }
+        if (els.inlineStopBtn) {
+            els.inlineStopBtn.classList.toggle('d-none', !isRunning);
+        }
+
+        // Clear Results Buttons: ONLY enabled when NOT running AND HAS results
+        const canClear = !isRunning && hasResults;
+        const clearButtons = [els.clear, els.clearAllResultsBtn, els.statusClearBtn, els.leadsClearBtn];
+        for (const btn of clearButtons) {
+            if (btn) {
+                btn.disabled = !canClear;
+                if (canClear) {
+                    btn.classList.remove('disabled');
+                    btn.removeAttribute('disabled');
+                    btn.removeAttribute('aria-disabled');
+                } else {
+                    btn.classList.add('disabled');
+                    btn.setAttribute('disabled', 'disabled');
+                    btn.setAttribute('aria-disabled', 'true');
+                }
+            }
+        }
+
+        // New search button
+        if (els.newExtraction) {
+            els.newExtraction.classList.toggle('d-none', isRunning);
+        }
+    }
+
+    function setRunning(running) {
+        state.running = running;
         if (els.prompt) els.prompt.disabled = running;
         if (els.locationInput) els.locationInput.disabled = running;
         if (els.limit) els.limit.disabled = running;
@@ -225,9 +263,7 @@
         if (els.preReqEmail) els.preReqEmail.disabled = running;
         if (els.preMinRating) els.preMinRating.disabled = running;
 
-        if (els.stop) els.stop.classList.toggle('d-none', !running);
-        if (els.inlineStopBtn) els.inlineStopBtn.classList.toggle('d-none', !running);
-        if (els.newExtraction) els.newExtraction.classList.toggle('d-none', running);
+        updateActionButtonsState();
     }
 
     function showVerification(show) {
@@ -294,8 +330,15 @@
         const rating = lead.rating != null && lead.rating > 0 ? Number(lead.rating).toFixed(1) : null;
         const reviews = formatReviewCount(lead.review_count);
         const emails = Array.isArray(lead.emails) ? lead.emails.filter(Boolean) : [];
+        const vStatus = lead.email_verification_status && typeof lead.email_verification_status === 'object' ? lead.email_verification_status : {};
         const emailHtml = emails.length
-            ? emails.map((email) => `<a href="mailto:${escapeAttr(email)}" class="extractor-lead-contact-link" title="${escapeAttr(email)}">${escapeHtml(email)}</a>`).join(', ')
+            ? emails.map((email) => {
+                const isVerified = (vStatus[email] && (vStatus[email].is_valid || vStatus[email] === true)) || lead.has_verified_email || Boolean(lead.email_verified_at);
+                const verifiedTick = isVerified
+                    ? '<i class="icon-base ti tabler-rosette-discount-check-filled ms-1" style="font-size: 0.85rem; color: #1d9bf0; vertical-align: middle;" title="Verified Deliverable Email (MX Valid)"></i>'
+                    : '';
+                return `<a href="mailto:${escapeAttr(email)}" class="extractor-lead-contact-link" title="${escapeAttr(email)}">${escapeHtml(email)}</a>${verifiedTick}`;
+            }).join(', ')
             : '<span class="text-muted">No email listed</span>';
         const phoneHtml = lead.phone
             ? `<a href="tel:${escapeAttr(lead.phone)}" class="extractor-lead-contact-link" title="${escapeAttr(lead.phone)}">${escapeHtml(lead.phone)}</a>`
@@ -327,10 +370,9 @@
         }
 
         let verificationBadge = '';
-        const vStatus = lead.email_verification_status && typeof lead.email_verification_status === 'object' ? lead.email_verification_status : {};
-        const hasVerifiedEmail = Object.values(vStatus).some((v) => v && (v.is_valid || v === true));
+        const hasVerifiedEmail = Object.values(vStatus).some((v) => v && (v.is_valid || v === true)) || lead.has_verified_email || Boolean(lead.email_verified_at);
         if (hasVerifiedEmail) {
-            verificationBadge = '<span class="badge bg-success text-white rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; height: 18px;" title="Verified Deliverable Email (DNS & MX Passed)"><i class="icon-base ti tabler-shield-check" style="font-size: 0.75rem;"></i><span>Verified</span></span>';
+            verificationBadge = '<span class="badge rounded-pill px-1.5 py-0 d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; height: 18px; background-color: rgba(29, 155, 240, 0.12); color: #1d9bf0; border: 1px solid rgba(29, 155, 240, 0.25);" title="Verified Deliverable Email (DNS & MX Passed)"><i class="icon-base ti tabler-rosette-discount-check-filled" style="font-size: 0.85rem; color: #1d9bf0;"></i><span class="fw-bold">Verified</span></span>';
         }
 
         return `
@@ -586,6 +628,8 @@
             els.bulkBar.classList.add('d-none');
             els.leadSelectedBadge.classList.add('d-none');
         }
+
+        updateActionButtonsState();
     }
 
     function upsertLead(lead) {
@@ -1237,6 +1281,17 @@
     }
 
     async function clearResults(skipPrompt = false) {
+        if (state.running) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('warning', 'Please stop active extraction before clearing results.', 'VektorLeads');
+            }
+            return;
+        }
+
+        if (!state.leads || state.leads.size === 0) {
+            return;
+        }
+
         if (!skipPrompt && state.leads && state.leads.size > 0 && !state.isSaved) {
             if (typeof window.showConfirm === 'function') {
                 const confirmed = await window.showConfirm(
@@ -1279,13 +1334,20 @@
             els.exportDropdownBtn.classList.add('disabled');
         }
         setRunning(false);
+        updateActionButtonsState();
+
         if (typeof window.showToast === 'function') {
             window.showToast('info', 'Extraction workspace and results cleared.', 'VektorLeads');
         }
     }
 
     async function newSearch() {
-        await clearResults(true);
+        if (state.running) {
+            await stopExtraction();
+        }
+        if (state.leads && state.leads.size > 0) {
+            await clearResults(true);
+        }
         if (els.prompt) {
             els.prompt.value = '';
             els.prompt.focus();
@@ -1293,6 +1355,7 @@
         if (els.locationInput) {
             els.locationInput.value = '';
         }
+        updateActionButtonsState();
         if (typeof window.showToast === 'function') {
             window.showToast('success', 'Ready for a new search query.', 'VektorLeads');
         }
@@ -1917,4 +1980,5 @@
     updateEngineModeUi();
     loadExtractorTemplates();
     restoreStateFromStorage();
+    updateActionButtonsState();
 })();
