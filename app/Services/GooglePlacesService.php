@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
 use App\Support\PromptNormalizer;
-use App\Support\SsrfGuard;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -581,7 +580,16 @@ class GooglePlacesService
      */
     public function quickEnrichWebsite(string $websiteUrl): array
     {
-        if (empty($websiteUrl) || ! SsrfGuard::isSafeUrl($websiteUrl)) {
+        if (empty($websiteUrl) || ! filter_var($websiteUrl, FILTER_VALIDATE_URL)) {
+            return [
+                'emails' => [],
+                'social_links' => [],
+                'email_verification_status' => [],
+            ];
+        }
+
+        $host = parse_url($websiteUrl, PHP_URL_HOST);
+        if (! $host || in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
             return [
                 'emails' => [],
                 'social_links' => [],
@@ -595,26 +603,14 @@ class GooglePlacesService
 
         try {
             $resp = Http::timeout(2.5)
-                ->connectTimeout(2)
                 ->withUserAgent('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)')
                 ->get($websiteUrl);
 
             if ($resp->successful()) {
-                $rawBody = $resp->body();
-                // 512KB memory ceiling to prevent OOM on massive asset pages
-                $html = strlen($rawBody) > 524288 ? substr($rawBody, 0, 524288) : $rawBody;
-
-                // Strip script, style, svg, canvas, and noscript blocks to prevent PCRE ReDoS backtracking
-                $cleanHtml = preg_replace('/<(script|style|svg|canvas|noscript)\b[^>]*>(.*?)<\/\1>/is', '', $html) ?? $html;
-
-                $foundEmails = $this->extractEmailsFromHtml($cleanHtml);
-                $socialLinks = $this->socialExtractor->extract($cleanHtml);
+                $html = $resp->body();
+                $foundEmails = $this->extractEmailsFromHtml($html);
+                $socialLinks = $this->socialExtractor->extract($html);
                 $verificationStatus = $this->emailVerifier->verifyBatch($foundEmails);
-
-                unset($rawBody, $html, $cleanHtml, $resp);
-                if (function_exists('gc_collect_cycles')) {
-                    gc_collect_cycles();
-                }
             }
         } catch (Throwable) {
             // Non-blocking enrichment

@@ -468,10 +468,6 @@ class ExtractorController extends Controller
         $url = $this->client->streamUrl($job->uuid);
 
         return response()->stream(function () use ($job, $url): void {
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_write_close();
-            }
-
             @ini_set('output_buffering', 'off');
             @ini_set('zlib.output_compression', '0');
             if (! app()->environment('testing')) {
