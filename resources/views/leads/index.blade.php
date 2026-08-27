@@ -30,6 +30,9 @@
     <!-- Filters Row -->
     <div class="p-3 border-bottom bg-light-subtle">
         <form id="leadsFilterForm" method="GET" action="{{ route('leads.index') }}">
+            @if (!empty($filters['job_id']))
+                <input type="hidden" name="job_id" value="{{ $filters['job_id'] }}">
+            @endif
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md-3">
                     <div class="input-group input-group-sm">
@@ -93,6 +96,11 @@
         <!-- Quick filter chips / shortcut pills -->
         <div class="d-flex flex-wrap align-items-center gap-1 mt-2 pt-2 border-top">
             <small class="text-muted fw-semibold me-1"><i class="icon-base ti tabler-filter me-1"></i>Quick Filters:</small>
+            @if (!empty($filters['job_id']))
+                <a href="{{ route('leads.index', request()->except(['job_id', 'page'])) }}" class="badge bg-primary text-white leads-quick-chip text-decoration-none py-1 px-2" title="Filtering by Task #{{ $filters['job_id'] }} (Click to clear)">
+                    <i class="icon-base ti tabler-history me-1"></i>Task #{{ $filters['job_id'] }} <i class="icon-base ti tabler-x ms-1"></i>
+                </a>
+            @endif
             <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'verified'])) }}" class="badge {{ ($filters['has_email'] ?? '') === 'verified' || ($filters['verified_email'] ?? '') === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with MX verified email">
                 <i class="icon-base ti tabler-shield-check me-1"></i>Verified Email
             </a>

@@ -300,18 +300,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Recipient</th>
-                            <th>Lead Name</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                            <th>Template</th>
-                            <th>Sent At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($logs as $log)
-                            <tr>
-                                <td>
+                            <th class="ps-3"><i class="icon-base ti tabler-mail me-1 text-primary"></i> Recipient</th>
+                            <th><i class="icon-base ti tabler-building me-1 text-secondary"></i> Lead Name</th>
+                            <th><i class="icon-base ti tabler-file-text me-1 text-info"></i> Subject</th>
+                            <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
+                            <th><i class="icon-base ti tabler-template me-1 text-primary"></i> Template</th>
+                            <th class="pe-3 text-end"><i class="icon-base ti tabler-clock me-1 text-muted"></i> Sent At</th>
                                     <div class="fw-semibold small text-heading">
                                         <i class="icon-base ti tabler-mail me-1 text-muted"></i>{{ $log->recipient_email }}
                                     </div>

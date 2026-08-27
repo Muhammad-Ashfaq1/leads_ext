@@ -24,14 +24,14 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-3">User</th>
+                    <th class="ps-3"><i class="icon-base ti tabler-user me-1 text-primary"></i> User</th>
                     @if ($isSuperAdmin)
-                        <th>Organization</th>
+                        <th><i class="icon-base ti tabler-building me-1 text-danger"></i> Organization</th>
                     @endif
-                    <th>Role</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th class="pe-3 text-end">Action</th>
+                    <th><i class="icon-base ti tabler-shield-check me-1 text-info"></i> Role</th>
+                    <th><i class="icon-base ti tabler-phone me-1 text-success"></i> Phone</th>
+                    <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
+                    <th class="pe-3 text-end"><i class="icon-base ti tabler-settings me-1 text-muted"></i> Action</th>
                 </tr>
             </thead>
             <tbody>

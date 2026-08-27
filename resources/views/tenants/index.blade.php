@@ -24,13 +24,13 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-3">Organization</th>
-                    <th>Plan</th>
-                    <th>Lead Quota Usage</th>
-                    <th>Team</th>
-                    <th>Leads Extracted</th>
-                    <th>Status</th>
-                    <th class="pe-3 text-end">Action</th>
+                    <th class="ps-3"><i class="icon-base ti tabler-building me-1 text-primary"></i> Organization</th>
+                    <th><i class="icon-base ti tabler-crown me-1 text-warning"></i> Plan</th>
+                    <th><i class="icon-base ti tabler-chart-bar me-1 text-info"></i> Lead Quota Usage</th>
+                    <th><i class="icon-base ti tabler-users me-1 text-secondary"></i> Team</th>
+                    <th><i class="icon-base ti tabler-database me-1 text-success"></i> Leads Extracted</th>
+                    <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
+                    <th class="pe-3 text-end"><i class="icon-base ti tabler-settings me-1 text-muted"></i> Action</th>
                 </tr>
             </thead>
             <tbody>

@@ -27,13 +27,13 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-3">Search Prompt &amp; Task ID</th>
-                    <th>Engine</th>
-                    <th>Leads Extracted</th>
-                    <th>Emails &amp; Websites</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th class="pe-3 text-end">Export &amp; Action</th>
+                    <th class="ps-3"><i class="icon-base ti tabler-search me-1 text-primary"></i> Search Prompt &amp; Task ID</th>
+                    <th><i class="icon-base ti tabler-cpu me-1 text-info"></i> Engine</th>
+                    <th><i class="icon-base ti tabler-users me-1 text-primary"></i> Leads Extracted</th>
+                    <th><i class="icon-base ti tabler-mail-opened me-1 text-success"></i> Emails &amp; Websites</th>
+                    <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
+                    <th><i class="icon-base ti tabler-calendar me-1 text-secondary"></i> Date</th>
+                    <th class="pe-3 text-end"><i class="icon-base ti tabler-adjustments-horizontal me-1 text-muted"></i> Export &amp; Action</th>
                 </tr>
             </thead>
             <tbody>
