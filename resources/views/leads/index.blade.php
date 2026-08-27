@@ -352,13 +352,15 @@
                         </td>
                         <td class="pe-3 text-end">
                             <div class="pos-lead-actions d-inline-flex align-items-center gap-1">
-                                <button type="button" class="btn btn-sm btn-icon {{ $lead->generated_website_content ? 'btn-label-success' : 'btn-label-warning' }} rounded-pill btn-generate-demo-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $lead->generated_website_content ? 'AI Demo Website Ready (Click to Regenerate)' : 'Generate AI Demo Website' }}" onclick="generateDemo({{ $lead->id }})" id="btn-demo-{{ $lead->id }}">
-                                    <i class="icon-base ti tabler-sparkles"></i>
-                                </button>
-                                @if ($lead->uuid && $lead->generated_website_content)
-                                    <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-primary rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="View Spec Landing Page">
-                                        <i class="icon-base ti tabler-external-link"></i>
-                                    </a>
+                                @if (empty($lead->website))
+                                    <button type="button" class="btn btn-sm btn-icon {{ $lead->generated_website_content ? 'btn-label-success' : 'btn-label-warning' }} rounded-pill btn-generate-demo-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $lead->generated_website_content ? 'AI Demo Website Ready (Click to Regenerate)' : 'Generate AI Demo Website' }}" onclick="generateDemo({{ $lead->id }})" id="btn-demo-{{ $lead->id }}">
+                                        <i class="icon-base ti tabler-sparkles"></i>
+                                    </button>
+                                    @if ($lead->uuid && $lead->generated_website_content)
+                                        <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-primary rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="View Spec Landing Page">
+                                            <i class="icon-base ti tabler-external-link"></i>
+                                        </a>
+                                    @endif
                                 @endif
                                 @if ($firstEmail)
                                     <button type="button" class="btn btn-sm btn-icon btn-label-primary rounded-pill btn-send-single-email" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Outreach Email ({{ $firstEmail }})" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
@@ -381,17 +383,19 @@
                                         <i class="icon-base ti tabler-dots-vertical"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <button type="button" class="dropdown-item" onClick="generateDemo({{ $lead->id }})">
-                                                <i class="icon-base ti tabler-sparkles me-2 text-warning"></i>✨ Generate AI Demo
-                                            </button>
-                                        </li>
-                                        @if ($lead->uuid)
+                                        @if (empty($lead->website))
                                             <li>
-                                                <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" class="dropdown-item {{ $lead->generated_website_content ? 'text-primary fw-semibold' : 'text-muted' }}" id="dropdown-preview-{{ $lead->id }}">
-                                                    <i class="icon-base ti tabler-world-www me-2"></i>🌐 View Spec Website
-                                                </a>
+                                                <button type="button" class="dropdown-item" onClick="generateDemo({{ $lead->id }})">
+                                                    <i class="icon-base ti tabler-sparkles me-2 text-warning"></i>✨ Generate AI Demo
+                                                </button>
                                             </li>
+                                            @if ($lead->uuid && $lead->generated_website_content)
+                                                <li>
+                                                    <a href="{{ route('leads.preview', $lead->uuid) }}" target="_blank" class="dropdown-item text-primary fw-semibold" id="dropdown-preview-{{ $lead->id }}">
+                                                        <i class="icon-base ti tabler-world-www me-2"></i>🌐 View Spec Website
+                                                    </a>
+                                                </li>
+                                            @endif
                                         @endif
                                         @if ($firstEmail)
                                             <li>

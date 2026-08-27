@@ -48,39 +48,19 @@ class LeadPreviewController extends Controller
         }
     }
 
-    public function preview(Request $request, string $uuid): View
+    public function preview(Request $request, string $uuid, GeminiWebsiteService $service): View
     {
         $lead = ExtractedLead::where('uuid', $uuid)->firstOrFail();
 
         $content = $lead->generated_website_content;
 
         if (empty($content) || ! is_array($content)) {
-            $bizName = $lead->business_name ?: 'Our Business';
-            $category = $lead->category ?: 'Professional Services';
-            $city = $lead->city ?: 'Your Area';
-
-            $content = [
-                'hero_headline' => "Premium {$category} Solutions by {$bizName}",
-                'hero_subheadline' => "Delivering trusted, top-rated {$category} expertise in {$city} and beyond.",
-                'about_text' => "At {$bizName}, we are dedicated to providing superior {$category} with unmatched customer dedication, reliable craftsmanship, and a proven track record.",
-                'services' => [
-                    [
-                        'title' => 'Customized Solutions',
-                        'description' => "Tailored {$category} solutions designed specifically for your individual needs.",
-                    ],
-                    [
-                        'title' => 'Professional Execution',
-                        'description' => 'Experienced specialists providing prompt, detail-oriented service you can trust.',
-                    ],
-                    [
-                        'title' => 'Customer Care & Quality',
-                        'description' => 'Dedicated follow-up, transparent pricing, and 100% satisfaction commitment.',
-                    ],
-                ],
-            ];
+            $content = $service->normalizeContent([], $lead);
         }
 
-        return view('leads.preview', compact('lead', 'content'));
+        $viewName = view()->exists('preview.sample-site') ? 'preview.sample-site' : 'leads.preview';
+
+        return view($viewName, compact('lead', 'content'));
     }
 }
 
