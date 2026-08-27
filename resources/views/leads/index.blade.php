@@ -3,7 +3,8 @@
 @section('title', 'All Extracted Leads')
 
 @section('content')
-<div class="pos-glass-card pos-tone-primary mb-4">
+<div id="leadsMainContainer">
+<div class="pos-glass-card pos-tone-primary mb-4" id="leadsTableCard">
     <div class="pos-glass-intro border-bottom">
         <div class="pos-glass-intro-copy">
             <h4 class="pos-glass-intro-title">
@@ -28,7 +29,7 @@
 
     <!-- Filters Row -->
     <div class="p-3 border-bottom bg-light-subtle">
-        <form method="GET" action="{{ route('leads.index') }}">
+        <form id="leadsFilterForm" method="GET" action="{{ route('leads.index') }}">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md-3">
                     <div class="input-group input-group-sm">
@@ -47,6 +48,14 @@
                 </div>
 
                 <div class="col-6 col-sm-4 col-md-2">
+                    <select name="has_website" class="form-select form-select-sm">
+                        <option value="">Website: All</option>
+                        <option value="yes" @selected($filters['has_website'] === 'yes')>Has Website</option>
+                        <option value="no" @selected($filters['has_website'] === 'no')>Without Website (No Site)</option>
+                    </select>
+                </div>
+
+                <div class="col-6 col-sm-4 col-md-2">
                     <select name="has_email" class="form-select form-select-sm">
                         <option value="">Email: All</option>
                         <option value="yes" @selected($filters['has_email'] === 'yes')>Has Email</option>
@@ -54,7 +63,7 @@
                     </select>
                 </div>
 
-                <div class="col-6 col-sm-4 col-md-2">
+                <div class="col-6 col-sm-4 col-md-1">
                     <select name="has_phone" class="form-select form-select-sm">
                         <option value="">Phone: All</option>
                         <option value="yes" @selected($filters['has_phone'] === 'yes')>Has Phone</option>
@@ -62,7 +71,7 @@
                     </select>
                 </div>
 
-                <div class="col-6 col-sm-4 col-md-2">
+                <div class="col-6 col-sm-4 col-md-1">
                     <select name="min_rating" class="form-select form-select-sm">
                         <option value="">Rating: All</option>
                         <option value="4.5" @selected($filters['min_rating'] === '4.5')>★ 4.5+</option>
@@ -74,11 +83,36 @@
                 <div class="col-12 col-sm-4 col-md-1 d-flex gap-1">
                     <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
                     @if (array_filter($filters))
-                        <a href="{{ route('leads.index') }}" class="btn btn-sm btn-outline-secondary" title="Clear Filters"><i class="icon-base ti tabler-x"></i></a>
+                        <a href="{{ route('leads.index') }}" class="btn btn-sm btn-outline-secondary leads-quick-chip" title="Clear Filters"><i class="icon-base ti tabler-x"></i></a>
                     @endif
                 </div>
             </div>
         </form>
+
+        <!-- Quick filter chips / shortcut pills -->
+        <div class="d-flex flex-wrap align-items-center gap-1 mt-2 pt-2 border-top">
+            <small class="text-muted fw-semibold me-1"><i class="icon-base ti tabler-filter me-1"></i>Quick Filters:</small>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'no'])) }}" class="badge {{ $filters['has_website'] === 'no' ? 'bg-danger text-white' : 'bg-label-danger' }} leads-quick-chip text-decoration-none py-1 px-2" title="Filter leads with no website">
+                <i class="icon-base ti tabler-world-off me-1"></i>Without Website
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_website' => 'yes'])) }}" class="badge {{ $filters['has_website'] === 'yes' ? 'bg-info text-white' : 'bg-label-info' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-world me-1"></i>Has Website
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_email' => 'yes'])) }}" class="badge {{ $filters['has_email'] === 'yes' ? 'bg-success text-white' : 'bg-label-success' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-mail me-1"></i>Has Email
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['has_phone' => 'yes'])) }}" class="badge {{ $filters['has_phone'] === 'yes' ? 'bg-primary text-white' : 'bg-label-primary' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-phone me-1"></i>Has Phone
+            </a>
+            <a href="{{ route('leads.index', array_merge(request()->except(['page']), ['min_rating' => '4.5'])) }}" class="badge {{ $filters['min_rating'] === '4.5' ? 'bg-warning text-white' : 'bg-label-warning' }} leads-quick-chip text-decoration-none py-1 px-2">
+                <i class="icon-base ti tabler-star me-1"></i>Top Rated (4.5+ ★)
+            </a>
+            @if (array_filter($filters))
+                <a href="{{ route('leads.index') }}" class="badge bg-label-secondary leads-quick-chip text-decoration-none py-1 px-2 ms-auto">
+                    <i class="icon-base ti tabler-rotate me-1"></i>Reset All
+                </a>
+            @endif
+        </div>
     </div>
 
     <!-- Bulk Actions Toolbar (Active when rows checked) -->
@@ -145,20 +179,18 @@
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 @if ($lead->avatar_url)
-                                    <img src="{{ $lead->avatar_url }}" alt="{{ $lead->business_name }}" class="rounded" style="width: 32px; height: 32px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div class="lead-avatar-fallback rounded align-items-center justify-content-center bg-primary text-white fw-bold" style="display: none; width: 32px; height: 32px; font-size: 0.8rem;">
+                                    <img src="{{ $lead->avatar_url }}" alt="{{ $lead->business_name }}" class="rounded-2 flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover; border: 1px solid rgba(0,0,0,0.08);" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="user-avatar-badge rounded-2 align-items-center justify-content-center bg-label-primary text-primary fw-bold flex-shrink-0" style="display: none; width: 36px; height: 36px; font-size: 0.9rem;">
                                         {{ strtoupper(substr($lead->business_name ?: 'B', 0, 1)) }}
                                     </div>
                                 @else
-                                    <div class="rounded d-flex align-items-center justify-content-center bg-label-primary text-primary fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                    <div class="user-avatar-badge rounded-2 d-flex align-items-center justify-content-center bg-label-primary text-primary fw-bold flex-shrink-0" style="width: 36px; height: 36px; font-size: 0.9rem;">
                                         {{ strtoupper(substr($lead->business_name ?: 'B', 0, 1)) }}
                                     </div>
                                 @endif
-                                <div>
-                                    <div class="fw-semibold text-heading small">{{ $lead->business_name }}</div>
-                                    @if ($lead->source)
-                                        <span class="badge bg-label-secondary" style="font-size: 0.65rem;">{{ $lead->source }}</span>
-                                    @endif
+                                <div class="min-w-0">
+                                    <div class="fw-semibold text-heading small text-truncate" style="max-width: 210px;" title="{{ $lead->business_name }}">{{ $lead->business_name }}</div>
+                                    <small class="text-muted text-truncate d-block" style="max-width: 210px;">{{ $lead->city ?: ($lead->category ?: 'Business') }}</small>
                                 </div>
                             </div>
                         </td>
@@ -241,7 +273,7 @@
                                     </a>
                                 @endif
                                 @if ($lead->google_maps_url)
-                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-danger rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="Open Google Maps">
+                                    <a href="{{ $lead->google_maps_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-icon btn-label-danger rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="View Location">
                                         <i class="icon-base ti tabler-map-pin"></i>
                                     </a>
                                 @endif
@@ -274,7 +306,7 @@
                     </small>
                     <div class="d-inline-flex align-items-center ms-3">
                         <label for="perPageSelect" class="small text-muted me-1 text-nowrap d-none d-sm-inline">Show:</label>
-                        <select id="perPageSelect" class="form-select form-select-sm" style="width: auto;" onchange="window.location.href=this.value">
+                        <select id="perPageSelect" class="form-select form-select-sm" style="width: auto;">
                             @foreach ([10, 25, 50, 100] as $size)
                                 <option value="{{ request()->fullUrlWithQuery(['per_page' => $size, 'page' => 1]) }}" @selected($leads->perPage() == $size)>
                                     {{ $size }}
@@ -290,6 +322,7 @@
         </div>
     @endif
 </div>
+</div>
 
 <!-- Send Outreach Email Modal -->
 <div class="modal fade" id="sendLeadEmailModal" tabindex="-1" aria-hidden="true">
@@ -304,46 +337,36 @@
             <div class="modal-body p-3 p-md-4">
                 <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <i class="icon-base ti tabler-mail me-1"></i>
+                        <i class="icon-base ti tabler-users me-1"></i>
                         <span id="modalRecipientsSummary" class="fw-semibold">1 recipient selected</span>
                     </div>
-                    <span class="badge bg-white text-primary" id="modalValidEmailsBadge">1 with valid email</span>
-                </div>
-
-                <div class="row g-3 mb-3">
-                    <div class="col-12 col-md-6">
-                        <label class="form-label fw-semibold" for="modalTemplateSelect">Select Email Template</label>
-                        <select class="form-select" id="modalTemplateSelect">
-                            <option value="">-- Choose a template (optional) --</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6 d-flex align-items-end justify-content-end">
-                        <a href="{{ route('email-templates.index') }}" target="_blank" class="small text-decoration-none">
-                            <i class="icon-base ti tabler-external-link me-1"></i> Manage Templates
-                        </a>
-                    </div>
+                    <span class="badge bg-label-info" id="modalValidEmailsBadge">1 valid</span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold" for="modalEmailSubject">Email Subject <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="modalEmailSubject" placeholder="e.g. Quick inquiry for @{{business_name}}">
+                    <label class="form-label fw-semibold" for="modalTemplateSelect">Select Email Template</label>
+                    <select id="modalTemplateSelect" class="form-select">
+                        <option value="">-- Custom Cold Outreach Email --</option>
+                    </select>
                 </div>
 
-                <!-- Dynamic tags toolbar -->
-                <div class="mb-3 p-2 bg-light-subtle border rounded">
-                    <div class="d-flex align-items-center flex-wrap gap-1">
-                        <small class="fw-bold text-muted me-2"><i class="icon-base ti tabler-code me-1"></i>Insert Tag:</small>
-                        <span class="badge bg-label-primary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{business_name}}')">@{{business_name}}</span>
-                        <span class="badge bg-label-info cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{email}}')">@{{email}}</span>
-                        <span class="badge bg-label-secondary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{phone}}')">@{{phone}}</span>
-                        <span class="badge bg-label-success cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{city}}')">@{{city}}</span>
-                        <span class="badge bg-label-warning cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{category}}')">@{{category}}</span>
-                        <span class="badge bg-label-dark cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{website}}')">@{{website}}</span>
-                        <span class="badge bg-label-primary cursor-pointer modal-var-pill" onclick="insertModalVariable('@{{sender_name}}')">@{{sender_name}}</span>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="modalEmailSubject">Subject <span class="text-danger">*</span></label>
+                    <input type="text" id="modalEmailSubject" class="form-control" placeholder="Subject line..." required>
+                </div>
+
+                <div class="mb-2">
+                    <small class="text-muted fw-semibold me-2">Insert Variables:</small>
+                    <div class="d-inline-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{business_name}}')">@{{business_name}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{city}}')">@{{city}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{category}}')">@{{category}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{website}}')">@{{website}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{phone}}')">@{{phone}}</button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="insertModalVariable('@{{sender_name}}')">@{{sender_name}}</button>
                     </div>
                 </div>
 
-                <!-- Rich Text Editor -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Email Body <span class="text-danger">*</span></label>
                     <div class="editor-toolbar" style="background: #f8f9fa; border: 1px solid #dee2e6; border-bottom: none; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; padding: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
@@ -386,6 +409,21 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Immediately clean browser URL bar so no query params or page numbers are exposed
+    if (window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    initLeadsPageHandlers();
+    initAjaxLeadsNavigation();
+    initEmailModalHandlers();
+});
+
+let sendEmailModalInstance = null;
+let activeEmailLeadIds = [];
+let loadedTemplates = [];
+
+function initLeadsPageHandlers() {
     const masterCheckbox = document.getElementById('masterTableCheckbox');
     const rowCheckboxes = document.querySelectorAll('.row-select-checkbox');
     const bulkBar = document.getElementById('leadsBulkBar');
@@ -397,167 +435,96 @@ document.addEventListener('DOMContentLoaded', () => {
     const copySelectedEmailsBtn = document.getElementById('copySelectedEmailsBtn');
     const copySelectedPhonesBtn = document.getElementById('copySelectedPhonesBtn');
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-    const toastEl = document.getElementById('leadsPageToast');
-    const toastBody = document.getElementById('leadsPageToastBody');
 
-    let toastInstance = null;
-    if (toastEl && window.bootstrap && window.bootstrap.Toast) {
-        toastInstance = new window.bootstrap.Toast(toastEl, { delay: 3000 });
+    function updateBulkBar() {
+        const checkedBoxes = document.querySelectorAll('.row-select-checkbox:checked');
+        const count = checkedBoxes.length;
+
+        if (count > 0) {
+            if (bulkBar) bulkBar.classList.remove('d-none');
+            if (bulkCountLabel) bulkCountLabel.textContent = `${count} lead${count === 1 ? '' : 's'} selected`;
+        } else {
+            if (bulkBar) bulkBar.classList.add('d-none');
+        }
+
+        if (masterCheckbox) {
+            const allCheckboxes = document.querySelectorAll('.row-select-checkbox');
+            masterCheckbox.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+            masterCheckbox.indeterminate = count > 0 && count < allCheckboxes.length;
+        }
+
+        document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+            const row = cb.closest('tr');
+            if (row) {
+                row.classList.toggle('table-active', cb.checked);
+            }
+        });
     }
 
-    function showToast(message, isDanger = false) {
-        if (typeof window.showToast === 'function') {
-            window.showToast(isDanger ? 'error' : 'success', message, isDanger ? 'Notice' : 'Success');
-        } else if (toastEl && toastBody) {
-            toastBody.textContent = message;
-            toastEl.className = `toast align-items-center border-0 ${isDanger ? 'text-bg-danger' : 'text-bg-primary'}`;
-            if (toastInstance) toastInstance.show();
-        } else {
-            console.log(message);
-        }
+    if (masterCheckbox) {
+        masterCheckbox.addEventListener('change', (e) => {
+            document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateBulkBar();
+        });
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    if (selectAllPageBtn) {
+        selectAllPageBtn.addEventListener('click', () => {
+            document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                cb.checked = true;
+            });
+            updateBulkBar();
+        });
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            updateBulkBar();
+        });
     }
 
     function getSelectedIds() {
         const ids = [];
         document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
-            const id = parseInt(cb.value, 10);
-            if (id) ids.push(id);
+            ids.push(parseInt(cb.value, 10));
         });
         return ids;
     }
 
-    function updateSelectionState() {
-        const total = rowCheckboxes.length;
-        const checkedList = document.querySelectorAll('.row-select-checkbox:checked');
-        const selected = checkedList.length;
-
-        if (masterCheckbox) {
-            if (total > 0 && selected === total) {
-                masterCheckbox.checked = true;
-                masterCheckbox.indeterminate = false;
-            } else if (selected > 0) {
-                masterCheckbox.checked = false;
-                masterCheckbox.indeterminate = true;
-            } else {
-                masterCheckbox.checked = false;
-                masterCheckbox.indeterminate = false;
-            }
-        }
-
-        if (bulkBar) {
-            if (selected > 0) {
-                bulkBar.classList.remove('d-none');
-                if (bulkCountLabel) bulkCountLabel.textContent = `${selected} selected`;
-            } else {
-                bulkBar.classList.add('d-none');
-            }
-        }
-
-        // Toggle bulk action buttons enabled state
-        if (deleteSelectedBtn) deleteSelectedBtn.disabled = selected === 0;
-
-        // Highlight selected rows
-        rowCheckboxes.forEach(cb => {
-            const tr = cb.closest('tr');
-            if (tr) {
-                tr.classList.toggle('table-active', cb.checked);
-            }
-        });
-    }
-
-    // Master Table Checkbox
-    if (masterCheckbox) {
-        masterCheckbox.addEventListener('change', () => {
-            const shouldCheck = masterCheckbox.checked;
-            rowCheckboxes.forEach(cb => {
-                cb.checked = shouldCheck;
-            });
-            updateSelectionState();
-        });
-    }
-
-    // Individual Row Checkboxes
-    rowCheckboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            updateSelectionState();
-        });
-    });
-
-    // Row Click to toggle
-    document.querySelectorAll('#leadsTable tbody tr').forEach(tr => {
-        tr.addEventListener('click', (e) => {
-            if (e.target.closest('a, button, .btn, input, label, select, .dropdown')) {
-                return;
-            }
-            const cb = tr.querySelector('.row-select-checkbox');
-            if (cb) {
-                cb.checked = !cb.checked;
-                updateSelectionState();
-            }
-        });
-    });
-
-    // Select All on Page button
-    if (selectAllPageBtn) {
-        selectAllPageBtn.addEventListener('click', () => {
-            rowCheckboxes.forEach(cb => {
-                cb.checked = true;
-            });
-            updateSelectionState();
-        });
-    }
-
-    // Deselect All button
-    if (deselectAllBtn) {
-        deselectAllBtn.addEventListener('click', () => {
-            rowCheckboxes.forEach(cb => {
-                cb.checked = false;
-            });
-            updateSelectionState();
-        });
-    }
-
-    // Export Selected Excel
     if (exportSelectedExcelBtn) {
-        exportSelectedExcelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        exportSelectedExcelBtn.addEventListener('click', () => {
             const ids = getSelectedIds();
-            if (!ids.length) {
-                showToast('Please select at least one lead.', true);
-                return;
-            }
-            showToast('Preparing Excel export...', false);
+            if (ids.length === 0) return;
             window.location.href = `{{ route('leads.export.excel') }}?ids=${ids.join(',')}`;
         });
     }
 
-    // Export Selected CSV
     if (exportSelectedCsvBtn) {
-        exportSelectedCsvBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        exportSelectedCsvBtn.addEventListener('click', () => {
             const ids = getSelectedIds();
-            if (!ids.length) {
-                showToast('Please select at least one lead.', true);
-                return;
-            }
-
-            showToast('Preparing CSV export...', false);
+            if (ids.length === 0) return;
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{{ route("leads.export-selected") }}';
-
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_token';
-            csrfInput.value = '{{ csrf_token() }}';
-            form.appendChild(csrfInput);
-
-            const formatInput = document.createElement('input');
-            formatInput.type = 'hidden';
-            formatInput.name = 'format';
-            formatInput.value = 'csv';
-            form.appendChild(formatInput);
-
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            const format = document.createElement('input');
+            format.type = 'hidden';
+            format.name = 'format';
+            format.value = 'csv';
+            form.appendChild(format);
             ids.forEach(id => {
                 const idInput = document.createElement('input');
                 idInput.type = 'hidden';
@@ -565,134 +532,244 @@ document.addEventListener('DOMContentLoaded', () => {
                 idInput.value = id;
                 form.appendChild(idInput);
             });
-
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);
         });
     }
 
-    // Quick Copy Emails
     if (copySelectedEmailsBtn) {
         copySelectedEmailsBtn.addEventListener('click', () => {
-            const emails = new Set();
+            const emails = [];
             document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
                 const email = cb.dataset.email;
-                if (email && email.trim()) emails.add(email.trim());
+                if (email && email.trim() && email !== 'null' && email !== 'undefined') {
+                    emails.push(email.trim());
+                }
             });
-            if (emails.size === 0) {
-                showToast('No emails found in selected leads.', true);
+
+            if (emails.length === 0) {
+                if (window.showToast) window.showToast('error', 'None of the selected leads have an email address.', 'Notice');
                 return;
             }
-            navigator.clipboard.writeText(Array.from(emails).join(', ')).then(() => {
-                showToast(`Copied ${emails.size} email(s) to clipboard.`);
+
+            const uniqueEmails = [...new Set(emails)].join(', ');
+            navigator.clipboard.writeText(uniqueEmails).then(() => {
+                if (window.showToast) window.showToast('success', `Copied ${emails.length} email(s) to clipboard.`, 'Copied');
             });
         });
     }
 
-    // Quick Copy Phones
     if (copySelectedPhonesBtn) {
         copySelectedPhonesBtn.addEventListener('click', () => {
-            const phones = new Set();
+            const phones = [];
             document.querySelectorAll('.row-select-checkbox:checked').forEach(cb => {
                 const phone = cb.dataset.phone;
-                if (phone && phone.trim()) phones.add(phone.trim());
+                if (phone && phone.trim() && phone !== 'null' && phone !== 'undefined') {
+                    phones.push(phone.trim());
+                }
             });
-            if (phones.size === 0) {
-                showToast('No phone numbers found in selected leads.', true);
+
+            if (phones.length === 0) {
+                if (window.showToast) window.showToast('error', 'None of the selected leads have a phone number.', 'Notice');
                 return;
             }
-            navigator.clipboard.writeText(Array.from(phones).join(', ')).then(() => {
-                showToast(`Copied ${phones.size} phone number(s) to clipboard.`);
+
+            const uniquePhones = [...new Set(phones)].join(', ');
+            navigator.clipboard.writeText(uniquePhones).then(() => {
+                if (window.showToast) window.showToast('success', `Copied ${phones.length} phone(s) to clipboard.`, 'Copied');
             });
         });
     }
 
-    // Delete Selected Leads
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', async () => {
             const ids = getSelectedIds();
-            if (!ids.length) {
-                showToast('Please select at least one lead to delete.', true);
-                return;
-            }
+            if (ids.length === 0) return;
 
             const confirmed = await window.showConfirm(
-                'Delete Selected Leads?',
+                'Delete Selected Leads',
                 `Are you sure you want to permanently delete ${ids.length} selected lead(s)? This action cannot be undone.`,
                 'Yes, Delete Leads',
                 true
             );
-            if (!confirmed.isConfirmed) {
-                return;
-            }
 
-            deleteSelectedBtn.disabled = true;
+            if (!confirmed || !confirmed.isConfirmed) return;
+
             try {
-                const response = await fetch('{{ route("leads.bulk-action") }}', {
+                const resp = await fetch('{{ route("leads.bulk-action") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({
-                        lead_ids: ids,
-                        action: 'delete'
-                    })
+                    body: JSON.stringify({ lead_ids: ids, action: 'delete' })
                 });
-                const data = await response.json();
-                if (response.ok) {
-                    if (window.showToast) {
-                        window.showToast('success', data.message || 'Leads deleted successfully.');
-                    }
-                    setTimeout(() => window.location.reload(), 600);
+
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    if (window.showToast) window.showToast('success', data.message || `Deleted ${ids.length} leads.`);
+                    loadLeadsAjax(window.location.href);
                 } else {
-                    showToast(data.message || 'Failed to delete leads.', true);
-                    deleteSelectedBtn.disabled = false;
+                    if (window.showToast) window.showToast('error', data.message || 'Failed to delete leads.', 'Error');
                 }
             } catch (err) {
-                showToast('Network error while deleting leads.', true);
-                deleteSelectedBtn.disabled = false;
+                if (window.showToast) window.showToast('error', 'Network error while deleting leads.', 'Error');
             }
         });
     }
 
-    // Email Outreach System
-    let loadedTemplates = [];
-    let activeEmailLeadIds = [];
-    const sendEmailModalEl = document.getElementById('sendLeadEmailModal');
-    let sendEmailModalInstance = null;
-    if (sendEmailModalEl && window.bootstrap && window.bootstrap.Modal) {
-        sendEmailModalInstance = new window.bootstrap.Modal(sendEmailModalEl);
+    // Single email buttons
+    document.querySelectorAll('.btn-send-single-email').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.id, 10);
+            const email = btn.dataset.email;
+            const name = btn.dataset.name;
+            const category = btn.dataset.category || '';
+            const city = btn.dataset.city || '';
+            const website = btn.dataset.website || '';
+            const phone = btn.dataset.phone || '';
+
+            if (!email) {
+                if (window.showToast) window.showToast('error', 'This lead does not have an email address.', 'Notice');
+                return;
+            }
+
+            activeEmailLeadIds = [id];
+
+            const modalRecipientsSummary = document.getElementById('modalRecipientsSummary');
+            const modalValidEmailsBadge = document.getElementById('modalValidEmailsBadge');
+            const templateSelect = document.getElementById('modalTemplateSelect');
+            const modalSubjectInput = document.getElementById('modalEmailSubject');
+            const modalEditor = document.getElementById('modalRichEditor');
+
+            if (modalRecipientsSummary) modalRecipientsSummary.textContent = `${name} <${email}>`;
+            if (modalValidEmailsBadge) modalValidEmailsBadge.textContent = '1 recipient';
+
+            const defaultTmpl = loadedTemplates.find(t => t.is_default) || loadedTemplates[0];
+            if (defaultTmpl) {
+                if (templateSelect) templateSelect.value = defaultTmpl.id;
+                if (modalSubjectInput) modalSubjectInput.value = defaultTmpl.subject;
+                if (modalEditor) modalEditor.innerHTML = defaultTmpl.body;
+            }
+
+            if (sendEmailModalInstance) sendEmailModalInstance.show();
+        });
+    });
+
+    // Re-initialize Bootstrap Tooltips
+    if (window.bootstrap && window.bootstrap.Tooltip) {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            new window.bootstrap.Tooltip(el);
+        });
     }
+}
+
+function initAjaxLeadsNavigation() {
+    const filterForm = document.querySelector('#leadsFilterForm');
+    const perPageSelect = document.querySelector('#perPageSelect');
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams(formData).toString();
+            loadLeadsAjax('{{ route("leads.index") }}?' + params);
+        });
+    }
+
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            loadLeadsAjax(this.value);
+        });
+    }
+
+    document.querySelectorAll('.leads-quick-chip').forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            e.preventDefault();
+            loadLeadsAjax(this.getAttribute('href'));
+        });
+    });
+
+    document.querySelectorAll('.pagination a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            loadLeadsAjax(this.getAttribute('href'));
+        });
+    });
+}
+
+async function loadLeadsAjax(url) {
+    const container = document.querySelector('#leadsMainContainer');
+    if (!container) {
+        window.location.href = url;
+        return;
+    }
+
+    container.style.opacity = '0.5';
+    container.style.pointerEvents = 'none';
+
+    try {
+        const resp = await fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const html = await resp.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.querySelector('#leadsMainContainer');
+
+        if (newContent) {
+            container.innerHTML = newContent.innerHTML;
+            // Clean browser address bar immediately so URL is always http://leads-info.test/leads
+            window.history.replaceState({}, document.title, window.location.pathname);
+            initLeadsPageHandlers();
+            initAjaxLeadsNavigation();
+        } else {
+            window.location.href = url;
+        }
+    } catch (err) {
+        console.error('AJAX leads navigation error:', err);
+        window.location.href = url;
+    } finally {
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+    }
+}
+
+function initEmailModalHandlers() {
+    const modalEl = document.getElementById('sendLeadEmailModal');
+    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+        sendEmailModalInstance = new window.bootstrap.Modal(modalEl);
+    }
+
+    const sendEmailBulkBtn = document.getElementById('sendEmailBulkBtn');
     const templateSelect = document.getElementById('modalTemplateSelect');
     const modalSubjectInput = document.getElementById('modalEmailSubject');
     const modalEditor = document.getElementById('modalRichEditor');
-    const modalRecipientsSummary = document.getElementById('modalRecipientsSummary');
-    const modalValidEmailsBadge = document.getElementById('modalValidEmailsBadge');
     const btnConfirmSendEmail = document.getElementById('btnConfirmSendEmail');
-    const sendEmailBulkBtn = document.getElementById('sendEmailBulkBtn');
 
-    // Fetch Email Templates
-    async function loadTemplates() {
-        try {
-            const resp = await fetch('{{ route("email-templates.list") }}');
-            if (resp.ok) {
-                loadedTemplates = await resp.json();
+    // Load templates
+    fetch('{{ route("email-templates.list") }}')
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.success && Array.isArray(data.templates)) {
+                loadedTemplates = data.templates;
                 if (templateSelect) {
-                    templateSelect.innerHTML = '<option value="">-- Choose a template (optional) --</option>';
+                    templateSelect.innerHTML = '<option value="">-- Custom Cold Outreach Email --</option>';
                     loadedTemplates.forEach(t => {
                         const opt = document.createElement('option');
                         opt.value = t.id;
-                        opt.textContent = `${t.name} (${t.category || 'Outreach'})${t.is_default ? ' ★ Default' : ''}`;
+                        opt.textContent = `${t.name} (${t.category})`;
+                        if (t.is_default) opt.textContent += ' [Default]';
                         templateSelect.appendChild(opt);
                     });
                 }
             }
-        } catch (_) {}
-    }
-    loadTemplates();
+        }).catch(() => {});
 
     if (templateSelect) {
         templateSelect.addEventListener('change', () => {
@@ -705,45 +782,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Single Lead Email Click Handler
-    document.querySelectorAll('.btn-send-single-email').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const leadId = parseInt(btn.dataset.id, 10);
-            const email = btn.dataset.email || '';
-            const name = btn.dataset.name || 'Business Owner';
-            activeEmailLeadIds = [leadId];
-
-            if (modalRecipientsSummary) {
-                modalRecipientsSummary.textContent = `${name} <${email}>`;
-            }
-            if (modalValidEmailsBadge) {
-                modalValidEmailsBadge.textContent = '1 recipient';
-            }
-
-            // Apply default template if exists
-            const defaultTmpl = loadedTemplates.find(t => t.is_default) || loadedTemplates[0];
-            if (defaultTmpl) {
-                if (templateSelect) templateSelect.value = defaultTmpl.id;
-                if (modalSubjectInput) modalSubjectInput.value = defaultTmpl.subject;
-                if (modalEditor) modalEditor.innerHTML = defaultTmpl.body;
-            } else {
-                if (modalSubjectInput) modalSubjectInput.value = `Quick inquiry regarding @{{business_name}}`;
-                if (modalEditor) {
-                    modalEditor.innerHTML = `
-                        <p>Hi <strong>@{{business_name}}</strong> Team,</p>
-                        <p>I came across your business in @{{city}} and wanted to reach out regarding our lead generation and growth services.</p>
-                        <p>Would you have 5 minutes this week for a brief call?</p>
-                        <p>Best regards,<br><strong>@{{sender_name}}</strong></p>
-                    `;
-                }
-            }
-
-            if (sendEmailModalInstance) sendEmailModalInstance.show();
-        });
-    });
-
-    // Bulk Email Button Handler
     if (sendEmailBulkBtn) {
         sendEmailBulkBtn.addEventListener('click', () => {
             const selectedCheckboxes = document.querySelectorAll('.row-select-checkbox:checked');
@@ -756,18 +794,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (idsWithEmail.length === 0) {
-                showToast('None of the selected leads have an email address.', true);
+                if (window.showToast) window.showToast('error', 'None of the selected leads have an email address.', 'Notice');
                 return;
             }
 
             activeEmailLeadIds = idsWithEmail;
 
-            if (modalRecipientsSummary) {
-                modalRecipientsSummary.textContent = `Sending outreach to ${idsWithEmail.length} selected lead(s)`;
-            }
-            if (modalValidEmailsBadge) {
-                modalValidEmailsBadge.textContent = `${idsWithEmail.length} with valid email`;
-            }
+            const modalRecipientsSummary = document.getElementById('modalRecipientsSummary');
+            const modalValidEmailsBadge = document.getElementById('modalValidEmailsBadge');
+
+            if (modalRecipientsSummary) modalRecipientsSummary.textContent = `Sending outreach to ${idsWithEmail.length} selected lead(s)`;
+            if (modalValidEmailsBadge) modalValidEmailsBadge.textContent = `${idsWithEmail.length} with valid email`;
 
             const defaultTmpl = loadedTemplates.find(t => t.is_default) || loadedTemplates[0];
             if (defaultTmpl) {
@@ -780,19 +817,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Confirm Send Email Submission
     if (btnConfirmSendEmail) {
         btnConfirmSendEmail.addEventListener('click', async () => {
             const subject = (modalSubjectInput ? modalSubjectInput.value : '').trim();
             const body = modalEditor ? modalEditor.innerHTML.trim() : '';
 
             if (!subject) {
-                showToast('Please enter an email subject.', true);
+                if (window.showToast) window.showToast('error', 'Please enter an email subject.', 'Required');
                 if (modalSubjectInput) modalSubjectInput.focus();
                 return;
             }
             if (!body || body === '<p><br></p>') {
-                showToast('Please enter an email body message.', true);
+                if (window.showToast) window.showToast('error', 'Please enter an email body message.', 'Required');
                 if (modalEditor) modalEditor.focus();
                 return;
             }
@@ -818,19 +854,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await resp.json();
                 if (resp.ok && data.success) {
                     if (sendEmailModalInstance) sendEmailModalInstance.hide();
-                    showToast(data.message || `Dispatched ${data.sent_count} email(s) successfully!`);
+                    if (window.showToast) window.showToast('success', data.message || `Dispatched ${data.sent_count} email(s) successfully!`);
                 } else {
-                    showToast(data.message || 'Failed to dispatch email.', true);
+                    if (window.showToast) window.showToast('error', data.message || 'Failed to dispatch email.', 'Error');
                 }
             } catch (err) {
-                showToast('Network error while dispatching email.', true);
+                if (window.showToast) window.showToast('error', 'Network error while dispatching email.', 'Error');
             } finally {
                 btnConfirmSendEmail.disabled = false;
                 btnConfirmSendEmail.innerHTML = '<i class="icon-base ti tabler-send me-1"></i> Send Outreach Email';
             }
         });
     }
-});
+}
 
 function formatModalDoc(cmd, val = null) {
     document.execCommand(cmd, false, val);

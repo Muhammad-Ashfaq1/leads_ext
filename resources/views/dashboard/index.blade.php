@@ -90,7 +90,9 @@
                 <p class="pos-stat-value">{{ $emailRate }}%</p>
                 <p class="pos-stat-desc mb-0">{{ number_format($totalEmails) }} verified emails</p>
                 <div class="pos-stat-note">
-                    <span class="text-success fw-medium"><i class="icon-base ti tabler-check me-1"></i>MX Validated</span>
+                    <a href="{{ route('leads.index', ['has_email' => 'yes']) }}" class="text-success fw-medium text-decoration-none" title="View leads with verified emails">
+                        <i class="icon-base ti tabler-check me-1"></i>View Leads ➔
+                    </a>
                 </div>
             </div>
         </div>
@@ -106,7 +108,9 @@
                 <p class="pos-stat-value">{{ $phoneRate }}%</p>
                 <p class="pos-stat-desc mb-0">{{ number_format($totalPhones) }} direct numbers</p>
                 <div class="pos-stat-note">
-                    <span class="text-info fw-medium">Direct contact</span>
+                    <a href="{{ route('leads.index', ['has_phone' => 'yes']) }}" class="text-info fw-medium text-decoration-none" title="View leads with direct phone numbers">
+                        <i class="icon-base ti tabler-phone me-1"></i>View Leads ➔
+                    </a>
                 </div>
             </div>
         </div>
@@ -121,8 +125,13 @@
                 </div>
                 <p class="pos-stat-value">{{ $websiteRate }}%</p>
                 <p class="pos-stat-desc mb-0">{{ number_format($totalWebsites) }} domains found</p>
-                <div class="pos-stat-note">
-                    <span class="text-warning fw-medium">Online presence</span>
+                <div class="pos-stat-note d-flex align-items-center justify-content-between">
+                    <a href="{{ route('leads.index', ['has_website' => 'yes']) }}" class="text-warning fw-medium text-decoration-none" title="View leads with websites">
+                        Found: {{ number_format($totalWebsites) }}
+                    </a>
+                    <a href="{{ route('leads.index', ['has_website' => 'no']) }}" class="badge bg-label-danger text-decoration-none small" title="View leads with no website">
+                        <i class="icon-base ti tabler-world-off me-1"></i>No Site: {{ number_format(max(0, $totalLeads - $totalWebsites)) }}
+                    </a>
                 </div>
             </div>
         </div>
@@ -138,7 +147,9 @@
                 <p class="pos-stat-value">{{ $socialRate }}%</p>
                 <p class="pos-stat-desc mb-0">{{ number_format($totalSocials) }} companies enriched</p>
                 <div class="pos-stat-note">
-                    <span class="text-primary fw-medium">5 platforms scanned</span>
+                    <a href="{{ route('leads.index') }}" class="text-primary fw-medium text-decoration-none">
+                        <i class="icon-base ti tabler-social me-1"></i>5 platforms scanned
+                    </a>
                 </div>
             </div>
         </div>
@@ -229,7 +240,7 @@
                     <h5 class="card-title mb-1">
                         <i class="icon-base ti tabler-chart-area-line me-1 text-primary"></i> Lead Extraction Trend (7 Days)
                     </h5>
-                    <p class="card-subtitle text-muted mb-0 small">Daily volume of leads extracted across Google Places API runs</p>
+                    <p class="card-subtitle text-muted mb-0 small">Daily volume of leads discovered across extraction runs</p>
                 </div>
                 <span class="badge bg-label-primary">{{ number_format($totalLeads) }} total leads</span>
             </div>
@@ -343,9 +354,9 @@
                                 </td>
                                 <td>
                                     @if ($job->mode === 'google_api')
-                                        <span class="badge bg-label-info" style="font-size: 0.7rem;"><i class="icon-base ti tabler-api me-1"></i>Google API</span>
+                                        <span class="badge bg-label-info" style="font-size: 0.7rem;"><i class="icon-base ti tabler-cpu me-1"></i>Cloud Matrix</span>
                                     @else
-                                        <span class="badge bg-label-secondary" style="font-size: 0.7rem;"><i class="icon-base ti tabler-brand-chrome me-1"></i>Browser</span>
+                                        <span class="badge bg-label-secondary" style="font-size: 0.7rem;"><i class="icon-base ti tabler-world me-1"></i>Deep Crawler</span>
                                     @endif
                                 </td>
                                 <td>

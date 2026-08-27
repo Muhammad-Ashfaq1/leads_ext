@@ -145,7 +145,7 @@
     const labels = {
         ready: 'Ready',
         starting: 'Starting',
-        searching: 'Searching Google Maps',
+        searching: 'Discovering Leads...',
         extracting: 'Extraction Running',
         enriching: 'Enriching website',
         waiting_for_human_verification: 'Waiting for Human Verification',
@@ -284,14 +284,12 @@
             ? `<a href="tel:${escapeAttr(lead.phone)}" class="extractor-lead-contact-link" title="${escapeAttr(lead.phone)}">${escapeHtml(lead.phone)}</a>`
             : '<span class="text-muted">No phone listed</span>';
         const category = lead.category || '';
-        const sourceTag = lead.source && lead.source !== 'Google Maps'
-            ? `<span class="extractor-lead-tag extractor-lead-tag-muted">${escapeHtml(lead.source)}</span>`
-            : '';
+        const sourceTag = '';
         const websiteBtn = lead.website
             ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noopener" class="btn btn-xs btn-label-info d-inline-flex align-items-center" title="Visit Website"><i class="icon-base ti tabler-world"></i></a>`
             : '';
         const mapsBtn = lead.google_maps_url
-            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-label-danger d-inline-flex align-items-center" title="View on Google Maps"><i class="icon-base ti tabler-map-pin"></i></a>`
+            ? `<a href="${escapeAttr(lead.google_maps_url)}" target="_blank" rel="noopener" class="btn btn-xs btn-label-danger d-inline-flex align-items-center" title="View Location"><i class="icon-base ti tabler-map-pin"></i></a>`
             : '';
 
         const avatarImg = lead.avatar_url
@@ -403,6 +401,7 @@
         if (f.website === 'has' && !hasWebsite) return false;
         if (f.website === 'none' && hasWebsite) return false;
         if (f.quick.has('website') && !hasWebsite) return false;
+        if (f.quick.has('no_website') && hasWebsite) return false;
 
         // Phone filter
         const hasPhone = Boolean(lead.phone && lead.phone.trim());
@@ -965,7 +964,7 @@
                 setStatus(event.status || 'starting', event.message || 'Extraction started.');
                 break;
             case 'searching':
-                setStatus('searching', event.message || 'Searching Google Maps');
+                setStatus('searching', event.message || 'Discovering business leads...');
                 if (event.query) els.searchLabel.textContent = `Search: ${event.query}`;
                 break;
             case 'progress':
@@ -980,7 +979,7 @@
             case 'human_verification_required':
                 setStatus('waiting_for_human_verification', event.message);
                 showVerification(true);
-                setAlert('warning', event.message || 'Google Maps requires human verification.', true);
+                setAlert('warning', event.message || 'A verification check is required to continue.', true);
                 break;
             case 'verification_completed':
                 showVerification(false);
@@ -1114,7 +1113,7 @@
             mode = 'google_api';
             if (!cfg.hasGoogleApiKey && !customApiKey) {
                 if (els.apiKeyRow) els.apiKeyRow.classList.remove('d-none');
-                setAlert('warning', 'Google Maps API key is required. Enter your API key below or switch to Browser Extractor mode.', true);
+                setAlert('warning', 'Platform Engine API key is required. Enter your API key below or switch to Deep Crawler mode.', true);
                 if (els.customApiKeyInput) els.customApiKeyInput.focus();
                 return;
             }
@@ -1209,7 +1208,7 @@
         } catch (_) {
             /* Handled */
         }
-        els.verificationHint.textContent = 'Complete the verification in the Google Maps browser window, then extraction will resume automatically.';
+        els.verificationHint.textContent = 'Complete the verification in the browser window, then extraction will resume automatically.';
     }
 
     async function completeMockVerification() {

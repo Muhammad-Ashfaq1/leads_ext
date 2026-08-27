@@ -39,7 +39,7 @@
                     <span class="settings-sidebar-icon">
                         <i class="icon-base ti tabler-key"></i>
                     </span>
-                    <span class="settings-text-responsive">Google Places API</span>
+                    <span class="settings-text-responsive">Discovery Engine API</span>
                 </button>
             </div>
 
@@ -80,8 +80,8 @@
                                 <div class="col-12 col-md-6">
                                     <label class="form-label fw-semibold" for="default_engine">Default Extraction Engine</label>
                                     <select id="default_engine" name="default_engine" class="form-select">
-                                        <option value="google_api" @selected(($settings['default_engine'] ?? 'google_api') === 'google_api')>Google Places API (Instant, recommended)</option>
-                                        <option value="browser" @selected(($settings['default_engine'] ?? '') === 'browser')>Browser Automation (Chromium)</option>
+                                        <option value="google_api" @selected(($settings['default_engine'] ?? 'google_api') === 'google_api')>Cloud Discovery Engine (Instant, recommended)</option>
+                                        <option value="browser" @selected(($settings['default_engine'] ?? '') === 'browser')>Autonomous Deep Crawler</option>
                                     </select>
                                 </div>
 
@@ -108,17 +108,17 @@
                             </div>
                         </div>
 
-                        <!-- Google Places API Tab -->
+                        <!-- Discovery Engine API Tab -->
                         <div class="tab-pane fade" id="api-tab" role="tabpanel" aria-labelledby="api-settings-tab">
                             <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
                                 <div>
-                                    <h5 class="mb-1 fw-bold text-heading">Google Places Platform API Key</h5>
-                                    <p class="text-muted small mb-0">Use your own Google Cloud Maps API key for high-volume lead discovery.</p>
+                                    <h5 class="mb-1 fw-bold text-heading">Discovery Engine Platform Key</h5>
+                                    <p class="text-muted small mb-0">Configure your dedicated Platform Key for high-velocity lead discovery.</p>
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label fw-semibold" for="tenantApiKeyInput">Google Maps Places API Key</label>
+                                <label class="form-label fw-semibold" for="tenantApiKeyInput">Platform Engine API Key</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
                                     <input type="password" name="google_maps_api_key" id="tenantApiKeyInput" class="form-control" value="{{ old('google_maps_api_key', $tenant->google_maps_api_key) }}" placeholder="AIzaSy...">
@@ -128,9 +128,9 @@
                                 </div>
                                 <div class="form-text small text-muted mt-2">
                                     @if ($hasGlobalGoogleKey)
-                                        <span class="text-success fw-medium"><i class="icon-base ti tabler-check"></i> System default Google Maps key is active.</span> You can leave this blank to use the shared server key, or supply your dedicated project key.
+                                        <span class="text-success fw-medium"><i class="icon-base ti tabler-check"></i> System default Engine key is active.</span> You can leave this blank to use the shared server key, or supply your dedicated workspace key.
                                     @else
-                                        Enter your Google Cloud Places API key to activate instant Places API lead queries.
+                                        Enter your platform engine API key to activate instant lead queries.
                                     @endif
                                 </div>
                             </div>

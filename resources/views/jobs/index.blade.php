@@ -45,9 +45,9 @@
                         </td>
                         <td>
                             @if ($job->mode === 'google_api')
-                                <span class="badge bg-label-info" style="font-size: 0.72rem;">Google API</span>
+                                <span class="badge bg-label-info" style="font-size: 0.72rem;">Cloud Matrix</span>
                             @else
-                                <span class="badge bg-label-secondary" style="font-size: 0.72rem;">Browser</span>
+                                <span class="badge bg-label-secondary" style="font-size: 0.72rem;">Deep Crawler</span>
                             @endif
                         </td>
                         <td>

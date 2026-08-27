@@ -100,7 +100,7 @@
                                                     <input type="number" name="lead_quota" class="form-control" value="{{ $t->lead_quota }}" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label class="form-label">Tenant-Specific Google Maps API Key</label>
+                                                    <label class="form-label">Tenant Dedicated Discovery Engine API Key</label>
                                                     <input type="text" name="google_maps_api_key" class="form-control" value="{{ $t->google_maps_api_key }}" placeholder="Leave blank to use platform default">
                                                 </div>
                                                 <div class="form-check">
@@ -157,21 +157,25 @@
 <div class="modal fade" id="createTenantModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title">Create New Tenant Organization</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form method="POST" action="{{ route('tenants.store') }}">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New SaaS Tenant</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Company / Organization Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing LLC" required>
+                        <label class="form-label">Company / Tenant Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Plan Tier</label>
+                        <label class="form-label">Domain (Optional)</label>
+                        <input type="text" name="domain" class="form-control" placeholder="e.g. apexmarketing.io">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription Plan</label>
                         <select name="plan" class="form-select">
-                            <option value="starter">Starter (10,000 leads)</option>
+                            <option value="starter">Starter (5,000 leads)</option>
                             <option value="pro" selected>Pro (25,000 leads)</option>
                             <option value="enterprise">Enterprise (50,000+ leads)</option>
                         </select>
@@ -181,7 +185,7 @@
                         <input type="number" name="lead_quota" class="form-control" value="25000" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Tenant Google Maps API Key (Optional)</label>
+                        <label class="form-label">Tenant Platform Engine API Key (Optional)</label>
                         <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy...">
                     </div>
                 </div>

@@ -53,7 +53,7 @@ class LeadsController extends Controller
             ->when($hasPhone === 'yes', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
             ->when($hasPhone === 'no', fn ($q) => $q->whereNull('phone')->orWhere('phone', ''))
             ->when($hasWebsite === 'yes', fn ($q) => $q->whereNotNull('website')->where('website', '!=', ''))
-            ->when($hasWebsite === 'no', fn ($q) => $q->whereNull('website')->orWhere('website', ''))
+            ->when($hasWebsite === 'no', fn ($q) => $q->where(fn ($sub) => $sub->whereNull('website')->orWhere('website', '')))
             ->when($minRating, fn ($q) => $q->where('rating', '>=', (float) $minRating))
             ->when($source, fn ($q) => $q->where('source', $source))
             ->when($jobId, fn ($q) => $q->where('extraction_job_id', $jobId))

@@ -147,8 +147,8 @@ class AuthTest extends TestCase
         $this->actingAs($user)
             ->get('/settings')
             ->assertOk()
-            ->assertSee('Extraction Preferences')
-            ->assertSee('Google Places Platform API Key');
+            ->assertSee('Extraction Limits')
+            ->assertSee('Discovery Engine Platform Key');
 
         $this->actingAs($user)
             ->put('/settings', [

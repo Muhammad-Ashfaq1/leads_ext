@@ -38,6 +38,7 @@ class LeadsBulkActionTest extends TestCase
             'email' => 'alice@acme.com',
             'password' => bcrypt('secret123'),
             'role' => 'tenant_admin',
+            'is_active' => true,
         ]);
 
         $this->user2 = User::create([
@@ -46,6 +47,7 @@ class LeadsBulkActionTest extends TestCase
             'email' => 'bob@globex.com',
             'password' => bcrypt('secret123'),
             'role' => 'tenant_admin',
+            'is_active' => true,
         ]);
     }
 
@@ -357,6 +359,39 @@ class LeadsBulkActionTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function test_leads_can_be_filtered_by_website_presence_and_absence(): void
+    {
+        $job = $this->makeJob($this->tenant1, $this->user1, 'Dental Clinics');
+
+        $leadWithSite = ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Smile Dental Clinic',
+            'website' => 'https://smiledental.example',
+        ]);
+
+        $leadWithoutSite = ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Quick Fix Garage',
+            'website' => null,
+        ]);
+
+        // Filter: Without Website (has_website=no)
+        $responseNo = $this->actingAs($this->user1)->get('/leads?has_website=no');
+        $responseNo->assertOk()
+            ->assertSee('Quick Fix Garage')
+            ->assertDontSee('Smile Dental Clinic');
+
+        // Filter: With Website (has_website=yes)
+        $responseYes = $this->actingAs($this->user1)->get('/leads?has_website=yes');
+        $responseYes->assertOk()
+            ->assertSee('Smile Dental Clinic')
+            ->assertDontSee('Quick Fix Garage');
     }
 }
 

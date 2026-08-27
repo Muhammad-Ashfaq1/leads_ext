@@ -8,7 +8,7 @@
         <h4 class="mb-1 fw-bold text-heading">
             <i class="icon-base ti tabler-map-pin-search me-1 text-primary"></i> Lead Extractor
         </h4>
-        <p class="text-muted mb-0">Search Google Maps by category, city, area, or zip code and stream verified leads in real-time.</p>
+        <p class="text-muted mb-0">Search businesses by category, city, area, or zip code and stream verified leads in real-time.</p>
     </div>
     @if ($tenant && $tenant->lead_quota > 0)
         <div class="text-end">
@@ -29,16 +29,16 @@
                         <input name="engineMode" class="form-check-input" type="radio" value="google_api" id="engineGoogleApi" checked />
                         <span class="custom-option-header">
                             <span class="h6 mb-0 d-flex align-items-center">
-                                <i class="icon-base ti tabler-api me-2 text-primary fs-4"></i>Google Places API
+                                <i class="icon-base ti tabler-cpu me-2 text-primary fs-4"></i>AI Discovery Engine (Cloud Matrix)
                             </span>
                             <span class="badge bg-label-success">Recommended</span>
                         </span>
                         <span class="custom-option-body">
-                            <small class="text-muted d-block mb-2">Instant extraction from Google Maps API. Target by Zip Code, City, Area, or State with zero CAPTCHAs.</small>
+                            <small class="text-muted d-block mb-2">Instant high-density business discovery. Target by Zip Code, City, Area, or Region with zero delays.</small>
                             <span class="d-flex align-items-center gap-2">
                                 @if ($hasGoogleApiKey)
-                                    <span class="badge bg-label-success" id="apiKeyStatusBadge" title="Google Maps API Key is active in .env">
-                                        <i class="icon-base ti tabler-check me-1"></i>API Key Active (.env)
+                                    <span class="badge bg-label-success" id="apiKeyStatusBadge" title="Discovery Engine API Key is active">
+                                        <i class="icon-base ti tabler-check me-1"></i>Platform Key Active
                                     </span>
                                 @else
                                     <button type="button" class="btn btn-xs btn-outline-secondary" id="toggleApiKeyBtn">
@@ -56,12 +56,12 @@
                         <input name="engineMode" class="form-check-input" type="radio" value="live" id="engineBrowser" />
                         <span class="custom-option-header">
                             <span class="h6 mb-0 d-flex align-items-center">
-                                <i class="icon-base ti tabler-brand-chrome me-2 text-info fs-4"></i>Browser Extractor (Chromium)
+                                <i class="icon-base ti tabler-world me-2 text-info fs-4"></i>Autonomous Deep Crawler
                             </span>
                             <span class="badge bg-label-info">Local / Free</span>
                         </span>
                         <span class="custom-option-body">
-                            <small class="text-muted d-block">Automated Playwright Chromium desktop browser scrolling and scraping live Google Maps pages locally without an API key.</small>
+                            <small class="text-muted d-block">Autonomous deep web crawler scanning business directories and public records with anti-bot intelligence.</small>
                         </span>
                     </label>
                 </div>
@@ -154,13 +154,13 @@
 
         <!-- Custom API Key input (shown when toggled or if key missing) -->
         <div class="mt-3 d-none" id="apiKeyRow">
-            <label class="form-label small fw-semibold" for="customApiKeyInput">Google Maps Places API Key</label>
+            <label class="form-label small fw-semibold" for="customApiKeyInput">Discovery Engine API Key</label>
             <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
                 <input type="password" id="customApiKeyInput" class="form-control" placeholder="AIzaSy...">
                 <button class="btn btn-outline-secondary" type="button" id="toggleKeyVisibilityBtn"><i class="icon-base ti tabler-eye"></i></button>
             </div>
-            <div class="form-text small text-muted">Enter a Google Maps Platform API key with Places API enabled, or configure `GOOGLE_MAPS_API_KEY` in `.env`.</div>
+            <div class="form-text small text-muted">Enter your dedicated Platform API key or configure it in your workspace settings.</div>
         </div>
 
         <div class="d-flex flex-wrap align-items-end gap-3 mt-4">
@@ -206,7 +206,7 @@
             </span>
             <div class="flex-grow-1">
                 <h5 class="mb-1">Human Verification Required</h5>
-                <p class="mb-3 text-muted">Google Maps requires you to complete a verification before extraction can continue. Complete the verification in the browser window.</p>
+                <p class="mb-3 text-muted">A verification check is required before extraction can continue. Complete the verification in the browser window.</p>
                 <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-warning" id="openVerificationBtn">
                         <i class="icon-base ti tabler-external-link me-1"></i>
@@ -382,6 +382,9 @@
             </button>
             <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="website">
                 <i class="icon-base ti tabler-world-www me-1"></i>Has Website
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="no_website">
+                <i class="icon-base ti tabler-world-off me-1"></i>No Website
             </button>
             <button type="button" class="btn btn-xs btn-outline-secondary extractor-filter-chip" data-filter="phone">
                 <i class="icon-base ti tabler-phone me-1"></i>Has Phone
