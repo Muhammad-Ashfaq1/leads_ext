@@ -58,3 +58,34 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
+/* ── Sticky Table Header & Scrollable Body ─────────────────────────────── */
+.leads-table-responsive {
+    max-height: calc(100vh - 290px);
+    min-height: 380px;
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+    scrollbar-width: thin;
+}
+
+.leads-table-responsive table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.leads-table-responsive table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-bs-theme="dark"] .leads-table-responsive table thead th {
+    background-color: #2b2c40;
+    color: #e7e3fc;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+

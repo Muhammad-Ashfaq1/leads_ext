@@ -113,7 +113,7 @@
     </div>
 
     <!-- Table -->
-    <div class="table-responsive">
+    <div class="table-responsive leads-table-responsive">
         <table class="table table-hover align-middle mb-0" id="leadsTable">
             <thead class="table-light">
                 <tr>
