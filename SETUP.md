@@ -85,12 +85,13 @@ Open your browser and navigate to: **`http://127.0.0.1:8000`** (or your local vi
 
 ## 🔑 Default Login Credentials
 
-After running `php artisan migrate --seed`, the database is seeded with two administrative accounts:
+After running `php artisan migrate --seed`, the database is seeded with three administrative accounts:
 
 | Role | Email | Password | Access Scope |
 | :--- | :--- | :--- | :--- |
 | **Super Admin** | `superadmin@obtainsolutions.com` | `Obtain@2026!` | Global SaaS console, multi-tenant management, all workspaces |
-| **Workspace Admin** | `admin@obtainsolutions.com` | `Obtain@2026!` | Lead extraction, CRM database, cold outreach, template manager |
+| **Obtain Solutions Admin** | `admin@obtainsolutions.com` | `Obtain@2026!` | Full extractor limits (up to 2,500), CRM, outreach |
+| **General Admin** | `admin@general.test` | `Obtain@2026!` | Empty workspace, extractor capped at 500 leads |
 
 > 🔒 **Security Notice**: Change these default passwords immediately after your initial login from the **My Profile** page (`/profile`).
 

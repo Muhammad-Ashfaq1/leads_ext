@@ -48,6 +48,39 @@ class ExtractorPageTest extends TestCase
         $this->assertSame(0, substr_count($html, 'id="summaryCard"'));
         $this->assertSame(0, substr_count($html, 'Download Excel'));
         $this->assertSame(0, substr_count($html, 'id="clearAllResultsBtn"'));
+        $this->assertStringContainsString('value="500"', $html);
+        $this->assertStringNotContainsString('value="1000"', $html);
+        $this->assertStringNotContainsString('value="1500"', $html);
+        $this->assertStringNotContainsString('value="2500"', $html);
+    }
+
+    public function test_obtain_solutions_tenant_sees_high_extractor_limits(): void
+    {
+        $tenant = Tenant::query()->firstOrCreate(
+            ['slug' => 'obtain-solutions'],
+            [
+                'name' => 'Obtain Solutions',
+                'domain' => 'obtainsolutions.com',
+                'plan' => 'enterprise',
+                'lead_quota' => 100000,
+            ]
+        );
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'email' => 'admin@obtainsolutions.com',
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $html = $this->actingAs($user)
+            ->get('/extractor')
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('value="1000"', $html);
+        $this->assertStringContainsString('value="1500"', $html);
+        $this->assertStringContainsString('value="2500"', $html);
     }
 
     public function test_dashboard_renders_metrics(): void

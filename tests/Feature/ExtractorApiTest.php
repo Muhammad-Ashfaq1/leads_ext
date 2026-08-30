@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -31,6 +33,43 @@ class ExtractorApiTest extends TestCase
             'prompt' => 'Find dentists in Lahore',
             'limit' => 5000,
         ])->assertStatus(422)->assertJsonValidationErrors(['limit']);
+
+        $this->postJson('/api/extractor/start', [
+            'prompt' => 'Find dentists in Lahore',
+            'limit' => 1500,
+        ])->assertStatus(422)->assertJsonValidationErrors(['limit']);
+    }
+
+    public function test_standard_tenant_cannot_start_above_500(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Acme Corporation',
+            'slug' => 'acme',
+            'plan' => 'starter',
+            'lead_quota' => 5000,
+        ]);
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)->postJson('/api/extractor/start', [
+            'prompt' => 'Dentists',
+            'location' => 'Chicago, IL',
+            'limit' => 1000,
+            'mode' => 'google_api',
+            'api_key' => 'AIzaSyFakeTestKey123',
+        ])->assertStatus(422)->assertJsonValidationErrors(['limit']);
+
+        $this->actingAs($user)->postJson('/api/extractor/start', [
+            'prompt' => 'Dentists',
+            'location' => 'Chicago, IL',
+            'limit' => 500,
+            'mode' => 'google_api',
+            'api_key' => 'AIzaSyFakeTestKey123',
+        ])->assertOk();
     }
 
     public function test_start_creates_job_and_returns_job_id(): void
@@ -565,7 +604,24 @@ class ExtractorApiTest extends TestCase
 
     public function test_start_supports_high_limit_up_to_2500(): void
     {
-        $response = $this->postJson('/api/extractor/start', [
+        $tenant = Tenant::query()->firstOrCreate(
+            ['slug' => 'obtain-solutions'],
+            [
+                'name' => 'Obtain Solutions',
+                'domain' => 'obtainsolutions.com',
+                'plan' => 'enterprise',
+                'lead_quota' => 100000,
+            ]
+        );
+
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'email' => 'admin@obtainsolutions.com',
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/extractor/start', [
             'prompt' => 'Dentists',
             'location' => 'Beverly Hills, CA 90210',
             'limit' => 2500,

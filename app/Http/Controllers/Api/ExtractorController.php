@@ -31,6 +31,12 @@ class ExtractorController extends Controller
 
     public function start(Request $request): JsonResponse
     {
+        $user = Auth::user();
+        $email = strtolower((string) ($user?->email ?? ''));
+        $maxLimit = ($user?->isAdmin() && (str_contains($email, 'obtainsolutions') || str_contains($email, 'obtain-solutions')))
+            ? 2500
+            : 500;
+
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'min:2', 'max:500'],
             'location' => ['nullable', 'string', 'max:300'],
@@ -38,7 +44,7 @@ class ExtractorController extends Controller
             'state' => ['nullable', 'string', 'max:100'],
             'zip_code' => ['nullable', 'string', 'max:50'],
             'api_key' => ['nullable', 'string', 'max:200'],
-            'limit' => ['nullable', 'integer', 'min:'.config('extractor.min_limit'), 'max:'.config('extractor.max_limit')],
+            'limit' => ['nullable', 'integer', 'min:'.config('extractor.min_limit'), 'max:'.$maxLimit],
             'mode' => ['nullable', Rule::in(['live', 'mock', 'google_api'])],
             'simulate_verification' => ['sometimes', 'boolean'],
             'filters' => ['nullable', 'array'],
@@ -83,7 +89,6 @@ class ExtractorController extends Controller
             $query = PromptNormalizer::toSearchQuery($prompt);
         }
 
-        $user = Auth::user();
         $tenantId = $user?->tenant_id ?? \App\Models\Tenant::first()?->id;
         $userId = $user?->id ?? \App\Models\User::where('email', 'admin@obtainsolutions.com')->value('id') ?? \App\Models\User::first()?->id;
         $tenantKey = $user?->tenant?->google_maps_api_key;
