@@ -49,4 +49,30 @@ class GooglePlacesLocationFilterTest extends TestCase
             'location' => ['latitude' => 41.88, 'longitude' => -87.78],
         ], 'Chicago, IL', $bounds));
     }
+
+    public function test_matches_country_aliases_like_uae_and_uk(): void
+    {
+        // UAE queries should match Dubai / Abu Dhabi / United Arab Emirates addresses
+        $this->assertTrue($this->service->placeMatchesTargetLocation([
+            'displayName' => ['text' => 'Master Lube Vehicle Oil Change'],
+            'formattedAddress' => 'Ajman Industrial 1 - Ajman - United Arab Emirates',
+        ], 'UAE', null));
+
+        $this->assertTrue($this->service->placeMatchesTargetLocation([
+            'displayName' => ['text' => 'Battmobile Car Repair Dubai'],
+            'formattedAddress' => 'Al Quoz, Dubai - United Arab Emirates',
+        ], 'UAE', null));
+
+        // Should drop clearly out of country results
+        $this->assertFalse($this->service->placeMatchesTargetLocation([
+            'displayName' => ['text' => 'Berlin Auto Service'],
+            'formattedAddress' => 'Alexanderplatz 1, Berlin, Germany',
+        ], 'UAE', null));
+
+        // UK queries should match London / Manchester / United Kingdom addresses
+        $this->assertTrue($this->service->placeMatchesTargetLocation([
+            'displayName' => ['text' => 'London Plumbing Experts'],
+            'formattedAddress' => '221B Baker St, London, United Kingdom',
+        ], 'UK', null));
+    }
 }

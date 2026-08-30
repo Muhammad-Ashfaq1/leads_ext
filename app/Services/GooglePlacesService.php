@@ -152,16 +152,11 @@ class GooglePlacesService
                 }
             }
 
-            // Fallback to a single query. Location stays in the text query so Google
-            // does not fall back to the request IP ("near me").
-            if (empty($gridCells)) {
-                $gridCells = [null];
-            }
+            $tasks = $this->buildSearchTasks($searchTerm, $resolvedLocation, $job->query, $searchBounds, $gridCells, $limit);
+            $totalTasks = count($tasks);
 
             try {
-                $totalCells = count($gridCells);
-
-                foreach ($gridCells as $cellIdx => $cell) {
+                foreach ($tasks as $taskIdx => $task) {
                     if ($extractedCount >= $limit) {
                         break;
                     }
@@ -176,20 +171,23 @@ class GooglePlacesService
                         break;
                     }
 
-                    $cellNum = $cellIdx + 1;
-                    if ($totalCells > 1 && $cell !== null) {
-                        $this->sendSseEvent('progress', [
-                            'type' => 'progress',
-                            'status' => ExtractionJob::STATUS_EXTRACTING,
-                            'current_activity' => "Scanning grid cell {$cellNum} of {$totalCells} in {$resolvedLocation}...",
-                            'businesses_seen' => $seenCount,
-                            'leads_extracted' => $extractedCount,
-                            'emails_found' => $emailsCount,
-                            'websites_found' => $websitesCount,
-                        ]);
-                    }
+                    $taskNum = $taskIdx + 1;
+                    $currentQueryText = $task['query'];
+                    $cell = $task['cell'] ?? null;
+                    $taskLabel = $task['label'] ?? $currentQueryText;
+
+                    $this->sendSseEvent('progress', [
+                        'type' => 'progress',
+                        'status' => ExtractionJob::STATUS_EXTRACTING,
+                        'current_activity' => $totalTasks > 1 ? "Target {$taskNum}/{$totalTasks}: {$taskLabel} ({$extractedCount}/{$limit} leads)..." : "Searching {$currentQueryText}...",
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
 
                     $pageToken = null;
+                    $taskPage = 1;
 
                     try {
                         do {
@@ -198,7 +196,7 @@ class GooglePlacesService
                             }
 
                             $payload = [
-                                'textQuery' => $textQuery,
+                                'textQuery' => $currentQueryText,
                                 'pageSize' => min(20, max(20, $limit - $extractedCount)),
                                 'rankPreference' => 'RELEVANCE',
                             ];
@@ -252,18 +250,18 @@ class GooglePlacesService
                                     return;
                                 }
 
-                                if ($totalCells === 1) {
+                                if ($totalTasks === 1) {
                                     $this->failJob($job, $this->formatGoogleCloudError($errorMessage));
 
                                     return;
                                 }
 
-                                // Otherwise log warning, emit non-fatal SSE event and proceed to next cell
-                                Log::warning("Grid cell {$cellNum} request failed with HTTP {$response->status()}, skipping to next cell", ['error' => $errorMessage]);
+                                // Otherwise log warning, emit non-fatal SSE event and proceed to next target
+                                Log::warning("Target {$taskNum} request failed with HTTP {$response->status()}, skipping to next target", ['error' => $errorMessage]);
                                 $this->sendSseEvent('warning', [
                                     'type' => 'warning',
                                     'status' => ExtractionJob::STATUS_EXTRACTING,
-                                    'message' => "Grid cell {$cellNum} request failed (HTTP {$response->status()}), continuing to next area...",
+                                    'message' => "Target {$taskNum} request failed (HTTP {$response->status()}), continuing to next area...",
                                     'businesses_seen' => $seenCount,
                                     'leads_extracted' => $extractedCount,
                                     'emails_found' => $emailsCount,
@@ -759,6 +757,324 @@ class GooglePlacesService
     }
 
     /**
+     * Build an expanded list of search targets to fulfill high limits (100, 500, 1000, 1500+).
+     *
+     * @return array<int, array{query: string, cell: array|null, label: string}>
+     */
+    public function buildSearchTasks(string $searchTerm, ?string $resolvedLocation, string $fallbackQuery, ?array $searchBounds, array $gridCells, int $limit): array
+    {
+        $tasks = [];
+        $primaryQuery = $this->buildTextQuery($searchTerm, $resolvedLocation, $fallbackQuery);
+
+        // 1. If grid cells exist from geocoding and more than 1 cell, add each grid cell
+        if (! empty($gridCells) && count($gridCells) > 1) {
+            foreach ($gridCells as $idx => $cell) {
+                if ($cell !== null) {
+                    $tasks[] = [
+                        'query' => $primaryQuery,
+                        'cell' => $cell,
+                        'label' => "Grid Cell #".($idx + 1)." in {$resolvedLocation}",
+                    ];
+                }
+            }
+        } else {
+            // 2. Primary full text search query
+            $tasks[] = [
+                'query' => $primaryQuery,
+                'cell' => ! empty($gridCells[0]) ? $gridCells[0] : null,
+                'label' => $primaryQuery,
+            ];
+        }
+
+        // If requested limit <= 60 and we have tasks, no need to expand yet
+        if ($limit <= 60 && ! empty($tasks)) {
+            return $tasks;
+        }
+
+        // 3. Sub-locality expansion (cities, districts, boroughs)
+        $subLocalities = $this->getSubLocalities($resolvedLocation);
+        foreach ($subLocalities as $subLoc) {
+            $subQuery = $this->buildTextQuery($searchTerm, $subLoc, "{$searchTerm} in {$subLoc}");
+            $tasks[] = [
+                'query' => $subQuery,
+                'cell' => null,
+                'label' => $subQuery,
+            ];
+        }
+
+        // 4. Niche synonym / keyword variation expansion (if limit > 150)
+        if ($limit > 150) {
+            $synonyms = $this->getNicheSynonyms($searchTerm);
+            foreach ($synonyms as $synonym) {
+                $synQuery = $this->buildTextQuery($synonym, $resolvedLocation, "{$synonym} in {$resolvedLocation}");
+                $tasks[] = [
+                    'query' => $synQuery,
+                    'cell' => null,
+                    'label' => $synQuery,
+                ];
+
+                // If high limit (>= 400), combine top sub-localities with synonyms
+                if ($limit >= 400 && ! empty($subLocalities)) {
+                    foreach (array_slice($subLocalities, 0, 10) as $subLoc) {
+                        $synSubQuery = $this->buildTextQuery($synonym, $subLoc, "{$synonym} in {$subLoc}");
+                        $tasks[] = [
+                            'query' => $synSubQuery,
+                            'cell' => null,
+                            'label' => $synSubQuery,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Deduplicate task queries
+        $seenQueries = [];
+        $uniqueTasks = [];
+        foreach ($tasks as $t) {
+            $k = strtolower(trim($t['query'])).($t['cell'] ? json_encode($t['cell']['low']) : '');
+            if (! isset($seenQueries[$k])) {
+                $seenQueries[$k] = true;
+                $uniqueTasks[] = $t;
+            }
+        }
+
+        return $uniqueTasks;
+    }
+
+    /**
+     * Get sub-localities, boroughs, or regional cities for a given location.
+     *
+     * @return array<string>
+     */
+    public function getSubLocalities(?string $location): array
+    {
+        if (! $location) {
+            return [];
+        }
+
+        $loc = strtolower(trim($location));
+
+        // UAE Sub-localities & Major Hubs
+        if (in_array($loc, ['uae', 'united arab emirates', 'emirates'], true)) {
+            return [
+                'Dubai, UAE', 'Abu Dhabi, UAE', 'Sharjah, UAE', 'Ajman, UAE', 'Ras Al Khaimah, UAE',
+                'Al Ain, UAE', 'Fujairah, UAE', 'Umm Al Quwain, UAE', 'Al Quoz, Dubai', 'Deira, Dubai',
+                'Bur Dubai, Dubai', 'Musaffah, Abu Dhabi', 'Al Barsha, Dubai', 'Jumeirah, Dubai',
+                'Industrial Area, Sharjah', 'Mirdif, Dubai', 'Motor City, Dubai', 'Al Karama, Dubai',
+                'Business Bay, Dubai', 'Al Qusais, Dubai', 'Al Nahda, Sharjah', 'Khalidiya, Abu Dhabi',
+                'Yas Island, Abu Dhabi', 'Mohamed Bin Zayed City, Abu Dhabi',
+            ];
+        }
+
+        // UK Sub-localities & Major Cities
+        if (in_array($loc, ['uk', 'united kingdom', 'great britain', 'england'], true)) {
+            return [
+                'London, UK', 'Manchester, UK', 'Birmingham, UK', 'Leeds, UK', 'Glasgow, UK',
+                'Liverpool, UK', 'Newcastle, UK', 'Sheffield, UK', 'Bristol, UK', 'Nottingham, UK',
+                'Leicester, UK', 'Edinburgh, UK', 'Belfast, UK', 'Cardiff, UK', 'Central London, UK',
+                'East London, UK', 'North London, UK', 'South London, UK', 'West London, UK', 'Croydon, UK',
+            ];
+        }
+
+        // US Nationwide
+        if (in_array($loc, ['usa', 'us', 'united states', 'america'], true)) {
+            return [
+                'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
+                'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'Austin, TX',
+                'Jacksonville, FL', 'San Jose, CA', 'Fort Worth, TX', 'Columbus, OH', 'Charlotte, NC',
+                'Indianapolis, IN', 'San Francisco, CA', 'Seattle, WA', 'Denver, CO', 'Washington, DC',
+                'Boston, MA', 'Miami, FL', 'Atlanta, GA', 'Nashville, TN', 'Las Vegas, NV',
+            ];
+        }
+
+        // Texas Sub-localities
+        if (str_contains($loc, 'texas') || str_contains($loc, 'tx')) {
+            return [
+                'Houston, TX', 'Dallas, TX', 'Austin, TX', 'San Antonio, TX', 'Fort Worth, TX',
+                'El Paso, TX', 'Arlington, TX', 'Corpus Christi, TX', 'Plano, TX', 'Lubbock, TX',
+                'Irving, TX', 'Laredo, TX', 'Garland, TX', 'Frisco, TX', 'McKinney, TX',
+                'Downtown Dallas, TX', 'North Dallas, TX', 'Uptown Dallas, TX', 'Addison, TX', 'Richardson, TX',
+            ];
+        }
+
+        // California Sub-localities
+        if (str_contains($loc, 'california') || str_contains($loc, 'ca')) {
+            return [
+                'Los Angeles, CA', 'San Francisco, CA', 'San Diego, CA', 'San Jose, CA', 'Sacramento, CA',
+                'Fresno, CA', 'Long Beach, CA', 'Oakland, CA', 'Bakersfield, CA', 'Anaheim, CA',
+                'Santa Ana, CA', 'Riverside, CA', 'Irvine, CA', 'Stockton, CA', 'Chula Vista, CA',
+            ];
+        }
+
+        // Florida Sub-localities
+        if (str_contains($loc, 'florida') || str_contains($loc, 'fl')) {
+            return [
+                'Miami, FL', 'Orlando, FL', 'Tampa, FL', 'Jacksonville, FL', 'St. Petersburg, FL',
+                'Hialeah, FL', 'Port St. Lucie, FL', 'Cape Coral, FL', 'Tallahassee, FL', 'Fort Lauderdale, FL',
+                'Pembroke Pines, FL', 'Hollywood, FL', 'Gainesville, FL', 'Miramar, FL', 'Coral Springs, FL',
+            ];
+        }
+
+        // Saudi Arabia Sub-localities
+        if (in_array($loc, ['ksa', 'saudi', 'saudi arabia'], true)) {
+            return [
+                'Riyadh, Saudi Arabia', 'Jeddah, Saudi Arabia', 'Dammam, Saudi Arabia', 'Khobar, Saudi Arabia',
+                'Mecca, Saudi Arabia', 'Medina, Saudi Arabia', 'Tabuk, Saudi Arabia', 'Taif, Saudi Arabia',
+                'Buraidah, Saudi Arabia', 'Abha, Saudi Arabia', 'Khamis Mushait, Saudi Arabia', 'Jubail, Saudi Arabia',
+            ];
+        }
+
+        // Canada Sub-localities
+        if (in_array($loc, ['canada', 'ca'], true)) {
+            return [
+                'Toronto, Canada', 'Montreal, Canada', 'Vancouver, Canada', 'Calgary, Canada', 'Edmonton, Canada',
+                'Ottawa, Canada', 'Winnipeg, Canada', 'Quebec City, Canada', 'Hamilton, Canada', 'Kitchener, Canada',
+                'London ON, Canada', 'Victoria BC, Canada', 'Halifax, Canada', 'Mississauga, Canada', 'Brampton, Canada',
+            ];
+        }
+
+        // Australia Sub-localities
+        if (in_array($loc, ['australia', 'au'], true)) {
+            return [
+                'Sydney, Australia', 'Melbourne, Australia', 'Brisbane, Australia', 'Perth, Australia', 'Adelaide, Australia',
+                'Gold Coast, Australia', 'Newcastle, Australia', 'Canberra, Australia', 'Sunshine Coast, Australia', 'Wollongong, Australia',
+            ];
+        }
+
+        // Pakistan Sub-localities
+        if (in_array($loc, ['pakistan', 'pk'], true)) {
+            return [
+                'Karachi, Pakistan', 'Lahore, Pakistan', 'Faisalabad, Pakistan', 'Rawalpindi, Pakistan', 'Gujranwala, Pakistan',
+                'Peshawar, Pakistan', 'Multan, Pakistan', 'Hyderabad, Pakistan', 'Islamabad, Pakistan', 'Quetta, Pakistan',
+            ];
+        }
+
+        // India Sub-localities
+        if (in_array($loc, ['india', 'in'], true)) {
+            return [
+                'Mumbai, India', 'Delhi, India', 'Bangalore, India', 'Hyderabad, India', 'Ahmedabad, India',
+                'Chennai, India', 'Kolkata, India', 'Surat, India', 'Pune, India', 'Jaipur, India',
+            ];
+        }
+
+        // Generic City Sub-areas (Downtown, North, South, East, West, Central, Metro)
+        $cleanLoc = ucwords(trim($location));
+
+        return [
+            "Downtown {$cleanLoc}",
+            "North {$cleanLoc}",
+            "South {$cleanLoc}",
+            "East {$cleanLoc}",
+            "West {$cleanLoc}",
+            "Central {$cleanLoc}",
+            "Metro {$cleanLoc}",
+            "Greater {$cleanLoc}",
+        ];
+    }
+
+    /**
+     * Get common industry keyword variations and synonyms.
+     *
+     * @return array<string>
+     */
+    public function getNicheSynonyms(string $searchTerm): array
+    {
+        $term = strtolower(trim($searchTerm));
+
+        if (str_contains($term, 'oil') || str_contains($term, 'auto') || str_contains($term, 'car') || str_contains($term, 'mechanic') || str_contains($term, 'repair')) {
+            return [
+                'Auto Repair',
+                'Car Service',
+                'Auto Workshop',
+                'Car Mechanic',
+                'Lube Express',
+                'Tire and Auto Repair',
+                'Car Maintenance',
+                'Brake and Oil Service',
+            ];
+        }
+
+        if (str_contains($term, 'plumb') || str_contains($term, 'drain') || str_contains($term, 'pipe')) {
+            return [
+                'Emergency Plumbing',
+                'Drain Cleaning',
+                'Water Heater Repair',
+                'Commercial Plumbing',
+                'Plumber and Gas Fitter',
+                'Leak Detection',
+            ];
+        }
+
+        if (str_contains($term, 'dent') || str_contains($term, 'teeth') || str_contains($term, 'ortho')) {
+            return [
+                'Dental Clinic',
+                'Family Dentist',
+                'Cosmetic Dentistry',
+                'Orthodontics',
+                'Dental Care',
+                'Teeth Whitening',
+            ];
+        }
+
+        if (str_contains($term, 'law') || str_contains($term, 'attorney') || str_contains($term, 'legal')) {
+            return [
+                'Law Firm',
+                'Attorneys at Law',
+                'Legal Services',
+                'Solicitors',
+                'Advocate',
+                'Legal Counsel',
+            ];
+        }
+
+        if (str_contains($term, 'roof')) {
+            return [
+                'Roofing Contractor',
+                'Roof Repair',
+                'Commercial Roofing',
+                'Residential Roofing',
+                'Roof Replacement',
+            ];
+        }
+
+        if (str_contains($term, 'real estate') || str_contains($term, 'realt') || str_contains($term, 'propert')) {
+            return [
+                'Real Estate Agency',
+                'Property Management',
+                'Realtors',
+                'Commercial Real Estate',
+                'Real Estate Brokers',
+            ];
+        }
+
+        if (str_contains($term, 'clean') || str_contains($term, 'maid')) {
+            return [
+                'Commercial Cleaning',
+                'Janitorial Services',
+                'House Cleaning Service',
+                'Deep Cleaning',
+                'Carpet Cleaning',
+            ];
+        }
+
+        if (str_contains($term, 'electric')) {
+            return [
+                'Electrical Contractor',
+                'Licensed Electrician',
+                'Emergency Electrician',
+                'Commercial Electrician',
+            ];
+        }
+
+        return [
+            "{$searchTerm} Services",
+            "{$searchTerm} Specialists",
+            "{$searchTerm} Company",
+            "{$searchTerm} Experts",
+        ];
+    }
+
+    /**
      * @return array{index?: int, row: int, col: int, low: array{latitude: float, longitude: float}, high: array{latitude: float, longitude: float}, center: array{latitude: float, longitude: float}}
      */
     private function cellFromBounds(array $bounds): array
@@ -846,9 +1162,14 @@ class GooglePlacesService
             $south = (float) $bounds['southwest']['lat'];
             $east = (float) $bounds['northeast']['lng'];
             $west = (float) $bounds['southwest']['lng'];
-            $pad = 0.08;
+            $pad = 0.12;
 
-            return ! ($lat < ($south - $pad) || $lat > ($north + $pad) || $lng < ($west - $pad) || $lng > ($east + $pad));
+            $inBounds = ! ($lat < ($south - $pad) || $lat > ($north + $pad) || $lng < ($west - $pad) || $lng > ($east + $pad));
+            if (! $inBounds) {
+                return false;
+            }
+
+            return true;
         }
 
         if (! $location) {
@@ -862,37 +1183,105 @@ class GooglePlacesService
             return false;
         }
 
+        $locLower = strtolower(trim($location));
+
+        // Comprehensive country & region alias directory
+        $countryAliases = [
+            'uae' => ['uae', 'u.a.e', 'u.a.e.', 'united arab emirates', 'emirates', 'dubai', 'abu dhabi', 'sharjah', 'ajman', 'ras al khaimah', 'fujairah', 'umm al quwain', 'al ain', 'دبي', 'أبو ظبي', 'الشارقة', 'عجمان', 'الإمارات'],
+            'united arab emirates' => ['uae', 'u.a.e', 'u.a.e.', 'united arab emirates', 'emirates', 'dubai', 'abu dhabi', 'sharjah', 'ajman', 'ras al khaimah', 'fujairah', 'umm al quwain', 'al ain', 'دبي', 'أبو ظبي', 'الشارقة', 'عجمان', 'الإمارات'],
+            'uk' => ['uk', 'u.k', 'u.k.', 'united kingdom', 'great britain', 'britain', 'england', 'scotland', 'wales', 'northern ireland', 'london', 'manchester', 'birmingham', 'leeds', 'glasgow', 'liverpool'],
+            'united kingdom' => ['uk', 'u.k', 'united kingdom', 'great britain', 'britain', 'england', 'scotland', 'wales', 'london', 'manchester'],
+            'usa' => ['usa', 'u.s.a', 'u.s.', 'us', 'united states', 'america'],
+            'us' => ['usa', 'u.s.a', 'u.s.', 'us', 'united states', 'america'],
+            'united states' => ['usa', 'u.s.a', 'u.s.', 'us', 'united states', 'america'],
+            'ksa' => ['ksa', 'saudi', 'saudi arabia', 'riyadh', 'jeddah', 'dammam', 'khobar', 'mecca', 'medina'],
+            'saudi arabia' => ['ksa', 'saudi', 'saudi arabia', 'riyadh', 'jeddah', 'dammam', 'khobar'],
+            'canada' => ['canada', 'ca', 'ontario', 'quebec', 'toronto', 'vancouver', 'montreal', 'calgary', 'ottawa', 'alberta', 'british columbia'],
+            'australia' => ['australia', 'au', 'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'nsw', 'queensland', 'victoria'],
+            'pakistan' => ['pakistan', 'pk', 'karachi', 'lahore', 'islamabad', 'rawalpindi', 'faisalabad', 'multan', 'peshawar'],
+            'india' => ['india', 'in', 'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'ahmedabad'],
+            'germany' => ['germany', 'deutschland', 'berlin', 'munich', 'münchen', 'frankfurt', 'hamburg', 'cologne', 'köln'],
+            'france' => ['france', 'paris', 'marseille', 'lyon', 'toulouse', 'nice', 'nantes'],
+        ];
+
+        // If entire location is a recognized country
+        if (isset($countryAliases[$locLower])) {
+            foreach ($countryAliases[$locLower] as $alias) {
+                if (mb_stripos($haystack, $alias) !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $parts = array_values(array_filter(array_map('trim', explode(',', $location))));
         if ($parts === []) {
             return true;
         }
 
         $city = strtolower($parts[0]);
-        if ($city !== '' && ! preg_match('/\b'.preg_quote($city, '/').'\b/i', $haystack)) {
+        if (isset($countryAliases[$city])) {
+            foreach ($countryAliases[$city] as $alias) {
+                if (mb_stripos($haystack, $alias) !== false) {
+                    return true;
+                }
+            }
+
             return false;
         }
 
-        if (! isset($parts[1])) {
-            return true;
-        }
-
-        $region = strtolower($parts[1]);
+        // State / Region mapping
         $regionAliases = [
-            'il' => ['il', 'illinois'],
-            'tx' => ['tx', 'texas'],
-            'ca' => ['ca', 'california'],
-            'ny' => ['ny', 'new york'],
-            'fl' => ['fl', 'florida'],
-            'wa' => ['wa', 'washington'],
+            'il' => ['il', 'illinois', 'chicago'],
+            'tx' => ['tx', 'texas', 'dallas', 'houston', 'austin', 'san antonio', 'fort worth'],
+            'ca' => ['ca', 'california', 'los angeles', 'san francisco', 'san diego', 'san jose'],
+            'ny' => ['ny', 'new york', 'nyc', 'brooklyn', 'manhattan', 'queens'],
+            'fl' => ['fl', 'florida', 'miami', 'orlando', 'tampa', 'jacksonville'],
+            'wa' => ['wa', 'washington', 'seattle'],
+            'oh' => ['oh', 'ohio', 'columbus', 'cleveland', 'cincinnati'],
+            'ga' => ['ga', 'georgia', 'atlanta'],
+            'nc' => ['nc', 'north carolina', 'charlotte', 'raleigh'],
+            'pa' => ['pa', 'pennsylvania', 'philadelphia', 'pittsburgh'],
         ];
-        $needles = $regionAliases[$region] ?? [$region];
-        foreach ($needles as $needle) {
-            if (preg_match('/\b'.preg_quote($needle, '/').'\b/i', $haystack)) {
+
+        if ($city !== '') {
+            $cityNeedles = $regionAliases[$city] ?? [$city];
+            $matchedCity = false;
+            foreach ($cityNeedles as $cNeedle) {
+                if (mb_stripos($haystack, $cNeedle) !== false) {
+                    $matchedCity = true;
+                    break;
+                }
+            }
+
+            if ($matchedCity) {
                 return true;
             }
         }
 
-        return (bool) preg_match('/\b(usa|united states)\b/i', $haystack);
+        if (isset($parts[1])) {
+            $region = strtolower($parts[1]);
+            $needles = $regionAliases[$region] ?? [$region];
+            foreach ($needles as $needle) {
+                if (mb_stripos($haystack, $needle) !== false) {
+                    return true;
+                }
+            }
+
+            // Reject if clearly from a different country/region
+            $conflictingCountries = ['pakistan', 'india', 'germany', 'france', 'china', 'russia', 'brazil', 'japan'];
+            foreach ($conflictingCountries as $conflict) {
+                if (mb_stripos($haystack, $conflict) !== false) {
+                    return false;
+                }
+            }
+
+            return (bool) preg_match('/\b(usa|united states|us)\b/i', $haystack);
+        }
+
+        // If user searched for a generic term without strict bounds, keep Google's result unless conflicting
+        return true;
     }
 
     private function isFatalGoogleCloudFailure(?string $message, ?string $status = null): bool
