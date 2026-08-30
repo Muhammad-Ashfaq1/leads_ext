@@ -88,14 +88,14 @@
         <li class="menu-item {{ request()->routeIs('extractor.*') ? 'active' : '' }}">
             <a href="{{ route('extractor.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-map-pin-search"></i>
-                <div data-i18n="Lead Extractor">Lead Extractor</div>
+                <div data-i18n="Lead Finder">Lead Finder</div>
             </a>
         </li>
 
         <li class="menu-item {{ request()->routeIs('leads.*') ? 'active' : '' }}">
             <a href="{{ route('leads.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-users-group"></i>
-                <div data-i18n="All Extracted Leads">All Extracted Leads</div>
+                <div data-i18n="Prospects Directory">Prospects Directory</div>
             </a>
         </li>
 
@@ -109,7 +109,7 @@
         <li class="menu-item {{ request()->routeIs('jobs.*') ? 'active' : '' }}">
             <a href="{{ route('jobs.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-history"></i>
-                <div data-i18n="Extraction History">Extraction History</div>
+                <div data-i18n="Search Campaigns">Search Campaigns</div>
             </a>
         </li>
 
@@ -122,7 +122,7 @@
             <li class="menu-item {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
                 <a href="{{ route('tenants.index') }}" class="menu-link">
                     <i class="menu-icon icon-base ti tabler-building"></i>
-                    <div data-i18n="Tenants / Clients">Tenants / Clients</div>
+                    <div data-i18n="Workspaces & Accounts">Workspaces &amp; Accounts</div>
                 </a>
             </li>
         @endif

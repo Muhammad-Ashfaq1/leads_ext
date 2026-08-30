@@ -1,24 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Extraction History')
+@section('title', 'Search Campaigns & History')
 
 @section('content')
 <div class="pos-glass-card pos-tone-info mb-4">
     <div class="pos-glass-intro border-bottom">
         <div class="pos-glass-intro-copy">
             <h4 class="pos-glass-intro-title">
-                <i class="icon-base ti tabler-history me-1 text-info"></i> Extraction History
+                <i class="icon-base ti tabler-history me-1 text-info"></i> Search Campaigns &amp; History
             </h4>
             <p class="pos-glass-intro-subtitle">
-                Audit log of all extraction tasks, real-time status, and instant Excel re-exports.
+                Audit log of all discovery campaigns, real-time status, and instant lead exports.
             </p>
         </div>
         <div class="pos-glass-intro-actions d-flex align-items-center gap-2">
             <span class="pos-glass-pill pos-tone-info">
-                <i class="icon-base ti tabler-list-check me-1"></i> {{ $jobs->total() }} tasks
+                <i class="icon-base ti tabler-list-check me-1"></i> {{ $jobs->total() }} campaigns
             </span>
             <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                <i class="icon-base ti tabler-plus me-1"></i> New Extraction
+                <i class="icon-base ti tabler-plus me-1"></i> New Lead Search
             </a>
         </div>
     </div>
@@ -27,9 +27,9 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-3"><i class="icon-base ti tabler-search me-1 text-primary"></i> Search Prompt &amp; Task ID</th>
+                    <th class="ps-3"><i class="icon-base ti tabler-search me-1 text-primary"></i> Search Query &amp; Reference</th>
                     <th><i class="icon-base ti tabler-cpu me-1 text-info"></i> Engine</th>
-                    <th><i class="icon-base ti tabler-users me-1 text-primary"></i> Leads Extracted</th>
+                    <th><i class="icon-base ti tabler-users me-1 text-primary"></i> Leads Discovered</th>
                     <th><i class="icon-base ti tabler-mail-opened me-1 text-success"></i> Emails &amp; Websites</th>
                     <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
                     <th><i class="icon-base ti tabler-calendar me-1 text-secondary"></i> Date</th>

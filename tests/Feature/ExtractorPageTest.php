@@ -36,10 +36,10 @@ class ExtractorPageTest extends TestCase
             ->get('/extractor')
             ->assertOk()
             ->assertSee('VektorLeads')
-            ->assertSee('Lead Extractor')
+            ->assertSee('Lead Finder')
             ->assertSee('Industry / Business Category')
-            ->assertSee('Start Extraction')
-            ->assertSee('Extraction Status')
+            ->assertSee('Start Search')
+            ->assertSee('Search Status')
             ->assertDontSee('AWT Phone');
 
         $html = $response->getContent();

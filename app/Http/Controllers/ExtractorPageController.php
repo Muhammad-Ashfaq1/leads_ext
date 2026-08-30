@@ -22,7 +22,7 @@ class ExtractorPageController extends Controller
 
         return view('extractor.index', [
             'allowMock' => (bool) config('extractor.allow_mock'),
-            'defaultLimit' => (int) config('extractor.default_limit'),
+            'defaultLimit' => (int) ($tenant?->settings['default_limit'] ?? config('extractor.default_limit', 50)),
             'allowedLimits' => $allowedLimits,
             'hasGoogleApiKey' => $hasKey,
             'tenant' => $tenant,

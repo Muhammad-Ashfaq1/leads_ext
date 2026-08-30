@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Lead Extractor')
+@section('title', 'Lead Finder & Prospect Discovery')
 
 @section('content')
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="mb-1 fw-bold text-heading">
-            <i class="icon-base ti tabler-map-pin-search me-1 text-primary"></i> Lead Extractor
+            <i class="icon-base ti tabler-map-pin-search me-1 text-primary"></i> Lead Finder &amp; Prospect Discovery
         </h4>
-        <p class="text-muted mb-0">Search businesses by category, city, area, or zip code and stream verified leads in real-time.</p>
+        <p class="text-muted mb-0">Search businesses by category, city, area, or zip code and discover verified prospects in real-time.</p>
     </div>
     @if ($tenant && $tenant->lead_quota > 0)
         <div class="text-end">
             <span class="badge bg-label-primary px-3 py-2">
-                <i class="icon-base ti tabler-chart-pie me-1"></i> Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}
+                <i class="icon-base ti tabler-chart-pie me-1"></i> Allowance: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}
             </span>
         </div>
     @endif
@@ -29,7 +29,7 @@
                         <input name="engineMode" class="form-check-input" type="radio" value="google_api" id="engineGoogleApi" checked />
                         <span class="custom-option-header">
                             <span class="h6 mb-0 d-flex align-items-center">
-                                <i class="icon-base ti tabler-cpu me-2 text-primary fs-4"></i>AI Discovery Engine (Cloud Matrix)
+                                <i class="icon-base ti tabler-sparkles me-2 text-primary fs-4"></i>Cloud Lead Finder (Instant)
                             </span>
                             <span class="badge bg-label-success">Recommended</span>
                         </span>
@@ -56,12 +56,12 @@
                         <input name="engineMode" class="form-check-input" type="radio" value="live" id="engineBrowser" />
                         <span class="custom-option-header">
                             <span class="h6 mb-0 d-flex align-items-center">
-                                <i class="icon-base ti tabler-world me-2 text-info fs-4"></i>Autonomous Deep Crawler
+                                <i class="icon-base ti tabler-world me-2 text-info fs-4"></i>Web Business Directory Search
                             </span>
-                            <span class="badge bg-label-info">Local / Free</span>
+                            <span class="badge bg-label-info">Standard Search</span>
                         </span>
                         <span class="custom-option-body">
-                            <small class="text-muted d-block">Autonomous deep web crawler scanning business directories and public records with anti-bot intelligence.</small>
+                            <small class="text-muted d-block">Autonomous public web directory search scanning online business listings with verified contact extraction.</small>
                         </span>
                     </label>
                 </div>
@@ -109,7 +109,7 @@
         <div class="mt-3 p-3 rounded-2 bg-light-subtle border" id="preFiltersContainer">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="fw-semibold small text-uppercase text-muted d-flex align-items-center">
-                    <i class="icon-base ti tabler-adjustments-horizontal me-1 text-primary"></i> Pre-Extraction Criteria (Filter Before Query)
+                    <i class="icon-base ti tabler-adjustments-horizontal me-1 text-primary"></i> Pre-Search Criteria (Filter Before Query)
                 </span>
                 <span class="badge bg-label-info small" style="font-size: 0.72rem;">Filters before saving</span>
             </div>
@@ -179,11 +179,11 @@
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <button type="button" class="btn btn-primary" id="startBtn">
                     <i class="icon-base ti tabler-player-play me-1"></i>
-                    Start Extraction
+                    Start Search
                 </button>
                 <button type="button" class="btn btn-danger d-none" id="inlineStopBtn">
                     <i class="icon-base ti tabler-player-stop me-1"></i>
-                    Stop Extraction
+                    Stop Search
                 </button>
             </div>
         </div>
@@ -204,7 +204,7 @@
                         <i class="icon-base ti tabler-external-link me-1"></i>
                         Open Verification
                     </button>
-                    <button type="button" class="btn btn-outline-danger" id="stopFromVerifyBtn">Stop Extraction</button>
+                    <button type="button" class="btn btn-outline-danger" id="stopFromVerifyBtn">Stop Search</button>
                 </div>
                 <p class="small text-muted mt-3 mb-0" id="verificationHint">Waiting for verification...</p>
             </div>
@@ -216,7 +216,7 @@
     <div class="card-body p-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
-                <h5 class="mb-1">Extraction Status</h5>
+                <h5 class="mb-1">Search Status</h5>
                 <div class="extractor-status-line">
                     <span class="extractor-status-dot" data-status="ready" id="statusDot"></span>
                     <span class="fw-semibold" id="statusLabel">Ready</span>
@@ -229,25 +229,25 @@
         <div class="row g-3 extractor-kpis">
             <div class="col-6 col-lg-3">
                 <div class="card border bg-light-subtle py-2 px-3">
-                    <div class="text-muted small">Leads Found</div>
+                    <div class="text-muted small">Prospects Found</div>
                     <div class="fw-bold fs-4 text-primary" id="kpiLeads">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="card border bg-light-subtle py-2 px-3">
-                    <div class="text-muted small">Businesses Processed</div>
+                    <div class="text-muted small">Businesses Scanned</div>
                     <div class="fw-bold fs-4 text-info" id="kpiSeen">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="card border bg-light-subtle py-2 px-3">
-                    <div class="text-muted small">Emails Found</div>
+                    <div class="text-muted small">Direct Emails</div>
                     <div class="fw-bold fs-4 text-success" id="kpiEmails">0</div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="card border bg-light-subtle py-2 px-3">
-                    <div class="text-muted small">Websites Found</div>
+                    <div class="text-muted small">Websites Discovered</div>
                     <div class="fw-bold fs-4 text-warning" id="kpiWebsites">0</div>
                 </div>
             </div>
@@ -259,7 +259,7 @@
     <div class="card-header border-bottom py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <h5 class="mb-0">Discovered Leads</h5>
+                <h5 class="mb-0">Discovered Prospects</h5>
                 <span class="badge bg-label-primary" id="leadCountBadge" title="Total leads extracted">0 total</span>
                 <span class="badge bg-label-info d-none" id="leadFilterBadge" title="Currently visible filtered leads">0 shown</span>
                 <span class="badge bg-label-success d-none" id="leadSelectedBadge" title="Currently selected leads">

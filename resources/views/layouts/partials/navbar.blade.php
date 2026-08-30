@@ -24,7 +24,7 @@
             @unless (request()->routeIs('extractor.index'))
                 <li class="nav-item d-none d-md-block">
                     <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                        <i class="icon-base ti tabler-plus me-1"></i> New Extraction
+                        <i class="icon-base ti tabler-plus me-1"></i> New Lead Search
                     </a>
                 </li>
             @endunless

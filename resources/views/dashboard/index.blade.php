@@ -14,25 +14,25 @@
                     </h4>
                     <p class="pos-glass-intro-subtitle">
                         @if ($isSuperAdmin)
-                            Platform Administrator Workspace · Full visibility across {{ $platformStats['total_tenants'] ?? 0 }} organizations · {{ number_format($platformStats['global_leads'] ?? 0) }} total leads managed
+                            Platform Administrator Workspace · Full visibility across {{ $platformStats['total_tenants'] ?? 0 }} organizations · {{ number_format($platformStats['global_leads'] ?? 0) }} total prospects managed
                         @elseif ($tenant)
                             {{ $tenant->name }} ({{ ucfirst($tenant->plan) }} Plan) ·
-                            {{ number_format($totalLeads) }} leads extracted across {{ number_format($totalJobs) }} extraction runs ·
+                            {{ number_format($totalLeads) }} leads discovered across {{ number_format($totalJobs) }} search campaigns ·
                             {{ number_format($totalEmails) }} verified contacts discovered
                         @endif
                     </p>
                 </div>
                 <div class="pos-glass-intro-actions d-flex flex-wrap gap-2 align-items-center">
                     <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                        <i class="icon-base ti tabler-map-pin-search me-1" aria-hidden="true"></i> Start Extraction
+                        <i class="icon-base ti tabler-map-pin-search me-1" aria-hidden="true"></i> Find Prospects
                     </a>
                     <a href="{{ route('leads.index') }}" class="btn btn-sm btn-label-secondary">
-                        <i class="icon-base ti tabler-users-group me-1" aria-hidden="true"></i> View All Leads
+                        <i class="icon-base ti tabler-users-group me-1" aria-hidden="true"></i> Prospects Directory
                     </a>
                     @if ($tenant && $tenant->lead_quota > 0)
                         <span class="pos-glass-pill pos-tone-info">
                             <i class="icon-base ti tabler-chart-pie" aria-hidden="true"></i>
-                            Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }} ({{ round(($tenant->leads_extracted_count / $tenant->lead_quota) * 100) }}%)
+                            Allowance: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }} ({{ round(($tenant->leads_extracted_count / $tenant->lead_quota) * 100) }}%)
                         </span>
                     @endif
                 </div>
@@ -47,15 +47,15 @@
                 <div class="pos-glass-intro">
                     <div class="pos-glass-intro-copy">
                         <h5 class="pos-glass-intro-title text-danger mb-1">
-                            <i class="icon-base ti tabler-shield-check me-1"></i> Super Admin Global Overview
+                            <i class="icon-base ti tabler-shield-check me-1"></i> Global Administration
                         </h5>
                         <p class="pos-glass-intro-subtitle mb-0">
-                            {{ $platformStats['active_tenants'] }} active organizations · {{ $platformStats['total_users'] }} platform users · {{ number_format($platformStats['global_leads']) }} total leads database
+                            {{ $platformStats['active_tenants'] }} active organizations · {{ $platformStats['total_users'] }} platform users · {{ number_format($platformStats['global_leads']) }} total prospects managed
                         </p>
                     </div>
                     <div class="pos-glass-intro-actions d-flex align-items-center gap-2">
                         <a href="{{ route('tenants.index') }}" class="btn btn-sm btn-danger">
-                            <i class="icon-base ti tabler-building me-1"></i> Manage SaaS Tenants
+                            <i class="icon-base ti tabler-building me-1"></i> Manage Organizations
                         </a>
                     </div>
                 </div>

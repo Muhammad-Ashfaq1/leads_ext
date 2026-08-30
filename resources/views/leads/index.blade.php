@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'All Extracted Leads')
+@section('title', 'Prospects Directory')
 
 @section('content')
 <div id="leadsMainContainer">
@@ -8,15 +8,15 @@
     <div class="pos-glass-intro border-bottom">
         <div class="pos-glass-intro-copy">
             <h4 class="pos-glass-intro-title">
-                <i class="icon-base ti tabler-users-group me-1 text-primary"></i> Extracted Leads Database
+                <i class="icon-base ti tabler-users-group me-1 text-primary"></i> Prospects Directory
             </h4>
             <p class="pos-glass-intro-subtitle">
-                Comprehensive directory of all verified business leads discovered across your extraction runs.
+                Comprehensive directory of all verified business prospects and leads discovered across your outreach campaigns.
             </p>
         </div>
         <div class="pos-glass-intro-actions d-flex flex-wrap align-items-center gap-2">
             <span class="pos-glass-pill pos-tone-primary">
-                <i class="icon-base ti tabler-database me-1"></i> {{ number_format($leads->total()) }} leads
+                <i class="icon-base ti tabler-address-book me-1"></i> {{ number_format($leads->total()) }} prospects
             </span>
             <a href="{{ route('leads.export.excel') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}" class="btn btn-sm btn-success text-white">
                 <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Export

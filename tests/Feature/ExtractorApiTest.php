@@ -786,4 +786,51 @@ class ExtractorApiTest extends TestCase
             'business_name' => 'Nearby Me Plumbing',
         ]);
     }
+
+    public function test_google_places_expands_sub_localities_for_high_limit(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        $placesCallCount = 0;
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response(['status' => 'ZERO_RESULTS'], 200),
+            'https://places.googleapis.com/v1/places:searchText' => function ($request) use (&$placesCallCount) {
+                $placesCallCount++;
+                $query = $request->data()['textQuery'] ?? '';
+
+                return Http::response([
+                    'places' => [
+                        [
+                            'id' => "place_lead_{$placesCallCount}",
+                            'displayName' => ['text' => "Auto Workshop {$placesCallCount}"],
+                            'formattedAddress' => "Industrial Area, {$query}",
+                            'nationalPhoneNumber' => "+971 4 5550{$placesCallCount}",
+                            'rating' => 4.8,
+                            'userRatingCount' => 50,
+                            'location' => ['latitude' => 25.2, 'longitude' => 55.3],
+                        ],
+                    ],
+                ], 200);
+            },
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+            'prompt' => 'Oil Change (UAE)',
+            'query' => 'Oil Change in UAE',
+            'status' => 'starting',
+            'limit' => 100,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertGreaterThanOrEqual(3, $placesCallCount);
+        $this->assertStringContainsString('Auto Workshop 1', $streamContent);
+        $this->assertStringContainsString('Auto Workshop 2', $streamContent);
+        $this->assertStringContainsString('Auto Workshop 3', $streamContent);
+    }
 }
+

@@ -55,10 +55,10 @@
     <div class="pos-glass-intro border-bottom">
         <div class="pos-glass-intro-copy">
             <h4 class="pos-glass-intro-title">
-                <i class="icon-base ti tabler-template me-1 text-primary"></i> Email Templates & Outreach
+                <i class="icon-base ti tabler-template me-1 text-primary"></i> Email Templates &amp; Outreach
             </h4>
             <p class="pos-glass-intro-subtitle">
-                Create rich-text outreach templates with dynamic placeholders to contact extracted leads individually or in bulk.
+                Create rich-text outreach templates with dynamic placeholders to contact prospects and businesses individually or in bulk.
             </p>
         </div>
         <div class="pos-glass-intro-actions d-flex flex-wrap align-items-center gap-2">
@@ -66,7 +66,7 @@
                 <i class="icon-base ti tabler-plus me-1"></i> New Template
             </button>
             <a href="{{ route('leads.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="icon-base ti tabler-users me-1"></i> Go to Leads
+                <i class="icon-base ti tabler-users me-1"></i> Prospects Directory
             </a>
         </div>
     </div>

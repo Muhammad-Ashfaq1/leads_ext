@@ -90,7 +90,7 @@ class AuthTest extends TestCase
         $this->actingAs($user)
             ->get('/tenants')
             ->assertOk()
-            ->assertSee('SaaS Tenants & Organizations');
+            ->assertSee('Workspaces & Client Accounts');
     }
 
     public function test_user_can_view_and_update_profile(): void
@@ -147,8 +147,8 @@ class AuthTest extends TestCase
         $this->actingAs($user)
             ->get('/settings')
             ->assertOk()
-            ->assertSee('Extraction Limits')
-            ->assertSee('Discovery Engine Platform Key');
+            ->assertSee('Discovery Limits')
+            ->assertSee('Discovery Engine API');
 
         $this->actingAs($user)
             ->put('/settings', [

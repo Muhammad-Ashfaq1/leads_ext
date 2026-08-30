@@ -15,7 +15,7 @@
     <a href="{{ route('settings.index') }}"
        class="dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
         <i class="{{ $iconClass }} tabler-settings-cog me-2"></i>
-        Extractor Settings
+        Workspace Settings
     </a>
 </li>
 @if ($isSuperAdmin)
@@ -23,7 +23,7 @@
         <a href="{{ route('tenants.index') }}"
            class="dropdown-item {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
             <i class="{{ $iconClass }} tabler-building me-2"></i>
-            Manage Tenants
+            Manage Organizations
         </a>
     </li>
 @endif

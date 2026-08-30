@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'SaaS Tenants & Clients')
+@section('title', 'Organizations & Workspaces')
 
 @section('content')
 <div class="pos-glass-card pos-tone-danger mb-4">
     <div class="pos-glass-intro border-bottom">
         <div class="pos-glass-intro-copy">
             <h4 class="pos-glass-intro-title">
-                <i class="icon-base ti tabler-building me-1 text-danger"></i> SaaS Tenants &amp; Organizations
+                <i class="icon-base ti tabler-building me-1 text-danger"></i> Workspaces &amp; Client Accounts
             </h4>
             <p class="pos-glass-intro-subtitle">
-                Manage multi-tenant client accounts, plan tiers, and lead extraction quotas.
+                Manage client workspaces, subscription tiers, and monthly lead discovery quotas.
             </p>
         </div>
         <div class="pos-glass-intro-actions">
             <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#createTenantModal">
-                <i class="icon-base ti tabler-plus me-1"></i> Add Tenant
+                <i class="icon-base ti tabler-plus me-1"></i> Add Workspace
             </button>
         </div>
     </div>
@@ -28,7 +28,7 @@
                     <th><i class="icon-base ti tabler-crown me-1 text-warning"></i> Plan</th>
                     <th><i class="icon-base ti tabler-chart-bar me-1 text-info"></i> Lead Quota Usage</th>
                     <th><i class="icon-base ti tabler-users me-1 text-secondary"></i> Team</th>
-                    <th><i class="icon-base ti tabler-database me-1 text-success"></i> Leads Extracted</th>
+                    <th><i class="icon-base ti tabler-users-group me-1 text-success"></i> Total Discovered</th>
                     <th><i class="icon-base ti tabler-activity me-1 text-warning"></i> Status</th>
                     <th class="pe-3 text-end"><i class="icon-base ti tabler-settings me-1 text-muted"></i> Action</th>
                 </tr>
@@ -96,16 +96,16 @@
                                                     </select>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label class="form-label">Lead Quota</label>
+                                                    <label class="form-label">Monthly Lead Discovery Allowance</label>
                                                     <input type="number" name="lead_quota" class="form-control" value="{{ $t->lead_quota }}" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label class="form-label">Tenant Dedicated Discovery Engine API Key</label>
+                                                    <label class="form-label">Workspace Discovery Engine API Key</label>
                                                     <input type="text" name="google_maps_api_key" class="form-control" value="{{ $t->google_maps_api_key }}" placeholder="Leave blank to use platform default">
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="is_active" id="isActive{{ $t->id }}" value="1" @checked($t->is_active)>
-                                                    <label class="form-check-label" for="isActive{{ $t->id }}">Active Subscription</label>
+                                                    <label class="form-check-label" for="isActive{{ $t->id }}">Active Account</label>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -120,7 +120,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No tenants registered yet.</td>
+                        <td colspan="7" class="text-center py-4 text-muted">No organizations registered yet.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -132,7 +132,7 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-2">
                     <small class="text-muted">
-                        Showing <span class="fw-semibold text-heading">{{ $tenants->firstItem() }}</span> to <span class="fw-semibold text-heading">{{ $tenants->lastItem() }}</span> of <span class="fw-semibold text-heading">{{ number_format($tenants->total()) }}</span> tenants
+                        Showing <span class="fw-semibold text-heading">{{ $tenants->firstItem() }}</span> to <span class="fw-semibold text-heading">{{ $tenants->lastItem() }}</span> of <span class="fw-semibold text-heading">{{ number_format($tenants->total()) }}</span> organizations
                     </small>
                     <div class="d-inline-flex align-items-center ms-3">
                         <label for="perPageTenants" class="small text-muted me-1 text-nowrap d-none d-sm-inline">Show:</label>
@@ -158,14 +158,14 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title">Create New Tenant Organization</h5>
+                <h5 class="modal-title">Create New Organization Workspace</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ route('tenants.store') }}">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Company / Tenant Name</label>
+                        <label class="form-label">Company / Organization Name</label>
                         <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required>
                     </div>
                     <div class="mb-3">
@@ -181,17 +181,17 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Lead Quota</label>
+                        <label class="form-label">Monthly Lead Allowance</label>
                         <input type="number" name="lead_quota" class="form-control" value="25000" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Tenant Platform Engine API Key (Optional)</label>
+                        <label class="form-label">Dedicated Engine API Key (Optional)</label>
                         <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy...">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Tenant</button>
+                    <button type="submit" class="btn btn-primary">Create Workspace</button>
                 </div>
             </form>
         </div>

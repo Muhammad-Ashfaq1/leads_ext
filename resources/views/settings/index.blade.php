@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Extractor Settings')
+@section('title', 'Workspace Settings')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/settings.css') }}" />
@@ -11,7 +11,7 @@
     <!-- Left: Settings Tab Sidebar (Matching POS) -->
     <div class="col-12 col-md-4 col-xl-3 settings-tab-sidebar">
         <div class="settings-sidebar pos-glass-card pos-tone-primary">
-            <div class="settings-sidebar-label">Extraction Preferences</div>
+            <div class="settings-sidebar-label">Search &amp; Outreach Preferences</div>
             <div class="nav flex-column settings-sidebar-nav" id="settings-tab-list" role="tablist">
                 <button
                     type="button"
@@ -47,7 +47,7 @@
                 <div class="settings-sidebar-label mt-4">Subscription Plan</div>
                 <div class="p-2 text-center rounded bg-label-primary">
                     <span class="fw-bold d-block text-primary">{{ ucfirst($tenant->plan) }} Plan</span>
-                    <small class="text-muted d-block mt-1">Quota: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}</small>
+                    <small class="text-muted d-block mt-1">Allowance: {{ number_format($tenant->leads_extracted_count) }} / {{ number_format($tenant->lead_quota) }}</small>
                 </div>
             @endif
         </div>
@@ -66,8 +66,8 @@
                         <div class="tab-pane fade show active" id="general-tab" role="tabpanel" aria-labelledby="general-settings-tab">
                             <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
                                 <div>
-                                    <h5 class="mb-1 fw-bold text-heading">General &amp; Extraction Limits</h5>
-                                    <p class="text-muted small mb-0">Configure your company identity and default extraction parameters.</p>
+                                    <h5 class="mb-1 fw-bold text-heading">General &amp; Discovery Limits</h5>
+                                    <p class="text-muted small mb-0">Configure your company identity and default search parameters.</p>
                                 </div>
                             </div>
 
@@ -78,21 +78,21 @@
                                 </div>
 
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold" for="default_engine">Default Extraction Engine</label>
+                                    <label class="form-label fw-semibold" for="default_engine">Default Discovery Engine</label>
                                     <select id="default_engine" name="default_engine" class="form-select">
-                                        <option value="google_api" @selected(($settings['default_engine'] ?? 'google_api') === 'google_api')>Cloud Discovery Engine (Instant, recommended)</option>
-                                        <option value="browser" @selected(($settings['default_engine'] ?? '') === 'browser')>Autonomous Deep Crawler</option>
+                                        <option value="google_api" @selected(($settings['default_engine'] ?? 'google_api') === 'google_api')>Cloud Lead Finder (Instant, recommended)</option>
+                                        <option value="browser" @selected(($settings['default_engine'] ?? '') === 'browser')>Web Business Directory Search</option>
                                     </select>
                                 </div>
 
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold" for="default_limit">Default Lead Limit per Extraction</label>
+                                    <label class="form-label fw-semibold" for="default_limit">Default Lead Target per Search</label>
                                     <select id="default_limit" name="default_limit" class="form-select">
-                                        <option value="10" @selected(($settings['default_limit'] ?? 100) == 10)>10 Leads</option>
-                                        <option value="25" @selected(($settings['default_limit'] ?? 100) == 25)>25 Leads</option>
-                                        <option value="50" @selected(($settings['default_limit'] ?? 100) == 50)>50 Leads</option>
-                                        <option value="100" @selected(($settings['default_limit'] ?? 100) == 100)>100 Leads</option>
-                                        <option value="200" @selected(($settings['default_limit'] ?? 100) == 200)>200 Leads</option>
+                                        <option value="10" @selected(($settings['default_limit'] ?? 50) == 10)>10 Leads</option>
+                                        <option value="25" @selected(($settings['default_limit'] ?? 50) == 25)>25 Leads</option>
+                                        <option value="50" @selected(($settings['default_limit'] ?? 50) == 50)>50 Leads</option>
+                                        <option value="100" @selected(($settings['default_limit'] ?? 50) == 100)>100 Leads</option>
+                                        <option value="200" @selected(($settings['default_limit'] ?? 50) == 200)>200 Leads</option>
                                     </select>
                                 </div>
 
