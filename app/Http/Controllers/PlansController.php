@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,6 +27,22 @@ class PlansController extends Controller
         return view('plans.index', [
             'plans' => $plans,
             'stats' => $stats,
+        ]);
+    }
+
+    public function show(Plan $plan): JsonResponse
+    {
+        return response()->json([
+            'id' => $plan->id,
+            'name' => $plan->name,
+            'price' => number_format((float) $plan->price, 2, '.', ''),
+            'billing_interval' => $plan->billing_interval,
+            'lead_quota' => $plan->lead_quota,
+            'max_staff_members' => $plan->max_staff_members,
+            'description' => $plan->description,
+            'features' => is_array($plan->features) ? implode("\n", $plan->features) : (string) ($plan->features ?? ''),
+            'is_active' => (bool) $plan->is_active,
+            'is_default' => (bool) $plan->is_default,
         ]);
     }
 

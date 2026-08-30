@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,22 @@ class TenantsController extends Controller
         return view('tenants.index', [
             'tenants' => $tenants,
             'plans' => $plans,
+        ]);
+    }
+
+    public function show(Tenant $tenant): JsonResponse
+    {
+        $tenant->loadMissing('subscriptionPlan');
+
+        return response()->json([
+            'id' => $tenant->id,
+            'name' => $tenant->name,
+            'domain' => $tenant->domain,
+            'plan_id' => $tenant->plan_id,
+            'plan_name' => $tenant->subscriptionPlan?->name,
+            'lead_quota' => $tenant->lead_quota,
+            'google_maps_api_key' => $tenant->google_maps_api_key,
+            'is_active' => (bool) $tenant->is_active,
         ]);
     }
 
@@ -95,9 +112,13 @@ class TenantsController extends Controller
 
     public function update(Request $request, Tenant $tenant): RedirectResponse
     {
+        if ($request->input('plan_id') === '') {
+            $request->merge(['plan_id' => null]);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'plan_id' => ['nullable', 'exists:plans,id'],
+            'plan_id' => ['nullable', 'integer', 'exists:plans,id'],
             'plan' => ['nullable', 'string', 'max:100'],
             'lead_quota' => ['required', 'integer', 'min:100'],
             'domain' => ['nullable', 'string', 'max:255'],

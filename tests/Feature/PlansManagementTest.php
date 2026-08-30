@@ -108,6 +108,230 @@ class PlansManagementTest extends TestCase
         ]);
     }
 
+    public function test_updating_a_plan_does_not_change_workspace_records(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::create([
+            'name' => 'Pro',
+            'slug' => 'pro',
+            'price' => 79.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 25000,
+            'max_staff_members' => 5,
+            'is_active' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'plan' => 'pro',
+            'plan_id' => $plan->id,
+            'lead_quota' => 10000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($superAdmin)->put("/plans/{$plan->id}", [
+            'name' => 'Pro Plus',
+            'price' => 89.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 30000,
+            'max_staff_members' => 6,
+            'is_active' => '1',
+        ])->assertRedirect('/plans');
+
+        $this->assertDatabaseHas('tenants', [
+            'id' => $tenant->id,
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'plan_id' => $plan->id,
+            'lead_quota' => 10000,
+        ]);
+    }
+
+    public function test_workspaces_and_plans_pages_use_a_single_shared_form_modal(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 29.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 5000,
+            'max_staff_members' => 5,
+            'is_active' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'plan' => 'starter',
+            'plan_id' => $plan->id,
+            'lead_quota' => 10000,
+            'is_active' => true,
+        ]);
+
+        $plansHtml = $this->actingAs($superAdmin)->get('/plans')->assertOk()->getContent();
+        $this->assertSame(1, substr_count($plansHtml, 'id="planFormModal"'));
+        $this->assertStringNotContainsString('id="editPlanModal'.$plan->id.'"', $plansHtml);
+        $this->assertStringNotContainsString('id="createPlanModal"', $plansHtml);
+        $this->assertTrue(strpos($plansHtml, 'id="planFormModal"') > strpos($plansHtml, '</table>'));
+        $this->assertStringContainsString('data-id="'.$plan->id.'"', $plansHtml);
+
+        $tenantsHtml = $this->actingAs($superAdmin)->get('/tenants')->assertOk()->getContent();
+        $this->assertSame(1, substr_count($tenantsHtml, 'id="tenantFormModal"'));
+        $this->assertStringNotContainsString('id="editTenantModal'.$tenant->id.'"', $tenantsHtml);
+        $this->assertStringNotContainsString('id="createTenantModal"', $tenantsHtml);
+        $this->assertTrue(strpos($tenantsHtml, 'id="tenantFormModal"') > strpos($tenantsHtml, '</table>'));
+        $this->assertStringContainsString('data-id="'.$tenant->id.'"', $tenantsHtml);
+    }
+
+    public function test_super_admin_can_fetch_plan_json_for_the_edit_modal(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 29.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 5000,
+            'max_staff_members' => 5,
+            'description' => 'Entry tier',
+            'features' => ['Cloud Lead Finder', 'CSV Export'],
+            'is_active' => true,
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->getJson("/plans/{$plan->id}")
+            ->assertOk()
+            ->assertJson([
+                'id' => $plan->id,
+                'name' => 'Starter',
+                'price' => '29.00',
+                'billing_interval' => 'monthly',
+                'lead_quota' => 5000,
+                'max_staff_members' => 5,
+                'description' => 'Entry tier',
+                'features' => "Cloud Lead Finder\nCSV Export",
+                'is_active' => true,
+                'is_default' => true,
+            ]);
+    }
+
+    public function test_super_admin_can_fetch_workspace_json_for_the_edit_modal(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 29.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 5000,
+            'max_staff_members' => 5,
+            'is_active' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'domain' => 'general.test',
+            'plan' => 'starter',
+            'plan_id' => $plan->id,
+            'lead_quota' => 10000,
+            'google_maps_api_key' => 'AIza-test-key',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->getJson("/tenants/{$tenant->id}")
+            ->assertOk()
+            ->assertJson([
+                'id' => $tenant->id,
+                'name' => 'General Workspace',
+                'domain' => 'general.test',
+                'plan_id' => $plan->id,
+                'plan_name' => 'Starter',
+                'lead_quota' => 10000,
+                'google_maps_api_key' => 'AIza-test-key',
+                'is_active' => true,
+            ]);
+    }
+
+    public function test_super_admin_can_update_workspace_plan_without_breaking_other_fields(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $starter = Plan::create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 29.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 5000,
+            'max_staff_members' => 5,
+            'is_active' => true,
+        ]);
+
+        $pro = Plan::create([
+            'name' => 'Pro',
+            'slug' => 'pro',
+            'price' => 79.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 25000,
+            'max_staff_members' => 5,
+            'is_active' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'plan' => 'starter',
+            'plan_id' => $starter->id,
+            'lead_quota' => 10000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($superAdmin)->put("/tenants/{$tenant->id}", [
+            'name' => 'General Workspace',
+            'plan_id' => $pro->id,
+            'lead_quota' => 10000,
+            'is_active' => '1',
+        ])->assertRedirect('/tenants');
+
+        $this->assertDatabaseHas('tenants', [
+            'id' => $tenant->id,
+            'name' => 'General Workspace',
+            'slug' => 'general',
+            'plan' => 'pro',
+            'plan_id' => $pro->id,
+            'lead_quota' => 10000,
+            'is_active' => true,
+        ]);
+    }
+
     public function test_super_admin_can_delete_unused_plan(): void
     {
         $superAdmin = User::factory()->create([
@@ -179,5 +403,18 @@ class PlansManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/plans');
         $response->assertForbidden();
+
+        $plan = Plan::create([
+            'name' => 'Hidden Plan',
+            'slug' => 'hidden-plan',
+            'price' => 10.00,
+            'billing_interval' => 'monthly',
+            'lead_quota' => 1000,
+            'max_staff_members' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->getJson("/plans/{$plan->id}")->assertForbidden();
+        $this->actingAs($admin)->getJson('/tenants/'.$tenant->id)->assertForbidden();
     }
 }

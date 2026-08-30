@@ -69,10 +69,12 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::middleware(RoleMiddleware::class.':super_admin')->group(function (): void {
         Route::get('/tenants', [TenantsController::class, 'index'])->name('tenants.index');
         Route::post('/tenants', [TenantsController::class, 'store'])->name('tenants.store');
+        Route::get('/tenants/{tenant}', [TenantsController::class, 'show'])->name('tenants.show');
         Route::put('/tenants/{tenant}', [TenantsController::class, 'update'])->name('tenants.update');
 
         Route::get('/plans', [\App\Http\Controllers\PlansController::class, 'index'])->name('plans.index');
         Route::post('/plans', [\App\Http\Controllers\PlansController::class, 'store'])->name('plans.store');
+        Route::get('/plans/{plan}', [\App\Http\Controllers\PlansController::class, 'show'])->name('plans.show');
         Route::put('/plans/{plan}', [\App\Http\Controllers\PlansController::class, 'update'])->name('plans.update');
         Route::delete('/plans/{plan}', [\App\Http\Controllers\PlansController::class, 'destroy'])->name('plans.destroy');
     });
