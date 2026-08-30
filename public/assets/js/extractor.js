@@ -1,6 +1,6 @@
 (() => {
     const cfg = window.ExtractorConfig || {};
-    const STORAGE_KEY = 'leads_extractor_live_session';
+    const STORAGE_KEY = 'leads_extractor_live_session_' + String(cfg.userId || 'guest');
     const state = {
         jobId: null,
         source: null,
@@ -1857,6 +1857,7 @@
             }
 
             const data = {
+                userId: cfg.userId || null,
                 jobId: state.jobId,
                 prompt: els.prompt ? els.prompt.value : '',
                 location: els.locationInput ? els.locationInput.value : '',
@@ -1887,12 +1888,20 @@
 
     async function restoreStateFromStorage() {
         try {
+            try {
+                localStorage.removeItem('leads_extractor_live_session');
+            } catch (_) {}
+
             const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return;
 
             const session = JSON.parse(raw);
             if (!session || !Array.isArray(session.leads) || session.leads.length === 0) {
                 localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            if (session.userId && cfg.userId && Number(session.userId) !== Number(cfg.userId)) {
                 return;
             }
 

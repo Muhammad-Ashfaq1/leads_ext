@@ -121,11 +121,7 @@ class EmailOutreachService
         bool $isSuperAdmin = false,
     ): array {
         $leads = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)->orWhereNull('tenant_id');
-                });
-            })
+            ->visibleTo($sender)
             ->whereIn('id', $leadIds)
             ->get();
 

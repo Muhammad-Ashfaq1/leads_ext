@@ -409,8 +409,8 @@ class GooglePlacesService
                                 'extracted_at' => now(),
                                 'tenant_id' => $job->tenant_id ?? \App\Models\Tenant::first()?->id,
                                 'user_id' => $job->user_id ?? \App\Models\User::where('email', 'admin@obtainsolutions.com')->value('id'),
-                                'status' => 'saved',
-                                'is_saved' => true,
+                                'status' => 'new',
+                                'is_saved' => false,
                             ];
 
                             // Database deduplication check for current job

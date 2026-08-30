@@ -400,6 +400,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Verified Law Chambers',
             'emails' => ['contact@verifiedlaw.com'],
@@ -413,6 +414,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Unverified Law Firm',
             'emails' => ['info@unverifiedfake123.com'],
@@ -437,6 +439,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Email Ready CPA',
             'emails' => ['cpa@denver.com'],
@@ -444,6 +447,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Offline Accountant No Email',
             'emails' => [],
@@ -468,6 +472,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Alpha Fitness Gym',
             'phone' => '+1-555-0100',
@@ -477,6 +482,7 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
             'extraction_job_id' => $job->id,
             'business_name' => 'Beta Crossfit No Phone',
             'phone' => null,
@@ -495,6 +501,143 @@ class LeadsBulkActionTest extends TestCase
         $responseRating->assertOk()
             ->assertSee('Alpha Fitness Gym')
             ->assertDontSee('Beta Crossfit No Phone');
+    }
+
+    public function test_org_member_only_sees_own_leads_while_admin_sees_saved_org_leads(): void
+    {
+        $admin = User::create([
+            'tenant_id' => $this->tenant1->id,
+            'name' => 'Org Admin',
+            'email' => 'org-admin@acme.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $member = User::create([
+            'tenant_id' => $this->tenant1->id,
+            'name' => 'Org Member',
+            'email' => 'member@acme.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+
+        $adminJob = $this->makeJob($this->tenant1, $admin, 'Admin Query');
+        $memberJob = $this->makeJob($this->tenant1, $member, 'Member Query');
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $admin->id,
+            'extraction_job_id' => $adminJob->id,
+            'business_name' => 'Admin Saved Cafe',
+            'status' => 'saved',
+            'is_saved' => true,
+        ]);
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $member->id,
+            'extraction_job_id' => $memberJob->id,
+            'business_name' => 'Member Saved Bakery',
+            'status' => 'saved',
+            'is_saved' => true,
+        ]);
+
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $member->id,
+            'extraction_job_id' => $memberJob->id,
+            'business_name' => 'Member Unsaved Search Result',
+            'status' => 'new',
+            'is_saved' => false,
+        ]);
+
+        $this->actingAs($member)->get('/leads')
+            ->assertOk()
+            ->assertSee('Member Saved Bakery')
+            ->assertSee('Member Unsaved Search Result')
+            ->assertDontSee('Admin Saved Cafe');
+
+        $this->actingAs($admin)->get('/leads')
+            ->assertOk()
+            ->assertSee('Admin Saved Cafe')
+            ->assertSee('Member Saved Bakery')
+            ->assertDontSee('Member Unsaved Search Result');
+    }
+
+    public function test_org_member_cannot_bulk_save_another_members_leads(): void
+    {
+        $memberA = User::create([
+            'tenant_id' => $this->tenant1->id,
+            'name' => 'Member A',
+            'email' => 'member-a@acme.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+
+        $memberB = User::create([
+            'tenant_id' => $this->tenant1->id,
+            'name' => 'Member B',
+            'email' => 'member-b@acme.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+
+        $job = $this->makeJob($this->tenant1, $memberA, 'Private Query');
+        $lead = ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $memberA->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Private Lead',
+            'status' => 'new',
+            'is_saved' => false,
+        ]);
+
+        $this->actingAs($memberB)->postJson('/api/leads/bulk-action', [
+            'lead_ids' => [$lead->id],
+            'action' => 'save',
+        ])->assertStatus(403);
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'id' => $lead->id,
+            'is_saved' => false,
+            'user_id' => $memberA->id,
+        ]);
+    }
+
+    public function test_export_does_not_include_user_id_column(): void
+    {
+        $job = $this->makeJob($this->tenant1, $this->user1, 'Export Query');
+        $lead = ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->user1->id,
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Exportable Shop',
+            'emails' => ['shop@example.com'],
+            'status' => 'saved',
+            'is_saved' => true,
+        ]);
+
+        $csv = $this->actingAs($this->user1)->postJson('/api/leads/export-selected', [
+            'lead_ids' => [$lead->id],
+            'format' => 'csv',
+        ]);
+        $csv->assertOk();
+        ob_start();
+        $csv->sendContent();
+        $csvBody = ob_get_clean();
+        $this->assertStringContainsString('Exportable Shop', $csvBody);
+        $this->assertStringNotContainsString('user_id', $csvBody);
+        $this->assertStringNotContainsString('User ID', $csvBody);
+
+        $json = $this->actingAs($this->user1)->postJson('/api/leads/export-selected', [
+            'lead_ids' => [$lead->id],
+            'format' => 'json',
+        ]);
+        $json->assertOk()->assertJsonMissingPath('0.user_id');
     }
 }
 

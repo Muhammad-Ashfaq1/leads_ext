@@ -73,6 +73,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function canViewOrganizationLeads(): bool
+    {
+        return $this->isSuperAdmin() || $this->isTenantAdmin();
+    }
+
     public function getRoleBadgeClass(): string
     {
         return match ($this->role) {

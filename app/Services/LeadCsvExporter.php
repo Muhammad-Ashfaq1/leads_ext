@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
+use App\Models\User;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadCsvExporter
@@ -124,10 +126,10 @@ class LeadCsvExporter
         ]);
     }
 
-    public function downloadByIds(array $leadIds, string $format = 'excel', ?int $tenantId = null, bool $isSuperAdmin = false): StreamedResponse
+    public function downloadByIds(array $leadIds, string $format = 'excel', ?User $user = null): StreamedResponse
     {
-        $query = \App\Models\ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+        $query = ExtractedLead::query()
+            ->visibleTo($user)
             ->whereIn('id', $leadIds)
             ->orderBy('id');
 

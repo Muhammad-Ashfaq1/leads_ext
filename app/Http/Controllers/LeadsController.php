@@ -18,8 +18,6 @@ class LeadsController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
-        $isSuperAdmin = $user->isSuperAdmin();
-        $tenantId = $user->tenant_id;
 
         $search = trim($request->input('search', ''));
         $category = $request->input('category');
@@ -36,13 +34,8 @@ class LeadsController extends Controller
         $jobId = $request->input('job_id');
 
         $query = ExtractedLead::query()
-            ->with(['job', 'tenant'])
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)
-                        ->orWhereNull('tenant_id');
-                });
-            })
+            ->with(['job', 'tenant', 'user'])
+            ->visibleTo($user)
             ->when($search !== '', function ($q) use ($search): void {
                 $q->where(function ($inner) use ($search): void {
                     $inner->where('business_name', 'like', "%{$search}%")
@@ -154,12 +147,7 @@ class LeadsController extends Controller
 
         // Available categories for filter dropdown
         $categories = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)
-                        ->orWhereNull('tenant_id');
-                });
-            })
+            ->visibleTo($user)
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -192,8 +180,6 @@ class LeadsController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         $user = Auth::user();
-        $isSuperAdmin = $user->isSuperAdmin();
-        $tenantId = $user->tenant_id;
 
         $rawIds = $request->input('ids');
         $ids = null;
@@ -203,12 +189,7 @@ class LeadsController extends Controller
         }
 
         $query = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)
-                        ->orWhereNull('tenant_id');
-                });
-            })
+            ->visibleTo($user)
             ->when(! empty($ids), fn ($q) => $q->whereIn('id', $ids))
             ->orderBy('id');
 

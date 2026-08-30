@@ -17,7 +17,8 @@ class LeadPreviewController extends Controller
         $lead = ExtractedLead::findOrFail($id);
 
         $user = auth()->user();
-        if ($user && ! $user->isSuperAdmin() && $user->tenant_id && $lead->tenant_id && $lead->tenant_id !== $user->tenant_id) {
+        $isVisible = $user && ExtractedLead::query()->visibleTo($user)->where('id', $lead->id)->exists();
+        if (! $isVisible) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to generate demo for this lead.',

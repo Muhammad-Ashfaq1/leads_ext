@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -78,6 +79,32 @@ class ExtractedLead extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || $user->isSuperAdmin()) {
+            return $query;
+        }
+
+        if ($user->tenant_id) {
+            $query->where(function (Builder $sub) use ($user): void {
+                $sub->where('tenant_id', $user->tenant_id)
+                    ->orWhereNull('tenant_id');
+            });
+        }
+
+        if ($user->canViewOrganizationLeads()) {
+            $query->where(function (Builder $sub) use ($user): void {
+                $sub->where('is_saved', true)
+                    ->orWhere('status', 'saved')
+                    ->orWhere('user_id', $user->id);
+            });
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 
     public static function fromPayload(array $lead, ?int $tenantId = null, ?int $userId = null): array

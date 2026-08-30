@@ -270,7 +270,6 @@ class ExtractorController extends Controller
         ]);
 
         $user = Auth::user();
-        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
         $tenantId = $user?->tenant_id;
 
         $leadIds = $validated['lead_ids'] ?? [];
@@ -284,20 +283,16 @@ class ExtractorController extends Controller
         }
 
         if (! empty($leadIds)) {
-            if ($tenantId && ! $isSuperAdmin) {
-                $unauthorized = ExtractedLead::whereIn('id', $leadIds)
-                    ->whereNotNull('tenant_id')
-                    ->where('tenant_id', '!=', $tenantId)
-                    ->exists();
+            $requestedIds = ExtractedLead::whereIn('id', $leadIds)->pluck('id');
+            $visibleIds = ExtractedLead::query()->visibleTo($user)->whereIn('id', $leadIds)->pluck('id');
 
-                if ($unauthorized) {
-                    return response()->json([
-                        'message' => 'Unauthorized: One or more leads do not belong to your organization.',
-                    ], 403);
-                }
+            if ($requestedIds->diff($visibleIds)->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'Unauthorized: One or more leads are not available to your account.',
+                ], 403);
             }
 
-            $query = ExtractedLead::whereIn('id', $leadIds);
+            $query = ExtractedLead::query()->visibleTo($user)->whereIn('id', $leadIds);
         } else {
             $job = ExtractionJob::where('uuid', $jobIdentifier)
                 ->orWhere('id', $jobIdentifier)
@@ -307,13 +302,14 @@ class ExtractorController extends Controller
                 return response()->json(['message' => 'Extraction job not found.'], 404);
             }
 
-            if ($tenantId && ! $isSuperAdmin && $job->tenant_id && $job->tenant_id !== $tenantId) {
+            $canSeeJob = ExtractionJob::query()->visibleTo($user)->where('id', $job->id)->exists();
+            if (! $canSeeJob) {
                 return response()->json([
-                    'message' => 'Unauthorized: Job does not belong to your organization.',
+                    'message' => 'Unauthorized: Job does not belong to your account.',
                 ], 403);
             }
 
-            $query = $job->leads();
+            $query = $job->leads()->visibleTo($user);
         }
 
         $affected = 0;
@@ -326,6 +322,9 @@ class ExtractorController extends Controller
             ];
             if ($tenantId) {
                 $updateData['tenant_id'] = $tenantId;
+            }
+            if ($user?->id) {
+                $updateData['user_id'] = \Illuminate\Support\Facades\DB::raw('COALESCE(user_id, '.(int) $user->id.')');
             }
             $affected = $query->update($updateData);
             $message = "Successfully saved {$affected} lead(s) to the master database.";
@@ -357,35 +356,30 @@ class ExtractorController extends Controller
         ]);
 
         $user = Auth::user();
-        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
-        $tenantId = $user?->tenant_id;
         $leadIds = $validated['lead_ids'];
         $format = $validated['format'] ?? 'excel';
 
-        if ($tenantId && ! $isSuperAdmin) {
-            $unauthorized = ExtractedLead::whereIn('id', $leadIds)
-                ->whereNotNull('tenant_id')
-                ->where('tenant_id', '!=', $tenantId)
-                ->exists();
+        $requestedIds = ExtractedLead::whereIn('id', $leadIds)->pluck('id');
+        $visibleIds = ExtractedLead::query()->visibleTo($user)->whereIn('id', $leadIds)->pluck('id');
 
-            if ($unauthorized) {
-                return response()->json([
-                    'message' => 'Unauthorized: One or more leads do not belong to your organization.',
-                ], 403);
-            }
+        if ($requestedIds->diff($visibleIds)->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Unauthorized: One or more leads are not available to your account.',
+            ], 403);
         }
 
         if ($format === 'json') {
             $leads = ExtractedLead::query()
-                ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+                ->visibleTo($user)
                 ->whereIn('id', $leadIds)
                 ->orderBy('id')
-                ->get();
+                ->get()
+                ->makeHidden(['user_id']);
 
             return response()->json($leads);
         }
 
-        return $this->csvExporter->downloadByIds($leadIds, $format, $tenantId, $isSuperAdmin);
+        return $this->csvExporter->downloadByIds($leadIds, $format, $user);
     }
 
     public function sendEmail(Request $request): JsonResponse
@@ -400,8 +394,6 @@ class ExtractorController extends Controller
         ]);
 
         $user = Auth::user();
-        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
-        $tenantId = $user?->tenant_id;
 
         $leadIds = $validated['lead_ids'] ?? [];
         if (! empty($validated['lead_id'])) {
@@ -415,18 +407,13 @@ class ExtractorController extends Controller
             ], 422);
         }
 
-        // Validate tenant isolation
-        if ($tenantId && ! $isSuperAdmin) {
-            $unauthorized = ExtractedLead::whereIn('id', $leadIds)
-                ->whereNotNull('tenant_id')
-                ->where('tenant_id', '!=', $tenantId)
-                ->exists();
+        $requestedIds = ExtractedLead::whereIn('id', $leadIds)->pluck('id');
+        $visibleIds = ExtractedLead::query()->visibleTo($user)->whereIn('id', $leadIds)->pluck('id');
 
-            if ($unauthorized) {
-                return response()->json([
-                    'message' => 'Unauthorized: One or more leads do not belong to your organization.',
-                ], 403);
-            }
+        if ($requestedIds->diff($visibleIds)->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Unauthorized: One or more leads are not available to your account.',
+            ], 403);
         }
 
         $result = $this->emailOutreachService->sendBulk(
@@ -435,8 +422,6 @@ class ExtractorController extends Controller
             $validated['body'],
             $validated['template_id'] ?? null,
             $user,
-            $tenantId,
-            $isSuperAdmin
         );
 
         $sentCount = $result['sent_count'];
@@ -603,7 +588,10 @@ class ExtractorController extends Controller
         if (! $exists) {
             $tenantId = $job->tenant_id ?? \App\Models\Tenant::first()?->id;
             $userId = $job->user_id ?? \App\Models\User::where('email', 'admin@obtainsolutions.com')->value('id');
-            $job->leads()->create(ExtractedLead::fromPayload($lead, $tenantId, $userId));
+            $payload = ExtractedLead::fromPayload($lead, $tenantId, $userId);
+            $payload['status'] = $lead['status'] ?? 'new';
+            $payload['is_saved'] = $lead['is_saved'] ?? false;
+            $job->leads()->create($payload);
         }
 
         $job->forceFill([

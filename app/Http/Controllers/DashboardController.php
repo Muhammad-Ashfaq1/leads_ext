@@ -18,24 +18,12 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $isSuperAdmin = $user->isSuperAdmin();
-        $tenantId = $user->tenant_id;
 
-        // Base queries scoped by tenant unless Super Admin
         $jobsQuery = ExtractionJob::query()
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)
-                        ->orWhereNull('tenant_id');
-                });
-            });
+            ->visibleTo($user);
 
         $leadsQuery = ExtractedLead::query()
-            ->when(! $isSuperAdmin && $tenantId, function ($q) use ($tenantId): void {
-                $q->where(function ($sub) use ($tenantId): void {
-                    $sub->where('tenant_id', $tenantId)
-                        ->orWhereNull('tenant_id');
-                });
-            });
+            ->visibleTo($user);
 
         $totalLeads = (clone $leadsQuery)->count();
         $totalJobs = (clone $jobsQuery)->count();

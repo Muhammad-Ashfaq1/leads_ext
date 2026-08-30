@@ -52,6 +52,8 @@ class ExtractorPageTest extends TestCase
         $this->assertStringNotContainsString('value="1000"', $html);
         $this->assertStringNotContainsString('value="1500"', $html);
         $this->assertStringNotContainsString('value="2500"', $html);
+        $this->assertStringContainsString('userId:', $html);
+        $this->assertStringContainsString((string) $user->id, $html);
     }
 
     public function test_obtain_solutions_tenant_sees_high_extractor_limits(): void

@@ -552,6 +552,7 @@
         emailTemplatesUrl: @json(route('email-templates.list')),
         allowMock: @json((bool) $allowMock),
         hasGoogleApiKey: @json((bool) $hasGoogleApiKey),
+        userId: @json($user?->id),
         csrf: @json(csrf_token()),
     };
 </script>

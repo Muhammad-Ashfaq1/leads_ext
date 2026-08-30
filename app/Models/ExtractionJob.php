@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
@@ -87,6 +88,26 @@ class ExtractionJob extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(ExtractedLead::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || $user->isSuperAdmin()) {
+            return $query;
+        }
+
+        if ($user->tenant_id) {
+            $query->where(function (Builder $sub) use ($user): void {
+                $sub->where('tenant_id', $user->tenant_id)
+                    ->orWhereNull('tenant_id');
+            });
+        }
+
+        if (! $user->canViewOrganizationLeads()) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 
     public function isTerminal(): bool
