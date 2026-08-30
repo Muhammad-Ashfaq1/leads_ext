@@ -10,6 +10,19 @@ class GeospatialGridService
 {
     private const GEOCODING_API_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 
+    /** @var array{status: string, error: string}|null */
+    private ?array $lastFailure = null;
+
+    /**
+     * Last geocoding failure for the most recent geocode() call, if any.
+     *
+     * @return array{status: string, error: string}|null
+     */
+    public function lastFailure(): ?array
+    {
+        return $this->lastFailure;
+    }
+
     /**
      * Resolve a location string (city, state, zip, or raw coordinates) into a bounding box.
      *
@@ -17,6 +30,7 @@ class GeospatialGridService
      */
     public function geocode(string $location, string $apiKey): ?array
     {
+        $this->lastFailure = null;
         $location = trim($location);
         if (empty($location) || empty($apiKey)) {
             return null;
@@ -40,9 +54,15 @@ class GeospatialGridService
             ]);
 
             if ($response->failed()) {
+                $body = $response->json();
+                $this->lastFailure = [
+                    'status' => (string) ($body['status'] ?? $response->status()),
+                    'error' => (string) ($body['error_message'] ?? $body['error']['message'] ?? 'Google Geocoding API request failed.'),
+                ];
                 Log::warning('Google Geocoding API request failed', [
                     'status' => $response->status(),
                     'location' => $location,
+                    'error' => $this->lastFailure['error'],
                 ]);
 
                 return null;
@@ -50,9 +70,14 @@ class GeospatialGridService
 
             $data = $response->json();
             if (($data['status'] ?? '') !== 'OK' || empty($data['results'][0]['geometry'])) {
+                $this->lastFailure = [
+                    'status' => (string) ($data['status'] ?? 'UNKNOWN'),
+                    'error' => (string) ($data['error_message'] ?? 'Google Geocoding returned no results.'),
+                ];
                 Log::info('Google Geocoding returned no results', [
-                    'status' => $data['status'] ?? 'UNKNOWN',
+                    'status' => $this->lastFailure['status'],
                     'location' => $location,
+                    'error' => $this->lastFailure['error'],
                 ]);
 
                 return null;

@@ -585,4 +585,149 @@ class ExtractorApiTest extends TestCase
             'limit' => 2500,
         ]);
     }
+
+    public function test_google_api_stream_surfaces_billing_and_permission_errors_instead_of_timeout(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response([
+                'status' => 'REQUEST_DENIED',
+                'error_message' => 'You must enable Billing on the Google Cloud Project at https://console.cloud.google.com/project/_/billing/enable',
+                'results' => [],
+            ], 200),
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'error' => [
+                    'code' => 403,
+                    'message' => 'The caller does not have permission',
+                    'status' => 'PERMISSION_DENIED',
+                ],
+            ], 403),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            'prompt' => 'Plumbers (Chicago, IL)',
+            'query' => 'Plumbers in Chicago, IL',
+            'status' => 'starting',
+            'limit' => 10,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('"type":"error"', $streamContent);
+        $this->assertStringContainsString('billing', strtolower($streamContent));
+        $this->assertStringNotContainsString('timed out', $streamContent);
+        $this->assertStringNotContainsString('Extraction completed. Extracted 0 leads.', $streamContent);
+
+        $job->refresh();
+        $this->assertSame(ExtractionJob::STATUS_ERROR, $job->status);
+        $this->assertNotEmpty($job->error);
+    }
+
+    public function test_google_api_stream_surfaces_places_permission_denied_as_error(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'error' => [
+                    'code' => 403,
+                    'message' => 'The caller does not have permission',
+                    'status' => 'PERMISSION_DENIED',
+                ],
+            ], 403),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+            'prompt' => 'Plumbers',
+            'query' => 'Plumbers',
+            'status' => 'starting',
+            'limit' => 10,
+            'mode' => 'google_api',
+        ]);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('"type":"error"', $streamContent);
+        $this->assertStringContainsString('PERMISSION_DENIED', $streamContent);
+        $this->assertStringNotContainsString('timed out', $streamContent);
+
+        $job->refresh();
+        $this->assertSame(ExtractionJob::STATUS_ERROR, $job->status);
+    }
+
+    public function test_google_api_keeps_query_location_and_drops_out_of_area_places(): void
+    {
+        config(['services.google.maps_api_key' => 'test-api-key']);
+
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response([
+                'status' => 'REQUEST_DENIED',
+                'error_message' => 'This API is not activated on your API project.',
+                'results' => [],
+            ], 200),
+            'https://places.googleapis.com/v1/places:searchText' => Http::response([
+                'places' => [
+                    [
+                        'id' => 'chi_plumber',
+                        'displayName' => ['text' => 'Windy City Plumbing'],
+                        'formattedAddress' => '123 N Wells St, Chicago, IL 60654, USA',
+                        'nationalPhoneNumber' => '(312) 555-0100',
+                        'location' => ['latitude' => 41.888, 'longitude' => -87.634],
+                    ],
+                    [
+                        'id' => 'local_plumber',
+                        'displayName' => ['text' => 'Nearby Me Plumbing'],
+                        'formattedAddress' => 'Main Boulevard, Gulberg, Lahore, Pakistan',
+                        'nationalPhoneNumber' => '+92 42 1112223',
+                        'location' => ['latitude' => 31.5204, 'longitude' => 74.3587],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $job = ExtractionJob::create([
+            'uuid' => 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+            'prompt' => 'Plumbers (Chicago, IL)',
+            'query' => 'Plumbers in Chicago, IL',
+            'status' => 'starting',
+            'limit' => 50,
+            'mode' => 'google_api',
+        ]);
+
+        session(['google_maps_location_'.$job->uuid => 'Chicago, IL']);
+
+        $response = $this->get("/api/extractor/{$job->uuid}/stream");
+        $response->assertOk();
+        $streamContent = $response->streamedContent();
+
+        $this->assertStringContainsString('Windy City Plumbing', $streamContent);
+        $this->assertStringNotContainsString('Nearby Me Plumbing', $streamContent);
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'places:searchText')) {
+                return false;
+            }
+            $body = $request->data();
+
+            return ($body['textQuery'] ?? '') === 'Plumbers in Chicago, IL'
+                && ($body['regionCode'] ?? null) === 'US';
+        });
+
+        $this->assertDatabaseHas('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Windy City Plumbing',
+        ]);
+        $this->assertDatabaseMissing('extracted_leads', [
+            'extraction_job_id' => $job->id,
+            'business_name' => 'Nearby Me Plumbing',
+        ]);
+    }
 }

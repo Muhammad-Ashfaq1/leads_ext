@@ -90,6 +90,24 @@ class GeospatialGridServiceTest extends TestCase
         $this->assertEqualsWithDelta(33.0237, $result['northeast']['lat'], 0.001);
         $this->assertEqualsWithDelta(-97.0004, $result['southwest']['lng'], 0.001);
         $this->assertSame('Dallas, TX, USA', $result['formatted_address']);
+        $this->assertNull($this->service->lastFailure());
+    }
+
+    public function test_geocode_records_request_denied_failure(): void
+    {
+        Http::fake([
+            'https://maps.googleapis.com/maps/api/geocode/json*' => Http::response([
+                'status' => 'REQUEST_DENIED',
+                'error_message' => 'You must enable Billing on the Google Cloud Project',
+                'results' => [],
+            ], 200),
+        ]);
+
+        $result = $this->service->geocode('Chicago, IL', 'dummy-key');
+
+        $this->assertNull($result);
+        $this->assertSame('REQUEST_DENIED', $this->service->lastFailure()['status']);
+        $this->assertStringContainsString('Billing', $this->service->lastFailure()['error']);
     }
 
     public function test_geocode_handles_raw_coordinates_directly(): void

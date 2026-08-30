@@ -6,6 +6,7 @@ use App\Models\ExtractedLead;
 use App\Models\ExtractionJob;
 use App\Support\PromptNormalizer;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -107,6 +108,10 @@ class GooglePlacesService
             $seenPlaceIds = [];
             $seenSignatures = [];
 
+            $textQuery = $this->buildTextQuery($searchTerm, $resolvedLocation, $job->query);
+            $regionCode = $this->inferRegionCode($resolvedLocation);
+            $searchBounds = null;
+
             // Attempt Geospatial Grid Subdivision
             $gridCells = [];
             if (! empty($resolvedLocation)) {
@@ -121,8 +126,18 @@ class GooglePlacesService
                 ]);
 
                 $bounds = $this->gridService->geocode($resolvedLocation, $key);
+                $geocodeFailure = $this->gridService->lastFailure();
+                if ($this->isBillingFailure($geocodeFailure['error'] ?? null)) {
+                    $this->failJob($job, $this->formatGoogleCloudError($geocodeFailure['error'] ?? $geocodeFailure['status'] ?? null));
+
+                    return;
+                }
                 if ($bounds) {
+                    $searchBounds = $bounds;
                     $gridCells = $this->gridService->generateGrid($bounds, stepKm: 0.0, targetLimit: $limit);
+                    if (empty($gridCells)) {
+                        $gridCells = [$this->cellFromBounds($bounds)];
+                    }
                     $cellCount = count($gridCells);
 
                     $this->sendSseEvent('progress', [
@@ -137,7 +152,8 @@ class GooglePlacesService
                 }
             }
 
-            // Fallback to single unrestricted query if no grid cells generated
+            // Fallback to a single query. Location stays in the text query so Google
+            // does not fall back to the request IP ("near me").
             if (empty($gridCells)) {
                 $gridCells = [null];
             }
@@ -182,9 +198,14 @@ class GooglePlacesService
                             }
 
                             $payload = [
-                                'textQuery' => $searchTerm ?: $job->query,
+                                'textQuery' => $textQuery,
                                 'pageSize' => min(20, max(20, $limit - $extractedCount)),
+                                'rankPreference' => 'RELEVANCE',
                             ];
+
+                            if ($regionCode) {
+                                $payload['regionCode'] = $regionCode;
+                            }
 
                             if ($pageToken) {
                                 $payload['pageToken'] = $pageToken;
@@ -197,18 +218,26 @@ class GooglePlacesService
                                         'high' => $cell['high'],
                                     ],
                                 ];
+                            } elseif ($searchBounds) {
+                                $cityCell = $this->cellFromBounds($searchBounds);
+                                $payload['locationRestriction'] = [
+                                    'rectangle' => [
+                                        'low' => $cityCell['low'],
+                                        'high' => $cityCell['high'],
+                                    ],
+                                ];
                             }
 
                             $response = Http::withHeaders([
                                 'Content-Type' => 'application/json',
                                 'X-Goog-Api-Key' => $key,
-                                'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.primaryTypeDisplayName,nextPageToken',
+                                'X-Goog-FieldMask' => 'places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.primaryTypeDisplayName,nextPageToken',
                             ])
                                 ->timeout(35)
                                 ->connectTimeout(10)
                                 ->retry(3, 500, function ($exception, $request) {
                                     return $exception instanceof ConnectionException;
-                                })
+                                }, throw: false)
                                 ->post(self::PLACES_API_URL, $payload);
 
                             if ($response->failed()) {
@@ -218,33 +247,13 @@ class GooglePlacesService
 
                                 // If auth error, terminate with error
                                 if (in_array($response->status(), [401, 403], true)) {
-                                    $this->sendSseEvent('error', [
-                                        'type' => 'error',
-                                        'status' => ExtractionJob::STATUS_ERROR,
-                                        'message' => 'Google Maps API Error: '.$errorMessage,
-                                    ]);
-
-                                    $job->forceFill([
-                                        'status' => ExtractionJob::STATUS_ERROR,
-                                        'error' => $errorMessage,
-                                        'completed_at' => now(),
-                                    ])->save();
+                                    $this->failJob($job, $this->formatGoogleCloudError($errorMessage));
 
                                     return;
                                 }
 
                                 if ($totalCells === 1) {
-                                    $this->sendSseEvent('error', [
-                                        'type' => 'error',
-                                        'status' => ExtractionJob::STATUS_ERROR,
-                                        'message' => 'Google Maps API Error: '.$errorMessage,
-                                    ]);
-
-                                    $job->forceFill([
-                                        'status' => ExtractionJob::STATUS_ERROR,
-                                        'error' => $errorMessage,
-                                        'completed_at' => now(),
-                                    ])->save();
+                                    $this->failJob($job, $this->formatGoogleCloudError($errorMessage));
 
                                     return;
                                 }
@@ -314,6 +323,15 @@ class GooglePlacesService
                             $reviews = isset($place['userRatingCount']) ? (int) $place['userRatingCount'] : null;
                             $lat = isset($place['location']['latitude']) ? (float) $place['location']['latitude'] : null;
                             $lng = isset($place['location']['longitude']) ? (float) $place['location']['longitude'] : null;
+
+                            if (! $this->placeMatchesTargetLocation($place, $resolvedLocation, $searchBounds)) {
+                                Log::info('Skipped place outside target location', [
+                                    'name' => $name,
+                                    'address' => $address,
+                                    'target' => $resolvedLocation,
+                                ]);
+                                continue;
+                            }
 
                             // Pre-extraction filter: require website
                             if ($reqWebsite && empty($website)) {
@@ -437,12 +455,50 @@ class GooglePlacesService
                             usleep(1000000);
                         }
                     } while ($pageToken && $extractedCount < $limit);
+                } catch (RequestException $cellException) {
+                    $status = $cellException->response?->status();
+                    $errorBody = $cellException->response?->json();
+                    $errorMessage = $errorBody['error']['message'] ?? $cellException->getMessage();
+                    Log::warning("Grid cell {$cellNum} request failed: {$errorMessage}", [
+                        'cell_index' => $cellIdx,
+                        'cell' => $cell,
+                        'status' => $status,
+                        'error' => $errorMessage,
+                    ]);
+
+                    if (in_array($status, [401, 403], true) || $this->isFatalGoogleCloudFailure($errorMessage, (string) $status)) {
+                        $this->failJob($job, $this->formatGoogleCloudError($errorMessage));
+
+                        return;
+                    }
+
+                    if ($totalCells === 1) {
+                        $this->failJob($job, $this->formatGoogleCloudError($errorMessage));
+
+                        return;
+                    }
+
+                    $this->sendSseEvent('warning', [
+                        'type' => 'warning',
+                        'status' => ExtractionJob::STATUS_EXTRACTING,
+                        'message' => "Grid cell {$cellNum} request failed (HTTP {$status}), continuing to next area...",
+                        'businesses_seen' => $seenCount,
+                        'leads_extracted' => $extractedCount,
+                        'emails_found' => $emailsCount,
+                        'websites_found' => $websitesCount,
+                    ]);
                 } catch (Throwable $cellException) {
                     Log::warning("Grid cell {$cellNum} request failed or timed out: {$cellException->getMessage()}", [
                         'cell_index' => $cellIdx,
                         'cell' => $cell,
                         'error' => $cellException->getMessage(),
                     ]);
+
+                    if ($this->isFatalGoogleCloudFailure($cellException->getMessage())) {
+                        $this->failJob($job, $this->formatGoogleCloudError($cellException->getMessage()));
+
+                        return;
+                    }
 
                     $warningMessage = $totalCells > 1
                         ? "Grid cell {$cellNum} timed out, continuing to next area..."
@@ -631,6 +687,227 @@ class GooglePlacesService
     public function quickEnrichWebsiteEmails(string $websiteUrl): array
     {
         return $this->quickEnrichWebsite($websiteUrl)['emails'];
+    }
+
+    private function failJob(ExtractionJob $job, string $message): void
+    {
+        Log::error('Google Places API job failed', ['job_id' => $job->uuid, 'error' => $message]);
+
+        $this->sendSseEvent('error', [
+            'type' => 'error',
+            'status' => ExtractionJob::STATUS_ERROR,
+            'message' => $message,
+        ]);
+
+        $job->forceFill([
+            'status' => ExtractionJob::STATUS_ERROR,
+            'error' => $message,
+            'completed_at' => now(),
+        ])->save();
+    }
+
+    private function formatGoogleCloudError(?string $googleMessage): string
+    {
+        $googleMessage = trim((string) $googleMessage);
+
+        if ($this->isBillingFailure($googleMessage)) {
+            return 'Google Cloud billing is not enabled on the project that owns this API key. Open that exact project → Billing → Link a billing account. Then enable Places API (New) and Geocoding API. Adding a card on a different Google project will not work.';
+        }
+
+        if (
+            $googleMessage === ''
+            || stripos($googleMessage, 'does not have permission') !== false
+            || stripos($googleMessage, 'PERMISSION_DENIED') !== false
+            || stripos($googleMessage, 'REQUEST_DENIED') !== false
+            || stripos($googleMessage, 'API has not been used') !== false
+            || stripos($googleMessage, 'is not authorized') !== false
+        ) {
+            $detail = $googleMessage !== '' && stripos($googleMessage, 'does not have permission') === false
+                ? ' Google said: '.$googleMessage
+                : '';
+
+            return 'Google rejected this API key (PERMISSION_DENIED). On the same Cloud project that created the key: (1) link a billing account, (2) enable Places API (New), (3) enable Geocoding API. If the key has restrictions, allow those two APIs and do not use HTTP referrers — this app calls Google from the server.'.$detail;
+        }
+
+        return 'Google Maps API Error: '.$googleMessage;
+    }
+
+    private function isBillingFailure(?string $message): bool
+    {
+        return is_string($message) && $message !== '' && stripos($message, 'billing') !== false;
+    }
+
+    private function buildTextQuery(string $searchTerm, ?string $location, string $fallbackQuery): string
+    {
+        $searchTerm = trim($searchTerm);
+        $location = $location ? trim($location) : '';
+        $fallbackQuery = trim($fallbackQuery);
+
+        if ($location === '') {
+            return $searchTerm !== '' ? $searchTerm : $fallbackQuery;
+        }
+
+        if ($searchTerm === '') {
+            return $fallbackQuery !== '' ? $fallbackQuery : $location;
+        }
+
+        if (stripos($searchTerm, $location) !== false) {
+            return $searchTerm;
+        }
+
+        return $searchTerm.' in '.$location;
+    }
+
+    /**
+     * @return array{index?: int, row: int, col: int, low: array{latitude: float, longitude: float}, high: array{latitude: float, longitude: float}, center: array{latitude: float, longitude: float}}
+     */
+    private function cellFromBounds(array $bounds): array
+    {
+        $south = (float) ($bounds['southwest']['lat'] ?? 0);
+        $west = (float) ($bounds['southwest']['lng'] ?? 0);
+        $north = (float) ($bounds['northeast']['lat'] ?? 0);
+        $east = (float) ($bounds['northeast']['lng'] ?? 0);
+
+        return [
+            'row' => 0,
+            'col' => 0,
+            'low' => [
+                'latitude' => $south,
+                'longitude' => $west,
+            ],
+            'high' => [
+                'latitude' => $north,
+                'longitude' => $east,
+            ],
+            'center' => [
+                'latitude' => ($south + $north) / 2,
+                'longitude' => ($west + $east) / 2,
+            ],
+        ];
+    }
+
+    private function inferRegionCode(?string $location): ?string
+    {
+        if (! $location) {
+            return null;
+        }
+
+        $lower = strtolower($location);
+        $countries = [
+            'pakistan' => 'PK',
+            'united arab emirates' => 'AE',
+            'uae' => 'AE',
+            'saudi arabia' => 'SA',
+            'united kingdom' => 'GB',
+            'united states' => 'US',
+            'canada' => 'CA',
+            'australia' => 'AU',
+            'india' => 'IN',
+        ];
+        foreach ($countries as $name => $code) {
+            if (preg_match('/\b'.preg_quote($name, '/').'\b/', $lower)) {
+                return $code;
+            }
+        }
+
+        if (preg_match('/,\s*([A-Za-z]{2})\s*(,|$)/', $location, $matches)) {
+            $abbr = strtoupper($matches[1]);
+            $usStates = [
+                'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA',
+                'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+                'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT',
+                'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
+            ];
+            if (in_array($abbr, $usStates, true)) {
+                return 'US';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Drop Google results that are clearly outside the user-selected city/region.
+     *
+     * @param  array<string, mixed>  $place
+     * @param  array{northeast: array{lat: float, lng: float}, southwest: array{lat: float, lng: float}}|null  $bounds
+     */
+    public function placeMatchesTargetLocation(array $place, ?string $location, ?array $bounds): bool
+    {
+        if (empty($location) && empty($bounds)) {
+            return true;
+        }
+
+        $lat = isset($place['location']['latitude']) ? (float) $place['location']['latitude'] : null;
+        $lng = isset($place['location']['longitude']) ? (float) $place['location']['longitude'] : null;
+
+        if ($bounds && $lat !== null && $lng !== null) {
+            $north = (float) $bounds['northeast']['lat'];
+            $south = (float) $bounds['southwest']['lat'];
+            $east = (float) $bounds['northeast']['lng'];
+            $west = (float) $bounds['southwest']['lng'];
+            $pad = 0.08;
+
+            return ! ($lat < ($south - $pad) || $lat > ($north + $pad) || $lng < ($west - $pad) || $lng > ($east + $pad));
+        }
+
+        if (! $location) {
+            return true;
+        }
+
+        $address = strtolower(trim((string) ($place['formattedAddress'] ?? '')));
+        $name = strtolower(trim((string) ($place['displayName']['text'] ?? '')));
+        $haystack = trim($address.' '.$name);
+        if ($haystack === '') {
+            return false;
+        }
+
+        $parts = array_values(array_filter(array_map('trim', explode(',', $location))));
+        if ($parts === []) {
+            return true;
+        }
+
+        $city = strtolower($parts[0]);
+        if ($city !== '' && ! preg_match('/\b'.preg_quote($city, '/').'\b/i', $haystack)) {
+            return false;
+        }
+
+        if (! isset($parts[1])) {
+            return true;
+        }
+
+        $region = strtolower($parts[1]);
+        $regionAliases = [
+            'il' => ['il', 'illinois'],
+            'tx' => ['tx', 'texas'],
+            'ca' => ['ca', 'california'],
+            'ny' => ['ny', 'new york'],
+            'fl' => ['fl', 'florida'],
+            'wa' => ['wa', 'washington'],
+        ];
+        $needles = $regionAliases[$region] ?? [$region];
+        foreach ($needles as $needle) {
+            if (preg_match('/\b'.preg_quote($needle, '/').'\b/i', $haystack)) {
+                return true;
+            }
+        }
+
+        return (bool) preg_match('/\b(usa|united states)\b/i', $haystack);
+    }
+
+    private function isFatalGoogleCloudFailure(?string $message, ?string $status = null): bool
+    {
+        $haystack = trim($message.' '.$status);
+
+        return $haystack !== '' && (
+            $this->isBillingFailure($haystack)
+            || stripos($haystack, 'PERMISSION_DENIED') !== false
+            || stripos($haystack, 'does not have permission') !== false
+            || stripos($haystack, 'API has not been used') !== false
+            || stripos($haystack, 'is not authorized') !== false
+            || $status === '403'
+            || $status === '401'
+        );
     }
 
     private function extractEmailsFromHtml(string $html): array
