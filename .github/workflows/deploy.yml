@@ -67,6 +67,16 @@ jobs:
           set -e
           cd /home/u407529782/domains/obtainsolutions.com/public_html/leads
 
+          # ONE-TIME: write GOOGLE_MAPS_API_KEY into server .env, then delete this block from deploy.yml.
+          ENV_FILE=".env"
+          NEW_VAL="GOOGLE_MAPS_API_KEY='AIzaSyAcSI5VwSMrnry7Rc2E9SNwvVMTxVGXtbs'"
+          if [ -f "$ENV_FILE" ] && grep -qE '^GOOGLE_MAPS_API_KEY=' "$ENV_FILE"; then
+            sed -i -E "s|^GOOGLE_MAPS_API_KEY=.*|$NEW_VAL|" "$ENV_FILE"
+          else
+            printf '\n%s\n' "$NEW_VAL" >> "$ENV_FILE"
+          fi
+          echo "GOOGLE_MAPS_API_KEY updated in server .env (remove this block from deploy.yml after this deploy)."
+
           echo "Ensuring no composer.lock or stale bootstrap files on server..."
           rm -f composer.lock bootstrap/cache/*.php
 
