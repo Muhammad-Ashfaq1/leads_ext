@@ -246,7 +246,7 @@
         if (els.locationInput) els.locationInput.disabled = running;
         if (els.limit) els.limit.disabled = running;
         if (els.engineGoogleApi) els.engineGoogleApi.disabled = running;
-        if (els.engineBrowser) els.engineBrowser.disabled = running;
+        if (els.engineBrowser) els.engineBrowser.disabled = true;
         if (els.preWebsiteFilter) els.preWebsiteFilter.disabled = running;
         if (els.preReqPhone) els.preReqPhone.disabled = running;
         if (els.preReqEmail) els.preReqEmail.disabled = running;
@@ -1152,7 +1152,12 @@
     async function startExtraction() {
         const prompt = (els.prompt?.value || '').trim();
         const location = (els.locationInput?.value || '').trim();
-        const isGoogleApi = els.engineGoogleApi?.checked ?? false;
+        if (els.engineBrowser) {
+            els.engineBrowser.checked = false;
+            els.engineBrowser.disabled = true;
+        }
+        if (els.engineGoogleApi) els.engineGoogleApi.checked = true;
+        const isGoogleApi = true;
         const customApiKey = (els.customApiKeyInput?.value || '').trim();
 
         if (prompt.length < 2) {
@@ -1914,8 +1919,9 @@
             if (session.location && els.locationInput) els.locationInput.value = session.location;
             if (session.limit && els.limit) els.limit.value = session.limit;
             if (els.engineGoogleApi && els.engineBrowser) {
-                els.engineGoogleApi.checked = session.engineGoogleApi !== false;
-                els.engineBrowser.checked = session.engineGoogleApi === false;
+                els.engineGoogleApi.checked = true;
+                els.engineBrowser.checked = false;
+                els.engineBrowser.disabled = true;
                 updateEngineModeUi();
             }
 

@@ -67,50 +67,70 @@
                             @endif
                         </td>
                         <td class="pe-3 text-end">
-                            <button type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTenantModal{{ $t->id }}">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTenantModal{{ $t->id }}">
                                 <i class="icon-base ti tabler-edit me-1"></i> Edit
                             </button>
 
-                            <!-- Edit Modal -->
+                            <!-- Edit Modal (POS Glass) -->
                             <div class="modal fade" id="editTenantModal{{ $t->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog text-start">
-                                    <div class="modal-content">
+                                <div class="modal-dialog modal-dialog-centered modal-lg text-start">
+                                    <div class="modal-content border-0 shadow">
                                         <form method="POST" action="{{ route('tenants.update', $t->id) }}">
                                             @csrf
                                             @method('PUT')
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Edit Tenant: {{ $t->name }}</h5>
+                                            <div class="modal-header border-bottom py-3">
+                                                <h5 class="modal-title d-flex align-items-center">
+                                                    <i class="icon-base ti tabler-building text-danger me-2 fs-4"></i> Edit Workspace: {{ $t->name }}
+                                                </h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Tenant Name</label>
-                                                    <input type="text" name="name" class="form-control" value="{{ $t->name }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Plan Tier</label>
-                                                    <select name="plan" class="form-select">
-                                                        <option value="starter" @selected($t->plan === 'starter')>Starter</option>
-                                                        <option value="pro" @selected($t->plan === 'pro')>Pro</option>
-                                                        <option value="enterprise" @selected($t->plan === 'enterprise')>Enterprise</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Monthly Lead Discovery Allowance</label>
-                                                    <input type="number" name="lead_quota" class="form-control" value="{{ $t->lead_quota }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Workspace Discovery Engine API Key</label>
-                                                    <input type="text" name="google_maps_api_key" class="form-control" value="{{ $t->google_maps_api_key }}" placeholder="Leave blank to use platform default">
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive{{ $t->id }}" value="1" @checked($t->is_active)>
-                                                    <label class="form-check-label" for="isActive{{ $t->id }}">Active Account</label>
+                                            <div class="modal-body p-4">
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Workspace / Organization Name <span class="text-danger">*</span></label>
+                                                        <div class="input-group input-group-merge">
+                                                            <span class="input-group-text"><i class="icon-base ti tabler-building"></i></span>
+                                                            <input type="text" name="name" class="form-control" value="{{ $t->name }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Subscription Plan <span class="text-danger">*</span></label>
+                                                        <div class="input-group input-group-merge">
+                                                            <span class="input-group-text"><i class="icon-base ti tabler-crown"></i></span>
+                                                            <select name="plan" class="form-select">
+                                                                <option value="starter" @selected($t->plan === 'starter')>Starter (5,000 leads)</option>
+                                                                <option value="pro" @selected($t->plan === 'pro')>Pro (25,000 leads)</option>
+                                                                <option value="enterprise" @selected($t->plan === 'enterprise')>Enterprise (50,000+ leads)</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Monthly Lead Discovery Allowance <span class="text-danger">*</span></label>
+                                                        <div class="input-group input-group-merge">
+                                                            <span class="input-group-text"><i class="icon-base ti tabler-chart-bar"></i></span>
+                                                            <input type="number" name="lead_quota" class="form-control" value="{{ $t->lead_quota }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Workspace Discovery Engine API Key</label>
+                                                        <div class="input-group input-group-merge">
+                                                            <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
+                                                            <input type="text" name="google_maps_api_key" class="form-control" value="{{ $t->google_maps_api_key }}" placeholder="Leave blank to use platform default">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-check form-switch mt-2">
+                                                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive{{ $t->id }}" value="1" @checked($t->is_active)>
+                                                            <label class="form-check-label fw-semibold" for="isActive{{ $t->id }}">Active Organization Account</label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="modal-footer">
+                                            <div class="modal-footer border-top py-3">
                                                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="icon-base ti tabler-device-floppy me-1"></i> Save Changes
+                                                </button>
                                             </div>
                                         </form>
                                     </div>
@@ -153,45 +173,67 @@
     @endif
 </div>
 
-<!-- Create Tenant Modal -->
+<!-- Create Workspace Modal (Matching POS) -->
 <div class="modal fade" id="createTenantModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header border-bottom">
-                <h5 class="modal-title">Create New Organization Workspace</h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="icon-base ti tabler-building-plus text-danger me-2 fs-4"></i> Create New Organization Workspace
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ route('tenants.store') }}">
                 @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Company / Organization Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Domain (Optional)</label>
-                        <input type="text" name="domain" class="form-control" placeholder="e.g. apexmarketing.io">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Subscription Plan</label>
-                        <select name="plan" class="form-select">
-                            <option value="starter">Starter (5,000 leads)</option>
-                            <option value="pro" selected>Pro (25,000 leads)</option>
-                            <option value="enterprise">Enterprise (50,000+ leads)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Monthly Lead Allowance</label>
-                        <input type="number" name="lead_quota" class="form-control" value="25000" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Dedicated Engine API Key (Optional)</label>
-                        <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy...">
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Company / Organization Name <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-building"></i></span>
+                                <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Custom Domain (Optional)</label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-world"></i></span>
+                                <input type="text" name="domain" class="form-control" placeholder="e.g. apexmarketing.io">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Subscription Plan <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-crown"></i></span>
+                                <select name="plan" class="form-select">
+                                    <option value="starter">Starter (5,000 leads)</option>
+                                    <option value="pro" selected>Pro (25,000 leads)</option>
+                                    <option value="enterprise">Enterprise (50,000+ leads)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Monthly Lead Allowance <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-chart-bar"></i></span>
+                                <input type="number" name="lead_quota" class="form-control" value="25000" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Dedicated Engine API Key (Optional)</label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
+                                <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy...">
+                            </div>
+                            <small class="text-muted">Leave empty to use the platform default Discovery Engine key.</small>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-top py-3">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Workspace</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="icon-base ti tabler-plus me-1"></i> Create Workspace
+                    </button>
                 </div>
             </form>
         </div>

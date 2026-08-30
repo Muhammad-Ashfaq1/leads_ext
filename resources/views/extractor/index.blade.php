@@ -51,14 +51,14 @@
                 </div>
             </div>
             <div class="col-12 col-md-6">
-                <div class="form-check custom-option custom-option-basic" id="customOptionBrowser">
+                <div class="form-check custom-option custom-option-basic disabled pe-none opacity-50" id="customOptionBrowser">
                     <label class="form-check-label custom-option-content" for="engineBrowser">
-                        <input name="engineMode" class="form-check-input" type="radio" value="live" id="engineBrowser" />
+                        <input name="engineMode" class="form-check-input" type="radio" value="live" id="engineBrowser" disabled />
                         <span class="custom-option-header">
                             <span class="h6 mb-0 d-flex align-items-center">
                                 <i class="icon-base ti tabler-world me-2 text-info fs-4"></i>Web Business Directory Search
                             </span>
-                            <span class="badge bg-label-info">Standard Search</span>
+                            <span class="badge bg-label-secondary">Temporarily unavailable</span>
                         </span>
                         <span class="custom-option-body">
                             <small class="text-muted d-block">Autonomous public web directory search scanning online business listings with verified contact extraction.</small>

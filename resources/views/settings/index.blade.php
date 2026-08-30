@@ -81,7 +81,7 @@
                                     <label class="form-label fw-semibold" for="default_engine">Default Discovery Engine</label>
                                     <select id="default_engine" name="default_engine" class="form-select">
                                         <option value="google_api" @selected(($settings['default_engine'] ?? 'google_api') === 'google_api')>Cloud Lead Finder (Instant, recommended)</option>
-                                        <option value="browser" @selected(($settings['default_engine'] ?? '') === 'browser')>Web Business Directory Search</option>
+                                        <option value="browser" disabled>Web Business Directory Search (temporarily unavailable)</option>
                                     </select>
                                 </div>
 

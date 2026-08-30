@@ -116,13 +116,27 @@
         @if ($isSuperAdmin)
             <!-- Super Admin Section -->
             <li class="menu-header small text-uppercase mt-3">
-                <span class="menu-header-text">Super Admin</span>
+                <span class="menu-header-text">Platform Admin</span>
             </li>
 
             <li class="menu-item {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
                 <a href="{{ route('tenants.index') }}" class="menu-link">
                     <i class="menu-icon icon-base ti tabler-building"></i>
                     <div data-i18n="Workspaces & Accounts">Workspaces &amp; Accounts</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <a href="{{ route('users.index') }}" class="menu-link">
+                    <i class="menu-icon icon-base ti tabler-user-cog"></i>
+                    <div data-i18n="Team & Admins">Team &amp; Admins</div>
+                </a>
+            </li>
+        @else
+            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <a href="{{ route('users.index') }}" class="menu-link">
+                    <i class="menu-icon icon-base ti tabler-user-cog"></i>
+                    <div data-i18n="Team Members">Team Members</div>
                 </a>
             </li>
         @endif

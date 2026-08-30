@@ -12,6 +12,13 @@
     </a>
 </li>
 <li>
+    <a href="{{ route('users.index') }}"
+       class="dropdown-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+        <i class="{{ $iconClass }} tabler-user-cog me-2"></i>
+        Team &amp; Users
+    </a>
+</li>
+<li>
     <a href="{{ route('settings.index') }}"
        class="dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
         <i class="{{ $iconClass }} tabler-settings-cog me-2"></i>
