@@ -12,163 +12,168 @@ class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_can_view_users_page_with_stats_and_filters(): void
+    public function test_users_route_redirects_to_settings_team_tab(): void
     {
-        $superAdmin = User::factory()->create([
-            'role' => 'super_admin',
-            'tenant_id' => null,
-            'is_active' => true,
-        ]);
-
-        $tenant = Tenant::create([
-            'name' => 'Acme Corp',
-            'slug' => 'acme-corp',
-            'plan' => 'pro',
-        ]);
-
-        $user = User::factory()->create([
+        $tenant = Tenant::create(['name' => 'Acme Corp', 'slug' => 'acme', 'plan' => 'pro']);
+        $admin = User::factory()->create([
             'tenant_id' => $tenant->id,
             'role' => 'admin',
-            'name' => 'Acme Admin',
-            'email' => 'admin@acme.com',
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($superAdmin)->get('/users');
+        $response = $this->actingAs($admin)->get('/users');
+        $response->assertRedirect('/settings?tab=team');
+    }
+
+    public function test_admin_can_view_team_tab_under_settings(): void
+    {
+        $tenant = Tenant::create(['name' => 'Acme Corp', 'slug' => 'acme', 'plan' => 'pro']);
+        $admin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'name' => 'Acme Leader',
+            'email' => 'leader@acme.com',
+            'is_active' => true,
+        ]);
+
+        $member = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'user',
+            'name' => 'Acme Hunter',
+            'email' => 'hunter@acme.com',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get('/settings?tab=team');
 
         $response->assertOk()
-            ->assertSee('Team &amp; User Accounts', false)
-            ->assertSee('Register New User')
-            ->assertSee('Acme Admin')
-            ->assertSee('admin@acme.com')
-            ->assertSee('Global Platform');
+            ->assertSee('Team &amp; Staff Members', false)
+            ->assertSee('Acme Leader')
+            ->assertSee('Acme Hunter')
+            ->assertSee('Staff Allowance: 1 of 5 Slots Used');
     }
 
-    public function test_super_admin_can_register_new_super_admin(): void
+    public function test_workspace_admin_can_create_upto_5_staff_members_only(): void
     {
-        $superAdmin = User::factory()->create([
-            'role' => 'super_admin',
-            'tenant_id' => null,
-            'is_active' => true,
-        ]);
-
-        $response = $this->actingAs($superAdmin)->post('/users', [
-            'name' => 'New Super Admin',
-            'email' => 'super@platform.com',
-            'password' => 'secret123',
-            'role' => 'super_admin',
-            'tenant_id' => '',
-            'phone' => '+1 555-1111',
-            'is_active' => '1',
-        ]);
-
-        $response->assertRedirect('/users');
-        $this->assertDatabaseHas('users', [
-            'name' => 'New Super Admin',
-            'email' => 'super@platform.com',
-            'role' => 'super_admin',
-            'tenant_id' => null,
-            'phone' => '+1 555-1111',
-            'is_active' => true,
-        ]);
-
-        $created = User::where('email', 'super@platform.com')->first();
-        $this->assertTrue(Hash::check('secret123', $created->password));
-    }
-
-    public function test_super_admin_can_register_workspace_admin_for_tenant(): void
-    {
-        $superAdmin = User::factory()->create([
-            'role' => 'super_admin',
-            'tenant_id' => null,
-            'is_active' => true,
-        ]);
-
-        $tenant = Tenant::create([
-            'name' => 'Starlight Media',
-            'slug' => 'starlight-media',
-            'plan' => 'enterprise',
-        ]);
-
-        $response = $this->actingAs($superAdmin)->post('/users', [
-            'name' => 'Starlight Lead',
-            'email' => 'lead@starlight.com',
-            'password' => 'pass123456',
-            'role' => 'admin',
+        $tenant = Tenant::create(['name' => 'Starlight Media', 'slug' => 'starlight', 'plan' => 'enterprise']);
+        $admin = User::factory()->create([
             'tenant_id' => $tenant->id,
-            'phone' => '+1 555-2222',
-            'is_active' => '1',
-        ]);
-
-        $response->assertRedirect('/users');
-        $this->assertDatabaseHas('users', [
-            'name' => 'Starlight Lead',
-            'email' => 'lead@starlight.com',
-            'role' => 'admin',
-            'tenant_id' => $tenant->id,
-        ]);
-    }
-
-    public function test_workspace_admin_can_register_team_member_for_own_workspace_only(): void
-    {
-        $tenant1 = Tenant::create(['name' => 'Tenant One', 'slug' => 't1', 'plan' => 'pro']);
-        $tenant2 = Tenant::create(['name' => 'Tenant Two', 'slug' => 't2', 'plan' => 'pro']);
-
-        $admin1 = User::factory()->create([
-            'tenant_id' => $tenant1->id,
             'role' => 'admin',
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($admin1)->post('/users', [
-            'name' => 'Member One',
-            'email' => 'member1@t1.com',
-            'password' => 'mypassword',
-            'role' => 'user',
-            'tenant_id' => $tenant2->id,
+        // Create 5 staff members successfully
+        for ($i = 1; $i <= 5; $i++) {
+            $response = $this->actingAs($admin)->post('/users', [
+                'name' => "Staff Member {$i}",
+                'email' => "staff{$i}@starlight.com",
+                'password' => 'password123',
+                'phone' => "+1 555-000{$i}",
+            ]);
+            $response->assertRedirect('/settings?tab=team');
+            $this->assertDatabaseHas('users', [
+                'email' => "staff{$i}@starlight.com",
+                'role' => 'user', // strictly staff member
+                'tenant_id' => $tenant->id,
+            ]);
+        }
+
+        $this->assertEquals(5, $tenant->staffMembersCount());
+
+        // Attempting to create a 6th staff member must be blocked
+        $response6 = $this->actingAs($admin)->post('/users', [
+            'name' => 'Staff Member 6',
+            'email' => 'staff6@starlight.com',
+            'password' => 'password123',
         ]);
 
-        $response->assertRedirect('/users');
-        $this->assertDatabaseHas('users', [
-            'name' => 'Member One',
-            'email' => 'member1@t1.com',
-            'role' => 'user',
-            'tenant_id' => $tenant1->id,
+        $response6->assertSessionHasErrors(['team']);
+        $this->assertDatabaseMissing('users', [
+            'email' => 'staff6@starlight.com',
         ]);
     }
 
-    public function test_super_admin_can_filter_users_by_role_and_search(): void
+    public function test_workspace_admin_cannot_create_another_admin_user(): void
     {
-        $superAdmin = User::factory()->create([
-            'role' => 'super_admin',
-            'tenant_id' => null,
-            'is_active' => true,
-        ]);
-
         $tenant = Tenant::create(['name' => 'Apex Agency', 'slug' => 'apex', 'plan' => 'pro']);
-
-        User::factory()->create([
+        $admin = User::factory()->create([
             'tenant_id' => $tenant->id,
             'role' => 'admin',
-            'name' => 'Apex Manager',
-            'email' => 'manager@apex.com',
+            'is_active' => true,
         ]);
 
-        User::factory()->create([
+        // Attempting to pass role=admin as org admin must still create a 'user'
+        $response = $this->actingAs($admin)->post('/users', [
+            'name' => 'Fake Admin',
+            'email' => 'fakeadmin@apex.com',
+            'password' => 'secret123',
+            'role' => 'admin',
+        ]);
+
+        $response->assertRedirect('/settings?tab=team');
+        $this->assertDatabaseHas('users', [
+            'email' => 'fakeadmin@apex.com',
+            'role' => 'user', // Forced to user
+        ]);
+    }
+
+    public function test_workspace_admin_can_remove_staff_member_to_free_slot(): void
+    {
+        $tenant = Tenant::create(['name' => 'Sol Corp', 'slug' => 'sol', 'plan' => 'pro']);
+        $admin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $staff = User::factory()->create([
             'tenant_id' => $tenant->id,
             'role' => 'user',
-            'name' => 'Apex Hunter',
-            'email' => 'hunter@apex.com',
+            'name' => 'Temporary Staff',
+            'email' => 'temp@sol.com',
         ]);
 
-        $resRole = $this->actingAs($superAdmin)->get('/users?role=admin');
-        $resRole->assertOk()
-            ->assertSee('Apex Manager')
-            ->assertDontSee('Apex Hunter');
+        $this->assertEquals(1, $tenant->staffMembersCount());
 
-        $resSearch = $this->actingAs($superAdmin)->get('/users?search=Hunter');
-        $resSearch->assertOk()
-            ->assertSee('Apex Hunter')
-            ->assertDontSee('Apex Manager');
+        $response = $this->actingAs($admin)->delete("/users/{$staff->id}");
+        $response->assertRedirect('/settings?tab=team');
+
+        $this->assertDatabaseMissing('users', ['id' => $staff->id]);
+        $this->assertEquals(0, $tenant->fresh()->staffMembersCount());
+    }
+
+    public function test_super_admin_can_create_organization_with_initial_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'tenant_id' => null,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->post('/tenants', [
+            'name' => 'Horizon Holdings',
+            'plan' => 'enterprise',
+            'lead_quota' => 50000,
+            'admin_name' => 'Horizon Lead Admin',
+            'admin_email' => 'horizon.lead@horizon.com',
+            'admin_password' => 'horizonPass999',
+            'admin_phone' => '+1 555-9876',
+        ]);
+
+        $response->assertRedirect('/tenants');
+
+        $tenant = Tenant::where('name', 'Horizon Holdings')->first();
+        $this->assertNotNull($tenant);
+
+        $this->assertDatabaseHas('users', [
+            'tenant_id' => $tenant->id,
+            'name' => 'Horizon Lead Admin',
+            'email' => 'horizon.lead@horizon.com',
+            'role' => 'admin',
+            'phone' => '+1 555-9876',
+        ]);
+
+        $adminUser = User::where('email', 'horizon.lead@horizon.com')->first();
+        $this->assertTrue(Hash::check('horizonPass999', $adminUser->password));
     }
 }

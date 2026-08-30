@@ -126,17 +126,10 @@
                 </a>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <a href="{{ route('users.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base ti tabler-user-cog"></i>
-                    <div data-i18n="Team & Admins">Team &amp; Admins</div>
-                </a>
-            </li>
-        @else
-            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <a href="{{ route('users.index') }}" class="menu-link">
-                    <i class="menu-icon icon-base ti tabler-user-cog"></i>
-                    <div data-i18n="Team Members">Team Members</div>
+            <li class="menu-item {{ request()->routeIs('plans.*') ? 'active' : '' }}">
+                <a href="{{ route('plans.index') }}" class="menu-link">
+                    <i class="menu-icon icon-base ti tabler-packages"></i>
+                    <div data-i18n="Subscription Plans">Subscription Plans</div>
                 </a>
             </li>
         @endif

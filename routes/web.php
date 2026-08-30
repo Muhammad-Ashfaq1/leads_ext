@@ -54,6 +54,7 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::get('/users', [UsersController::class, 'index'])->name('users.index');
     Route::post('/users', [UsersController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
 
     // Profile Settings
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
@@ -69,5 +70,10 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
         Route::get('/tenants', [TenantsController::class, 'index'])->name('tenants.index');
         Route::post('/tenants', [TenantsController::class, 'store'])->name('tenants.store');
         Route::put('/tenants/{tenant}', [TenantsController::class, 'update'])->name('tenants.update');
+
+        Route::get('/plans', [\App\Http\Controllers\PlansController::class, 'index'])->name('plans.index');
+        Route::post('/plans', [\App\Http\Controllers\PlansController::class, 'store'])->name('plans.store');
+        Route::put('/plans/{plan}', [\App\Http\Controllers\PlansController::class, 'update'])->name('plans.update');
+        Route::delete('/plans/{plan}', [\App\Http\Controllers\PlansController::class, 'destroy'])->name('plans.destroy');
     });
 });

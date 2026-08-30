@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\EmailTemplate;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -12,6 +13,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(PlanSeeder::class);
+
+        $starterPlan = Plan::where('slug', 'starter')->first();
+        $enterprisePlan = Plan::where('slug', 'enterprise')->first();
+
         EmailTemplate::query()
             ->whereIn('name', [
                 'B2B Partnership / Introduction',
@@ -38,6 +44,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Obtain Solutions',
                 'domain' => 'obtainsolutions.com',
                 'plan' => 'enterprise',
+                'plan_id' => $enterprisePlan->id,
                 'lead_quota' => 100000,
                 'is_active' => true,
             ]
@@ -61,6 +68,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'General Workspace',
                 'domain' => 'general.test',
                 'plan' => 'starter',
+                'plan_id' => $starterPlan->id,
                 'lead_quota' => 10000,
                 'leads_extracted_count' => 0,
                 'is_active' => true,

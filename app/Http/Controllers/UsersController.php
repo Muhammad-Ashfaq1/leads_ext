@@ -9,102 +9,64 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class UsersController extends Controller
 {
-    public function index(Request $request): View
+    public const MAX_STAFF_PER_TENANT = 5;
+
+    public function index(Request $request): RedirectResponse
     {
-        $currentUser = Auth::user();
-        $isSuperAdmin = $currentUser->isSuperAdmin();
-        $tenantId = $currentUser->tenant_id;
-
-        $perPage = (int) $request->input('per_page', 10);
-        if (! in_array($perPage, [10, 25, 50, 100], true)) {
-            $perPage = 10;
-        }
-
-        $search = trim((string) $request->input('search', ''));
-        $roleFilter = $request->input('role');
-        $statusFilter = $request->input('status');
-        $tenantFilter = $request->input('tenant_id');
-
-        $baseQuery = User::query()
-            ->with('tenant')
-            ->when(! $isSuperAdmin && $tenantId, fn ($q) => $q->where('tenant_id', $tenantId));
-
-        // Aggregate stats
-        $statsQuery = clone $baseQuery;
-        $stats = [
-            'total' => $statsQuery->count(),
-            'admins' => (clone $baseQuery)->whereIn('role', ['admin', 'super_admin'])->count(),
-            'super_admins' => (clone $baseQuery)->where('role', 'super_admin')->count(),
-            'members' => (clone $baseQuery)->where('role', 'user')->count(),
-            'active' => (clone $baseQuery)->where('is_active', true)->count(),
-        ];
-
-        $users = $baseQuery
-            ->when($search !== '', function ($q) use ($search) {
-                $q->where(function ($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->when($roleFilter && in_array($roleFilter, ['super_admin', 'admin', 'user'], true), fn ($q) => $q->where('role', $roleFilter))
-            ->when($statusFilter !== null && $statusFilter !== '', function ($q) use ($statusFilter) {
-                if ($statusFilter === 'active') {
-                    $q->where('is_active', true);
-                } elseif ($statusFilter === 'inactive') {
-                    $q->where('is_active', false);
-                }
-            })
-            ->when($isSuperAdmin && $tenantFilter !== null && $tenantFilter !== '', function ($q) use ($tenantFilter) {
-                if ($tenantFilter === 'global') {
-                    $q->whereNull('tenant_id');
-                } else {
-                    $q->where('tenant_id', $tenantFilter);
-                }
-            })
-            ->latest('id')
-            ->paginate($perPage)
-            ->withQueryString();
-
-        $tenants = $isSuperAdmin ? Tenant::where('is_active', true)->orderBy('name')->get() : collect();
-
-        return view('users.index', [
-            'users' => $users,
-            'tenants' => $tenants,
-            'stats' => $stats,
-            'isSuperAdmin' => $isSuperAdmin,
-            'filters' => [
-                'search' => $search,
-                'role' => $roleFilter,
-                'status' => $statusFilter,
-                'tenant_id' => $tenantFilter,
-            ],
-        ]);
+        return redirect()->route('settings.index', ['tab' => 'team']);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $currentUser = Auth::user();
         $isSuperAdmin = $currentUser->isSuperAdmin();
+        $tenant = $currentUser->tenant;
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
-            'role' => ['required', Rule::in($isSuperAdmin ? ['super_admin', 'admin', 'user'] : ['admin', 'user'])],
-            'tenant_id' => [$isSuperAdmin ? 'nullable' : 'required', 'exists:tenants,id'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        if ($isSuperAdmin) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                'password' => ['required', 'string', 'min:6'],
+                'role' => ['required', Rule::in(['super_admin', 'admin', 'user'])],
+                'tenant_id' => ['nullable', 'exists:tenants,id'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        if (! $isSuperAdmin) {
-            $validated['tenant_id'] = $currentUser->tenant_id;
-        } elseif ($validated['role'] === 'super_admin') {
-            $validated['tenant_id'] = null;
+            if ($validated['role'] === 'super_admin') {
+                $validated['tenant_id'] = null;
+            } elseif ($validated['role'] === 'user' && ! empty($validated['tenant_id'])) {
+                $targetTenant = Tenant::find($validated['tenant_id']);
+                if ($targetTenant && $targetTenant->staffMembersCount() >= self::MAX_STAFF_PER_TENANT) {
+                    throw ValidationException::withMessages([
+                        'tenant_id' => 'This organization has already reached the maximum allowance of '.self::MAX_STAFF_PER_TENANT.' staff members.',
+                    ]);
+                }
+            }
+        } else {
+            if (! $tenant || ! $currentUser->isAdmin()) {
+                abort(403, 'Only organization administrators can add team members.');
+            }
+
+            if (! $tenant->canAddStaffMember()) {
+                return redirect()->route('settings.index', ['tab' => 'team'])
+                    ->withErrors(['team' => 'Your organization has reached the maximum allowance of '.self::MAX_STAFF_PER_TENANT.' staff members. Remove an existing member to add new staff.']);
+            }
+
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                'password' => ['required', 'string', 'min:6'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
+
+            $validated['tenant_id'] = $tenant->id;
+            $validated['role'] = 'user'; // Organization admins can strictly only create staff members
         }
 
         $validated['password'] = Hash::make($validated['password']);
@@ -112,7 +74,9 @@ class UsersController extends Controller
 
         User::create($validated);
 
-        return redirect()->route('users.index')->with('success', "User account '{$validated['name']}' registered successfully.");
+        $returnUrl = $request->input('redirect_to', route('settings.index', ['tab' => 'team']));
+
+        return redirect($returnUrl)->with('success', "Staff member '{$validated['name']}' registered successfully.");
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -124,21 +88,37 @@ class UsersController extends Controller
             abort(403);
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', Rule::in($isSuperAdmin ? ['super_admin', 'admin', 'user'] : ['admin', 'user'])],
-            'tenant_id' => [$isSuperAdmin ? 'nullable' : 'sometimes', 'exists:tenants,id'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'is_active' => ['sometimes', 'boolean'],
-            'password' => ['nullable', 'string', 'min:6'],
-        ]);
+        if (! $isSuperAdmin && ! $currentUser->isAdmin()) {
+            abort(403, 'Only administrators can update team members.');
+        }
 
         if ($isSuperAdmin) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+                'role' => ['required', Rule::in(['super_admin', 'admin', 'user'])],
+                'tenant_id' => ['nullable', 'exists:tenants,id'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'is_active' => ['sometimes', 'boolean'],
+                'password' => ['nullable', 'string', 'min:6'],
+            ]);
+
             if ($validated['role'] === 'super_admin') {
                 $validated['tenant_id'] = null;
             } elseif (array_key_exists('tenant_id', $validated)) {
                 $validated['tenant_id'] = $validated['tenant_id'] ?: null;
+            }
+        } else {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'is_active' => ['sometimes', 'boolean'],
+                'password' => ['nullable', 'string', 'min:6'],
+            ]);
+
+            if ($user->id !== $currentUser->id) {
+                $validated['role'] = 'user'; // Ensure staff members cannot be promoted to admin by org admin
             }
         }
 
@@ -151,7 +131,33 @@ class UsersController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
         $user->update($validated);
 
-        return redirect()->route('users.index')->with('success', "User account '{$user->name}' updated successfully.");
+        $returnUrl = $request->input('redirect_to', route('settings.index', ['tab' => 'team']));
+
+        return redirect($returnUrl)->with('success', "Member '{$user->name}' updated successfully.");
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        $currentUser = Auth::user();
+        $isSuperAdmin = $currentUser->isSuperAdmin();
+
+        if ($user->id === $currentUser->id) {
+            return back()->withErrors(['team' => 'You cannot remove your own account.']);
+        }
+
+        if (! $isSuperAdmin) {
+            if ($user->tenant_id !== $currentUser->tenant_id || ! $currentUser->isAdmin()) {
+                abort(403);
+            }
+            if ($user->role !== 'user') {
+                return back()->withErrors(['team' => 'Organization admins cannot be removed through this action.']);
+            }
+        }
+
+        $userName = $user->name;
+        $user->delete();
+
+        return redirect()->route('settings.index', ['tab' => 'team'])->with('success', "Staff member '{$userName}' removed successfully.");
     }
 }
 

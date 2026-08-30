@@ -11,13 +11,15 @@
         Profile
     </a>
 </li>
-<li>
-    <a href="{{ route('users.index') }}"
-       class="dropdown-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-        <i class="{{ $iconClass }} tabler-user-cog me-2"></i>
-        Team &amp; Users
-    </a>
-</li>
+@if ($authUser?->tenant)
+    <li>
+        <a href="{{ route('settings.index', ['tab' => 'team']) }}"
+           class="dropdown-item {{ request()->get('tab') === 'team' ? 'active' : '' }}">
+            <i class="{{ $iconClass }} tabler-users me-2"></i>
+            Team Members
+        </a>
+    </li>
+@endif
 <li>
     <a href="{{ route('settings.index') }}"
        class="dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">

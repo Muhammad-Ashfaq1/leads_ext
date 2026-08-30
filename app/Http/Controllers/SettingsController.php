@@ -9,16 +9,38 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $tenant = $user->tenant;
+        $isSuperAdmin = $user->isSuperAdmin();
+
+        $activeTab = $request->query('tab', 'general');
+
+        // Team members for this workspace
+        $teamMembers = collect();
+        if ($tenant) {
+            $teamMembers = $tenant->users()
+                ->orderByRaw("CASE WHEN role = 'admin' THEN 1 ELSE 2 END")
+                ->latest('id')
+                ->get();
+        }
+
+        $staffCount = $tenant ? $tenant->staffMembersCount() : 0;
+        $maxStaff = \App\Http\Controllers\UsersController::MAX_STAFF_PER_TENANT;
+        $canAddStaff = $tenant ? $tenant->canAddStaffMember() : false;
 
         return view('settings.index', [
             'user' => $user,
             'tenant' => $tenant,
             'settings' => $tenant?->settings ?? [],
             'hasGlobalGoogleKey' => ! empty(config('services.google.maps_api_key')),
+            'activeTab' => $activeTab,
+            'teamMembers' => $teamMembers,
+            'staffCount' => $staffCount,
+            'maxStaff' => $maxStaff,
+            'canAddStaff' => $canAddStaff,
+            'isSuperAdmin' => $isSuperAdmin,
         ]);
     }
 
