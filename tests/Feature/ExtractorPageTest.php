@@ -32,7 +32,7 @@ class ExtractorPageTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get('/extractor')
             ->assertOk()
             ->assertSee('VektorLeads')
@@ -41,6 +41,13 @@ class ExtractorPageTest extends TestCase
             ->assertSee('Start Extraction')
             ->assertSee('Extraction Status')
             ->assertDontSee('AWT Phone');
+
+        $html = $response->getContent();
+        $this->assertSame(1, substr_count($html, 'id="leadsClearBtn"'));
+        $this->assertSame(1, substr_count($html, 'New Search'));
+        $this->assertSame(0, substr_count($html, 'id="summaryCard"'));
+        $this->assertSame(0, substr_count($html, 'Download Excel'));
+        $this->assertSame(0, substr_count($html, 'id="clearAllResultsBtn"'));
     }
 
     public function test_dashboard_renders_metrics(): void

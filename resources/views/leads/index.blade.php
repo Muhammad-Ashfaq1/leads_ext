@@ -18,11 +18,8 @@
             <span class="pos-glass-pill pos-tone-primary">
                 <i class="icon-base ti tabler-database me-1"></i> {{ number_format($leads->total()) }} leads
             </span>
-            <a href="{{ route('leads.export.excel') }}" class="btn btn-sm btn-success text-white">
-                <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Export Excel (.xlsx)
-            </a>
-            <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                <i class="icon-base ti tabler-plus me-1"></i> Extract Leads
+            <a href="{{ route('leads.export.excel') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}" class="btn btn-sm btn-success text-white">
+                <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Export
             </a>
         </div>
     </div>
@@ -207,23 +204,29 @@
                 <button type="button" class="btn btn-sm btn-primary" id="sendEmailBulkBtn" title="Send Email to selected leads">
                     <i class="icon-base ti tabler-send me-1"></i>Send Email
                 </button>
-                <button type="button" class="btn btn-sm btn-success" id="exportSelectedExcelBtn">
-                    <i class="icon-base ti tabler-file-spreadsheet me-1"></i>Export (Excel)
-                </button>
-                <button type="button" class="btn btn-sm btn-info text-white" id="exportSelectedCsvBtn">
-                    <i class="icon-base ti tabler-file-text me-1"></i>CSV
-                </button>
-                <button type="button" class="btn btn-sm btn-label-secondary" id="copySelectedEmailsBtn" title="Copy all emails from selected leads">
-                    <i class="icon-base ti tabler-copy me-1"></i>Emails
-                </button>
-                <button type="button" class="btn btn-sm btn-label-secondary" id="copySelectedPhonesBtn" title="Copy all phones from selected leads">
-                    <i class="icon-base ti tabler-phone me-1"></i>Phones
-                </button>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="icon-base ti tabler-download me-1"></i>Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><button type="button" class="dropdown-item" id="exportSelectedExcelBtn"><i class="icon-base ti tabler-file-spreadsheet me-2 text-success"></i>Excel (.xlsx)</button></li>
+                        <li><button type="button" class="dropdown-item" id="exportSelectedCsvBtn"><i class="icon-base ti tabler-file-text me-2 text-info"></i>CSV (.csv)</button></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-label-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="icon-base ti tabler-copy me-1"></i>Copy
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><button type="button" class="dropdown-item" id="copySelectedEmailsBtn"><i class="icon-base ti tabler-mail me-2"></i>Emails</button></li>
+                        <li><button type="button" class="dropdown-item" id="copySelectedPhonesBtn"><i class="icon-base ti tabler-phone me-2"></i>Phones</button></li>
+                    </ul>
+                </div>
                 <button type="button" class="btn btn-sm btn-outline-warning" id="discardSelectedBtn" title="Mark selected leads as discarded">
-                    <i class="icon-base ti tabler-archive me-1"></i>Discard Selected
+                    <i class="icon-base ti tabler-archive me-1"></i>Discard
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn" title="Delete selected leads from database">
-                    <i class="icon-base ti tabler-trash me-1"></i>Delete Selected
+                    <i class="icon-base ti tabler-trash me-1"></i>Delete
                 </button>
             </div>
         </div>
@@ -733,7 +736,7 @@ function initLeadsPageHandlers() {
                 'Discard Selected Leads',
                 `Mark ${ids.length} selected lead(s) as discarded?`,
                 'Yes, Discard Leads',
-                false
+                true
             );
 
             if (!confirmed || !confirmed.isConfirmed) return;

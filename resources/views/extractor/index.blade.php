@@ -185,14 +185,6 @@
                     <i class="icon-base ti tabler-player-stop me-1"></i>
                     Stop Extraction
                 </button>
-                <button type="button" class="btn btn-outline-danger disabled" id="clearAllResultsBtn" disabled title="Clear all searched leads from screen">
-                    <i class="icon-base ti tabler-trash me-1"></i>
-                    Clear Results
-                </button>
-                <button type="button" class="btn btn-outline-secondary" id="newExtractionBtn" title="Reset search inputs and prepare new query">
-                    <i class="icon-base ti tabler-rotate me-1"></i>
-                    New Search
-                </button>
             </div>
         </div>
     </div>
@@ -231,16 +223,6 @@
                 </div>
                 <p class="small text-muted mb-0 mt-1" id="searchLabel">Search: —</p>
             </div>
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <button type="button" class="btn btn-danger d-none" id="stopBtn">
-                    <i class="icon-base ti tabler-player-stop me-1"></i>
-                    Stop Extraction
-                </button>
-                <button type="button" class="btn btn-outline-danger btn-sm disabled" id="statusClearBtn" disabled title="Clear searched leads and reset counters">
-                    <i class="icon-base ti tabler-trash me-1"></i>
-                    Clear Results
-                </button>
-            </div>
         </div>
         <p class="mb-3" id="activityLabel">Current Activity: Waiting for a search.</p>
         <div class="alert d-none" id="statusAlert" role="alert"></div>
@@ -273,21 +255,6 @@
     </div>
 </div>
 
-<div class="pos-glass-card pos-tone-success mb-4 d-none w-100" id="summaryCard">
-    <div class="card-body p-4">
-        <h5 class="mb-3">Extraction Completed</h5>
-        <div class="row g-3 mb-3" id="summaryStats"></div>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-primary disabled" id="exportBtn" href="#">
-                <i class="icon-base ti tabler-file-spreadsheet me-1"></i>
-                Download Excel (.xlsx)
-            </a>
-            <button type="button" class="btn btn-outline-danger disabled" id="clearBtn" disabled>Clear Results</button>
-            <button type="button" class="btn btn-outline-primary" id="summaryNewBtn">New Search</button>
-        </div>
-    </div>
-</div>
-
 <div class="pos-glass-card pos-tone-primary mb-4 w-100" id="leadsSection">
     <div class="card-header border-bottom py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -300,8 +267,11 @@
                 </span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
-                <button type="button" class="btn btn-sm btn-outline-danger disabled" id="leadsClearBtn" disabled title="Clear all searched leads from screen">
-                    <i class="icon-base ti tabler-trash me-1"></i>Clear Results
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="newExtractionBtn" title="Reset search inputs for a new query">
+                    <i class="icon-base ti tabler-search me-1"></i>New Search
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger disabled" id="leadsClearBtn" disabled title="Clear discovered leads from this screen">
+                    <i class="icon-base ti tabler-trash me-1"></i>Clear
                 </button>
                 <button type="button" class="btn btn-sm btn-success d-none" id="saveAllDiscoveredBtn">
                     <i class="icon-base ti tabler-device-floppy me-1"></i>Save All (<span id="saveAllCount">0</span>)

@@ -47,16 +47,11 @@
         prompt: document.getElementById('promptInput'),
         limit: document.getElementById('limitInput'),
         start: document.getElementById('startBtn'),
-        stop: document.getElementById('stopBtn'),
+        stop: document.getElementById('inlineStopBtn'),
         inlineStopBtn: document.getElementById('inlineStopBtn'),
         stopVerify: document.getElementById('stopFromVerifyBtn'),
         newExtraction: document.getElementById('newExtractionBtn'),
-        summaryNew: document.getElementById('summaryNewBtn'),
-        clear: document.getElementById('clearBtn'),
-        clearAllResultsBtn: document.getElementById('clearAllResultsBtn'),
-        statusClearBtn: document.getElementById('statusClearBtn'),
         leadsClearBtn: document.getElementById('leadsClearBtn'),
-        exportSummary: document.getElementById('exportBtn'),
         mock: document.getElementById('mockToggle'),
         verify: document.getElementById('verifyToggle'),
         completeMock: document.getElementById('completeMockVerifyBtn'),
@@ -219,29 +214,23 @@
                 : '<i class="icon-base ti tabler-player-play me-1"></i>Start Extraction';
         }
 
-        // Stop Buttons
-        if (els.stop) {
-            els.stop.classList.toggle('d-none', !isRunning);
-        }
+        // Stop Button
         if (els.inlineStopBtn) {
             els.inlineStopBtn.classList.toggle('d-none', !isRunning);
         }
 
-        // Clear Results Buttons: ONLY enabled when NOT running AND HAS results
+        // Clear: only on the leads toolbar, and only when not running with results
         const canClear = !isRunning && hasResults;
-        const clearButtons = [els.clear, els.clearAllResultsBtn, els.statusClearBtn, els.leadsClearBtn];
-        for (const btn of clearButtons) {
-            if (btn) {
-                btn.disabled = !canClear;
-                if (canClear) {
-                    btn.classList.remove('disabled');
-                    btn.removeAttribute('disabled');
-                    btn.removeAttribute('aria-disabled');
-                } else {
-                    btn.classList.add('disabled');
-                    btn.setAttribute('disabled', 'disabled');
-                    btn.setAttribute('aria-disabled', 'true');
-                }
+        if (els.leadsClearBtn) {
+            els.leadsClearBtn.disabled = !canClear;
+            if (canClear) {
+                els.leadsClearBtn.classList.remove('disabled');
+                els.leadsClearBtn.removeAttribute('disabled');
+                els.leadsClearBtn.removeAttribute('aria-disabled');
+            } else {
+                els.leadsClearBtn.classList.add('disabled');
+                els.leadsClearBtn.setAttribute('disabled', 'disabled');
+                els.leadsClearBtn.setAttribute('aria-disabled', 'true');
             }
         }
 
@@ -521,7 +510,9 @@
 
         // Update counts
         els.leadCountBadge.textContent = `${total} total`;
-        els.exportDropdownBtn.classList.toggle('disabled', total === 0);
+        if (els.exportDropdownBtn) {
+            els.exportDropdownBtn.classList.toggle('disabled', total === 0);
+        }
         els.masterCheckbox.disabled = filtered.length === 0;
 
         if (filterActive) {
@@ -873,8 +864,24 @@
     }
 
     async function executeBulkAction(action, customLeadIds = null, confirmMessage = null) {
-        if (confirmMessage && !window.confirm(confirmMessage)) {
-            return;
+        if (confirmMessage) {
+            const isSaveAll = action === 'save_all';
+            const title = isSaveAll
+                ? 'Save discovered leads?'
+                : (action === 'discard' ? 'Discard selected leads?' : 'Please confirm');
+            const confirmText = isSaveAll
+                ? 'Yes, Save All'
+                : (action === 'discard' ? 'Yes, Discard' : 'Yes, Proceed');
+            let confirmed = false;
+            if (typeof window.showConfirm === 'function') {
+                const result = await window.showConfirm(title, confirmMessage, confirmText, !isSaveAll);
+                confirmed = Boolean(result && result.isConfirmed);
+            } else {
+                confirmed = window.confirm(confirmMessage);
+            }
+            if (!confirmed) {
+                return;
+            }
         }
 
         const selectedLeads = getSelectedLeadsList();
@@ -999,20 +1006,9 @@
     }
 
     function showSummary(event) {
-        els.summaryCard.classList.remove('d-none');
-        const scanned = event.businesses_seen ?? els.kpiSeen.textContent;
-        const extracted = event.leads_extracted ?? state.leads.size;
-        const emails = event.emails_found ?? els.kpiEmails.textContent;
-        const websites = event.websites_found ?? els.kpiWebsites.textContent;
-        els.summaryStats.innerHTML = `
-            <div class="col-6 col-md-3"><div class="text-muted small">Businesses Scanned</div><div class="fw-bold fs-5">${scanned}</div></div>
-            <div class="col-6 col-md-3"><div class="text-muted small">Leads Extracted</div><div class="fw-bold fs-5">${extracted}</div></div>
-            <div class="col-6 col-md-3"><div class="text-muted small">Emails Found</div><div class="fw-bold fs-5">${emails}</div></div>
-            <div class="col-6 col-md-3"><div class="text-muted small">Websites Found</div><div class="fw-bold fs-5">${websites}</div></div>
-        `;
-        if (state.jobId) {
-            els.exportSummary.classList.remove('disabled');
-            els.exportSummary.href = jobUrl(cfg.exportUrl) + '?format=excel';
+        updateCounts(event);
+        if (els.exportDropdownBtn && state.leads.size > 0) {
+            els.exportDropdownBtn.classList.remove('disabled');
         }
     }
 
@@ -1191,7 +1187,7 @@
         }
 
         setAlert('info', '', false);
-        els.summaryCard.classList.add('d-none');
+        if (els.summaryCard) els.summaryCard.classList.add('d-none');
         showVerification(false);
         setStatus('starting', 'Starting extraction');
         setRunning(true);
@@ -1326,10 +1322,6 @@
         setStatus('ready', 'Waiting for a search.');
         if (els.searchLabel) els.searchLabel.textContent = 'Search: —';
         if (els.activity) els.activity.textContent = 'Current Activity: Waiting for a search.';
-        if (els.exportSummary) {
-            els.exportSummary.classList.add('disabled');
-            els.exportSummary.href = '#';
-        }
         if (els.exportDropdownBtn) {
             els.exportDropdownBtn.classList.add('disabled');
         }
@@ -1351,6 +1343,7 @@
         if (els.prompt) {
             els.prompt.value = '';
             els.prompt.focus();
+            document.getElementById('promptCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         if (els.locationInput) {
             els.locationInput.value = '';
@@ -1653,15 +1646,10 @@
         });
     }
     if (els.stop) els.stop.addEventListener('click', stopExtraction);
-    if (els.inlineStopBtn) els.inlineStopBtn.addEventListener('click', stopExtraction);
     if (els.stopVerify) els.stopVerify.addEventListener('click', stopExtraction);
     if (els.openVerification) els.openVerification.addEventListener('click', openVerification);
-    if (els.clear) els.clear.addEventListener('click', () => clearResults(false));
-    if (els.clearAllResultsBtn) els.clearAllResultsBtn.addEventListener('click', () => clearResults(false));
-    if (els.statusClearBtn) els.statusClearBtn.addEventListener('click', () => clearResults(false));
     if (els.leadsClearBtn) els.leadsClearBtn.addEventListener('click', () => clearResults(false));
     if (els.newExtraction) els.newExtraction.addEventListener('click', newSearch);
-    if (els.summaryNew) els.summaryNew.addEventListener('click', newSearch);
     if (els.completeMock) {
         els.completeMock.addEventListener('click', completeMockVerification);
     }

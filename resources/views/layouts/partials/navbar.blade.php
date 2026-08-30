@@ -21,11 +21,13 @@
 
         <!-- Right: Actions, Theme Switcher & Account Dropdown -->
         <ul class="navbar-nav flex-row align-items-center ms-auto gap-3">
-            <li class="nav-item d-none d-md-block">
-                <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
-                    <i class="icon-base ti tabler-plus me-1"></i> New Extraction
-                </a>
-            </li>
+            @unless (request()->routeIs('extractor.index'))
+                <li class="nav-item d-none d-md-block">
+                    <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
+                        <i class="icon-base ti tabler-plus me-1"></i> New Extraction
+                    </a>
+                </li>
+            @endunless
 
             @include('layouts.partials.theme-switcher')
 
