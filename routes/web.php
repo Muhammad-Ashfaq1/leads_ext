@@ -46,6 +46,19 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::delete('/email-templates/{emailTemplate}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
     Route::post('/email-templates/{emailTemplate}/default', [EmailTemplateController::class, 'setDefault'])->name('email-templates.default');
 
+    // Gmail / Hostinger Email Integration & Inbox Hub
+    Route::get('/gmail', [\App\Http\Controllers\GmailController::class, 'index'])->name('gmail.index');
+    Route::get('/gmail/connect', [\App\Http\Controllers\GmailController::class, 'connect'])->name('gmail.connect');
+    Route::post('/gmail/connect-hostinger', [\App\Http\Controllers\GmailController::class, 'connectHostinger'])->name('gmail.connect-hostinger');
+    Route::get('/gmail/callback', [\App\Http\Controllers\GmailController::class, 'callback'])->name('gmail.callback');
+    Route::post('/gmail/disconnect/{account}', [\App\Http\Controllers\GmailController::class, 'disconnect'])->name('gmail.disconnect');
+    Route::post('/gmail/sync/{account?}', [\App\Http\Controllers\GmailController::class, 'sync'])->name('gmail.sync');
+    Route::get('/gmail/messages/{message}', [\App\Http\Controllers\GmailController::class, 'show'])->name('gmail.messages.show');
+    Route::post('/gmail/messages/{message}/reply', [\App\Http\Controllers\GmailController::class, 'sendReply'])->name('gmail.messages.reply');
+    Route::post('/gmail/messages/{message}/star', [\App\Http\Controllers\GmailController::class, 'toggleStar'])->name('gmail.messages.star');
+    Route::post('/gmail/messages/{message}/read', [\App\Http\Controllers\GmailController::class, 'markRead'])->name('gmail.messages.read');
+    Route::delete('/gmail/messages/{message}', [\App\Http\Controllers\GmailController::class, 'destroy'])->name('gmail.messages.destroy');
+
     // Extraction History & Job Export
     Route::get('/jobs', [JobsController::class, 'index'])->name('jobs.index');
     Route::get('/jobs/{job}/export', [ExtractorController::class, 'export'])->name('extractor.job.export');

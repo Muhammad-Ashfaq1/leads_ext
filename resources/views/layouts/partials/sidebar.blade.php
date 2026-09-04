@@ -106,6 +106,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('gmail.*') ? 'active' : '' }}">
+            <a href="{{ route('gmail.index') }}" class="menu-link">
+                <i class="menu-icon icon-base ti tabler-mail"></i>
+                <div data-i18n="Gmail Inbox">Gmail Inbox</div>
+            </a>
+        </li>
+
         <li class="menu-item {{ request()->routeIs('jobs.*') ? 'active' : '' }}">
             <a href="{{ route('jobs.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-history"></i>

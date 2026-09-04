@@ -55,6 +55,16 @@ class Tenant extends Model
         return $this->hasMany(ExtractedLead::class);
     }
 
+    public function gmailAccounts(): HasMany
+    {
+        return $this->hasMany(GmailAccount::class);
+    }
+
+    public function gmailMessages(): HasMany
+    {
+        return $this->hasMany(GmailMessage::class);
+    }
+
     public const MAX_STAFF_MEMBERS = 5;
 
     public function staffMembers(): HasMany

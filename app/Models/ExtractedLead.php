@@ -81,6 +81,11 @@ class ExtractedLead extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function gmailMessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(GmailMessage::class);
+    }
+
     public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (! $user || $user->isSuperAdmin()) {
