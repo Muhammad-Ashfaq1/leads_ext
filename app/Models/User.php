@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->belongsTo(Tenant::class);
     }
 
+    public function gmailAccounts()
+    {
+        return $this->hasMany(GmailAccount::class);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->role === 'super_admin';

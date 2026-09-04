@@ -70,6 +70,20 @@
                     </span>
                     <span class="settings-text-responsive">Discovery Engine API</span>
                 </button>
+                <button
+                    type="button"
+                    class="settings-sidebar-link {{ $activeTab === 'gmail' ? 'active is-active' : '' }} text-start border-0 bg-transparent w-100"
+                    id="gmail-settings-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#gmail-tab"
+                    role="tab"
+                    aria-controls="gmail-tab"
+                    aria-selected="{{ $activeTab === 'gmail' ? 'true' : 'false' }}">
+                    <span class="settings-sidebar-icon">
+                        <i class="icon-base ti tabler-mail"></i>
+                    </span>
+                    <span class="settings-text-responsive">Gmail Integration</span>
+                </button>
                 @if ($tenant)
                     <button
                         type="button"
@@ -232,6 +246,126 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+
+                    <!-- Gmail & Hostinger Email Integration Tab -->
+                    <div class="tab-pane fade {{ $activeTab === 'gmail' ? 'show active' : '' }}" id="gmail-tab" role="tabpanel" aria-labelledby="gmail-settings-tab">
+                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+                            <div>
+                                <h5 class="mb-1 fw-bold text-heading">
+                                    <i class="icon-base ti tabler-mail me-1 text-primary"></i> Hostinger &amp; Gmail Account Hub
+                                </h5>
+                                <p class="text-muted small mb-0">Connect your Hostinger Business Email or Gmail account to view incoming inquiries and send replies directly.</p>
+                            </div>
+                        </div>
+
+                        @if ($gmailAccount)
+                            <div class="card border border-success-subtle bg-success-subtle bg-opacity-10 p-4 mb-4 rounded-3">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar avatar-md bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold">
+                                            <i class="icon-base ti tabler-circle-check fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-heading fs-6">{{ $gmailAccount->email }}</span>
+                                                <span class="badge {{ $gmailAccount->isHostinger() ? 'bg-label-primary' : 'bg-label-danger' }} text-uppercase" style="font-size: 0.68rem;">
+                                                    {{ $gmailAccount->isHostinger() ? 'Hostinger (IMAP/SMTP)' : 'Gmail OAuth' }}
+                                                </span>
+                                            </div>
+                                            <div class="small text-secondary">
+                                                Connected {{ $gmailAccount->created_at?->diffForHumans() }}
+                                                @if ($gmailAccount->last_synced_at)
+                                                    • Last synced: {{ $gmailAccount->last_synced_at->diffForHumans() }}
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="{{ route('gmail.index') }}" class="btn btn-sm btn-primary">
+                                            <i class="icon-base ti tabler-inbox me-1"></i> Open Inbox
+                                        </a>
+                                        <form action="{{ route('gmail.disconnect', $gmailAccount->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Disconnect this email account?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="icon-base ti tabler-plug-connected-x me-1"></i> Disconnect
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="row g-3 mb-4">
+                                <!-- Option 1: Hostinger Email -->
+                                <div class="col-12 col-lg-7">
+                                    <div class="card border h-100 p-4 rounded-3 shadow-xs">
+                                        <h6 class="fw-bold text-heading mb-1 d-flex align-items-center">
+                                            <i class="icon-base ti tabler-mail-plus text-primary me-2"></i> Connect Hostinger Email (Recommended)
+                                        </h6>
+                                        <p class="small text-secondary mb-3">
+                                            Connect your Hostinger domain email (e.g. <code>info@yourdomain.com</code>) using pre-configured IMAP &amp; SMTP settings.
+                                        </p>
+
+                                        <form method="POST" action="{{ route('gmail.connect-hostinger') }}">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Hostinger Email</label>
+                                                <input type="email" name="email" class="form-control form-control-sm" placeholder="contact@yourcompany.com" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Email Password</label>
+                                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Hostinger email password" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Sender Display Name (Optional)</label>
+                                                <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. Support / Outreach">
+                                            </div>
+                                            <button type="submit" class="btn btn-sm btn-primary w-100">
+                                                <i class="icon-base ti tabler-plug-connected me-1"></i> Connect &amp; Sync Hostinger Email
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Option 2: Google Gmail -->
+                                <div class="col-12 col-lg-5">
+                                    <div class="card border h-100 p-4 rounded-3 text-center shadow-xs d-flex flex-column justify-content-center">
+                                        <div class="avatar avatar-md bg-label-danger rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center">
+                                            <i class="icon-base ti tabler-brand-google fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-1">Google Gmail OAuth</h6>
+                                        <p class="text-secondary small mb-3">
+                                            Connect via Google Cloud OAuth 2.0.
+                                        </p>
+                                        <div>
+                                            @if ($isGmailConfigured)
+                                                <a href="{{ route('gmail.connect') }}" class="btn btn-sm btn-outline-primary w-100">
+                                                    <i class="icon-base ti tabler-brand-google me-1"></i> Connect Google Account
+                                                </a>
+                                            @else
+                                                <div class="alert alert-warning py-2 px-2 small mb-0 text-start">
+                                                    <i class="icon-base ti tabler-alert-triangle me-1"></i> Add <code>GOOGLE_CLIENT_ID</code> to <code>.env</code> for OAuth.
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="card bg-light border-0 p-3 rounded-3">
+                            <h6 class="fw-semibold text-heading mb-2">
+                                <i class="icon-base ti tabler-info-circle me-1 text-info"></i> Hostinger Email Server Details
+                            </h6>
+                            <div class="row g-2 small text-secondary">
+                                <div class="col-md-6">
+                                    <strong>Incoming Server (IMAP):</strong> <code>imap.hostinger.com</code> (Port 993, SSL/TLS)
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Outgoing Server (SMTP):</strong> <code>smtp.hostinger.com</code> (Port 465, SSL/TLS)
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Team & Staff Members Tab -->

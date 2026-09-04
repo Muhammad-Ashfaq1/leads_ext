@@ -30,6 +30,12 @@ class SettingsController extends Controller
         $maxStaff = \App\Http\Controllers\UsersController::MAX_STAFF_PER_TENANT;
         $canAddStaff = $tenant ? $tenant->canAddStaffMember() : false;
 
+        $gmailAccount = \App\Models\GmailAccount::query()
+            ->visibleTo($user)
+            ->active()
+            ->latest('id')
+            ->first();
+
         return view('settings.index', [
             'user' => $user,
             'tenant' => $tenant,
@@ -41,6 +47,8 @@ class SettingsController extends Controller
             'maxStaff' => $maxStaff,
             'canAddStaff' => $canAddStaff,
             'isSuperAdmin' => $isSuperAdmin,
+            'gmailAccount' => $gmailAccount,
+            'isGmailConfigured' => ! empty(config('services.google.client_id')) && ! empty(config('services.google.client_secret')),
         ]);
     }
 
