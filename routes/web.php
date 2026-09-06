@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\ExtractorPageController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\JobsController;
 use App\Http\Controllers\LeadPreviewController;
 use App\Http\Controllers\LeadsController;
@@ -23,6 +24,15 @@ Route::get('/preview/{uuid}', [LeadPreviewController::class, 'preview'])->name('
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+    // Accept Invitation Flow
+    Route::get('/invitation/{token}', [\App\Http\Controllers\InvitationController::class, 'acceptForm'])->name('invitations.accept.form');
+    Route::post('/invitation/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])->name('invitations.accept.post');
+});
+
+// Stop Impersonation Session
+Route::middleware(['web', 'auth', 'impersonating'])->group(function (): void {
+    Route::get('/impersonate/stop', [ImpersonationController::class, 'stop'])->name('impersonate.stop');
 });
 
 // Authenticated SaaS App Routes
@@ -68,6 +78,11 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::post('/users', [UsersController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+    Route::get('/users/{user}/impersonate', [ImpersonationController::class, 'impersonateUser'])->name('users.impersonate');
+
+    // Invitations
+    Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
+    Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
 
     // Profile Settings
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
@@ -84,6 +99,7 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
         Route::post('/tenants', [TenantsController::class, 'store'])->name('tenants.store');
         Route::get('/tenants/{tenant}', [TenantsController::class, 'show'])->name('tenants.show');
         Route::put('/tenants/{tenant}', [TenantsController::class, 'update'])->name('tenants.update');
+        Route::get('/tenants/{tenant}/impersonate', [ImpersonationController::class, 'impersonateTenant'])->name('tenants.impersonate');
 
         Route::get('/plans', [\App\Http\Controllers\PlansController::class, 'index'])->name('plans.index');
         Route::post('/plans', [\App\Http\Controllers\PlansController::class, 'store'])->name('plans.store');

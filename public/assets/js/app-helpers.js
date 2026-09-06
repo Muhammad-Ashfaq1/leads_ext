@@ -131,6 +131,54 @@
         allowEscapeKey: false
       });
     }
+
+    $(document).on('click', '.impersonate-btn, .shop-impersonate-btn', function (e) {
+      e.preventDefault();
+      const $btn = $(this);
+      const href = $btn.attr('href') || $btn.data('href');
+      if (!href) return;
+      const name = $btn.data('name') || $btn.data('shop-name') || 'this user';
+
+      if (window.PosConfirm && typeof window.PosConfirm.open === 'function') {
+        window.PosConfirm.open({
+          title: 'Impersonate ' + name + '?',
+          message: 'You will sign in as "' + name + '". You can stop impersonation anytime from the navigation bar.',
+          confirmText: 'Yes, impersonate',
+          cancelText: 'Cancel',
+          tone: 'warning',
+          onConfirm: function () {
+            window.location.href = href;
+          }
+        });
+        return;
+      }
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Impersonate ' + name + '?',
+          text: 'You will be logged in as "' + name + '". You can stop impersonation anytime from the navigation bar.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, impersonate',
+          cancelButtonText: 'Cancel',
+          customClass: {
+            confirmButton: 'btn btn-warning me-2',
+            cancelButton: 'btn btn-outline-secondary'
+          },
+          buttonsStyling: false
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            window.location.href = href;
+          }
+        });
+        return;
+      }
+
+      if (window.confirm('Impersonate ' + name + '? You can stop impersonation anytime from the navigation bar.')) {
+        window.location.href = href;
+      }
+    });
   });
 })(window, document, window.jQuery);
+
 

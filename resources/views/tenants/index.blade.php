@@ -105,9 +105,20 @@
                             @endif
                         </td>
                         <td class="pe-3 text-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary js-edit-tenant" data-id="{{ $t->id }}">
-                                <i class="icon-base ti tabler-edit me-1"></i> Edit
-                            </button>
+                            <div class="d-inline-flex align-items-center gap-1">
+                                @if ($admin)
+                                    <a href="{{ route('tenants.impersonate', $t->id) }}"
+                                       class="btn btn-sm btn-outline-warning impersonate-btn"
+                                       title="Impersonate {{ $admin->name }}"
+                                       data-name="{{ $admin->name ?? $t->name }}"
+                                       data-bs-toggle="tooltip">
+                                        <i class="icon-base ti tabler-user-check me-1"></i> Impersonate
+                                    </a>
+                                @endif
+                                <button type="button" class="btn btn-sm btn-outline-primary js-edit-tenant" data-id="{{ $t->id }}">
+                                    <i class="icon-base ti tabler-edit me-1"></i> Edit
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @empty

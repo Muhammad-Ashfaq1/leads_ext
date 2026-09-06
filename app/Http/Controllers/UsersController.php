@@ -41,9 +41,9 @@ class UsersController extends Controller
                 $validated['tenant_id'] = null;
             } elseif ($validated['role'] === 'user' && ! empty($validated['tenant_id'])) {
                 $targetTenant = Tenant::find($validated['tenant_id']);
-                if ($targetTenant && $targetTenant->staffMembersCount() >= self::MAX_STAFF_PER_TENANT) {
+                if ($targetTenant && ! $targetTenant->canAddStaffMember()) {
                     throw ValidationException::withMessages([
-                        'tenant_id' => 'This organization has already reached the maximum allowance of '.self::MAX_STAFF_PER_TENANT.' staff members.',
+                        'tenant_id' => 'This organization has already reached the maximum allowance of '.self::MAX_STAFF_PER_TENANT.' staff members / invitations.',
                     ]);
                 }
             }

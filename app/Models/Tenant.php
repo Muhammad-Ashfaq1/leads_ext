@@ -77,9 +77,31 @@ class Tenant extends Model
         return $this->staffMembers()->count();
     }
 
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(UserInvitation::class);
+    }
+
+    public function pendingInvitations(): HasMany
+    {
+        return $this->hasMany(UserInvitation::class)
+            ->whereNull('accepted_at')
+            ->where('expires_at', '>', now());
+    }
+
+    public function pendingInvitationsCount(): int
+    {
+        return $this->pendingInvitations()->count();
+    }
+
+    public function staffAndInvitesCount(): int
+    {
+        return $this->staffMembersCount() + $this->pendingInvitationsCount();
+    }
+
     public function canAddStaffMember(): bool
     {
-        return $this->staffMembersCount() < self::MAX_STAFF_MEMBERS;
+        return $this->staffAndInvitesCount() < self::MAX_STAFF_MEMBERS;
     }
 
     public function adminUser()

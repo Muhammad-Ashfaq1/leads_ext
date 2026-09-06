@@ -27,6 +27,9 @@ class SettingsController extends Controller
         }
 
         $staffCount = $tenant ? $tenant->staffMembersCount() : 0;
+        $pendingInvitations = $tenant ? $tenant->pendingInvitations()->with('invitedBy')->latest('id')->get() : collect();
+        $pendingCount = $pendingInvitations->count();
+        $slotsUsed = $staffCount + $pendingCount;
         $maxStaff = \App\Http\Controllers\UsersController::MAX_STAFF_PER_TENANT;
         $canAddStaff = $tenant ? $tenant->canAddStaffMember() : false;
 
@@ -43,7 +46,10 @@ class SettingsController extends Controller
             'hasGlobalGoogleKey' => ! empty(config('services.google.maps_api_key')),
             'activeTab' => $activeTab,
             'teamMembers' => $teamMembers,
+            'pendingInvitations' => $pendingInvitations,
             'staffCount' => $staffCount,
+            'pendingCount' => $pendingCount,
+            'slotsUsed' => $slotsUsed,
             'maxStaff' => $maxStaff,
             'canAddStaff' => $canAddStaff,
             'isSuperAdmin' => $isSuperAdmin,

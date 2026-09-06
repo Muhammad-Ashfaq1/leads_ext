@@ -366,21 +366,22 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Team & Staff Members Tab -->
+                    </div>                    <!-- Team & Staff Members Tab -->
                     <div class="tab-pane fade {{ $activeTab === 'team' ? 'show active' : '' }}" id="team-tab" role="tabpanel" aria-labelledby="team-settings-tab">
                         <div class="d-flex flex-wrap align-items-center justify-content-between pb-3 mb-3 border-bottom gap-2">
                             <div>
                                 <h5 class="mb-1 fw-bold text-heading">
                                     <i class="icon-base ti tabler-users-group me-1 text-primary"></i> Team &amp; Staff Members
                                 </h5>
-                                <p class="text-muted small mb-0">Manage your workspace administrator and up to {{ $maxStaff }} staff member accounts.</p>
+                                <p class="text-muted small mb-0">Manage your workspace administrator, pending invitations, and up to {{ $maxStaff }} staff member accounts.</p>
                             </div>
-                            <div>
+                            <div class="d-flex align-items-center gap-2">
                                 @if ($canAddStaff)
-                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-                                        <i class="icon-base ti tabler-user-plus me-1"></i> Add Staff Member
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#inviteStaffModal">
+                                        <i class="icon-base ti tabler-mail-plus me-1"></i> Invite Staff Member
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addStaffModal" title="Directly register credentials without sending invite">
+                                        <i class="icon-base ti tabler-user-plus me-1"></i> Direct Add
                                     </button>
                                 @else
                                     <button type="button" class="btn btn-sm btn-secondary" disabled title="Maximum 5 staff limit reached">
@@ -390,20 +391,43 @@
                             </div>
                         </div>
 
+                        @if (session('invited_url'))
+                            <div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert">
+                                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-semibold small d-flex align-items-center gap-1">
+                                            <i class="icon-base ti tabler-circle-check text-success"></i> Invitation Link Generated!
+                                        </div>
+                                        <div class="small text-muted">Share this direct link with the team member to complete sign up:</div>
+                                    </div>
+                                    <div class="input-group input-group-sm" style="max-width: 360px;">
+                                        <input type="text" class="form-control" value="{{ session('invited_url') }}" id="newInviteUrl" readonly>
+                                        <button class="btn btn-primary" type="button" onclick="navigator.clipboard.writeText('{{ session('invited_url') }}'); if(typeof toastr !== 'undefined') toastr.success('Invitation link copied to clipboard!'); else alert('Copied to clipboard!');">
+                                            <i class="icon-base ti tabler-copy me-1"></i> Copy
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
                         <!-- Staff Quota Info Bar -->
                         <div class="p-3 mb-4 rounded-3 border bg-light-subtle">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <span class="fw-semibold small text-heading">
-                                    <i class="icon-base ti tabler-id-badge-2 me-1 text-info"></i> Staff Allowance: {{ $staffCount }} of {{ $maxStaff }} Slots Used
+                                    <i class="icon-base ti tabler-id-badge-2 me-1 text-info"></i> Staff Allowance: {{ $slotsUsed }} of {{ $maxStaff }} Slots Used
+                                    @if ($pendingCount > 0)
+                                        <span class="text-muted fw-normal">({{ $staffCount }} Active, {{ $pendingCount }} Pending)</span>
+                                    @endif
                                 </span>
-                                @if ($staffCount >= $maxStaff)
+                                @if ($slotsUsed >= $maxStaff)
                                     <span class="badge bg-label-warning">Maximum Limit Reached</span>
                                 @else
-                                    <span class="badge bg-label-success">{{ $maxStaff - $staffCount }} slots available</span>
+                                    <span class="badge bg-label-success">{{ $maxStaff - $slotsUsed }} slots available</span>
                                 @endif
                             </div>
                             <div class="progress" style="height: 6px;">
-                                <div class="progress-bar {{ $staffCount >= $maxStaff ? 'bg-warning' : 'bg-primary' }}" style="width: {{ round(($staffCount / max(1, $maxStaff)) * 100) }}%"></div>
+                                <div class="progress-bar {{ $slotsUsed >= $maxStaff ? 'bg-warning' : 'bg-primary' }}" style="width: {{ round(($slotsUsed / max(1, $maxStaff)) * 100) }}%"></div>
                             </div>
                             <small class="text-muted d-block mt-2">
                                 Each workspace organization can invite up to {{ $maxStaff }} staff members (users) who can discover leads and manage outreach.
@@ -473,6 +497,14 @@
                                                     </a>
                                                 @else
                                                     <div class="d-inline-flex align-items-center gap-1">
+                                                        @if ($member->role === 'user' || auth()->user()->isSuperAdmin())
+                                                            <a href="{{ route('users.impersonate', $member->id) }}"
+                                                               class="btn btn-xs btn-outline-warning impersonate-btn"
+                                                               title="Impersonate {{ $member->name }}"
+                                                               data-name="{{ $member->name }}">
+                                                                <i class="icon-base ti tabler-user-check me-1"></i> Impersonate
+                                                            </a>
+                                                        @endif
                                                         <button type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editStaffModal{{ $member->id }}">
                                                             <i class="icon-base ti tabler-edit me-1"></i> Edit
                                                         </button>
@@ -480,8 +512,8 @@
                                                             <form method="POST" action="{{ route('users.destroy', $member->id) }}" class="d-inline" onsubmit="return confirm('Remove staff member {{ $member->name }}? This will free up a staff slot.');">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Remove Member">
-                                                                    <i class="icon-base ti tabler-trash"></i>
+                                                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Remove staff member">
+                                                                    <i class="icon-base ti tabler-trash me-1"></i> Remove
                                                                 </button>
                                                             </form>
                                                         @endif
@@ -557,6 +589,70 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        @if ($pendingInvitations->isNotEmpty())
+                            <!-- Pending Invitations Section -->
+                            <div class="mt-4 pt-3 border-top">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <h6 class="fw-semibold text-heading mb-0 d-flex align-items-center gap-2">
+                                        <i class="icon-base ti tabler-mail-forward text-warning"></i>
+                                        <span>Pending Invitations</span>
+                                        <span class="badge bg-label-warning rounded-pill">{{ $pendingInvitations->count() }}</span>
+                                    </h6>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="ps-3"><i class="icon-base ti tabler-mail me-1 text-primary"></i> Invitee Email</th>
+                                                <th><i class="icon-base ti tabler-user me-1 text-info"></i> Suggested Name</th>
+                                                <th><i class="icon-base ti tabler-user-check me-1 text-secondary"></i> Invited By</th>
+                                                <th><i class="icon-base ti tabler-hourglass-empty me-1 text-warning"></i> Expires</th>
+                                                <th class="pe-3 text-end"><i class="icon-base ti tabler-settings me-1 text-muted"></i> Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($pendingInvitations as $invite)
+                                                <tr>
+                                                    <td class="ps-3">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="team-avatar-initial user" style="background: rgba(255, 159, 67, 0.15); color: #ff9f43;">
+                                                                <i class="icon-base ti tabler-mail"></i>
+                                                            </div>
+                                                            <div>
+                                                                <span class="fw-semibold text-heading small">{{ $invite->email }}</span>
+                                                                <span class="badge bg-label-warning ms-1" style="font-size: 0.65rem;">Pending</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="small text-muted">{{ $invite->name ?: '—' }}</td>
+                                                    <td class="small text-muted">{{ $invite->invitedBy?->name ?? 'Workspace Admin' }}</td>
+                                                    <td class="small text-muted">
+                                                        <span title="{{ $invite->expires_at->format('M d, Y H:i') }}">
+                                                            {{ $invite->expires_at->diffForHumans() }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="pe-3 text-end">
+                                                        <div class="d-inline-flex align-items-center gap-1">
+                                                            <button type="button" class="btn btn-xs btn-outline-primary js-copy-invite-btn" data-url="{{ $invite->accept_url }}" title="Copy Invitation Link">
+                                                                <i class="icon-base ti tabler-copy me-1"></i> Copy Link
+                                                            </button>
+                                                            <form method="POST" action="{{ route('invitations.destroy', $invite->id) }}" class="d-inline" onsubmit="return confirm('Revoke invitation for {{ $invite->email }}?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Revoke invitation">
+                                                                    <i class="icon-base ti tabler-trash me-1"></i> Revoke
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @else
@@ -571,7 +667,52 @@
 </div>
 
 @if ($tenant && $canAddStaff)
-    <!-- Add Staff Member Modal -->
+    <!-- Invite Staff Member Modal -->
+    <div class="modal fade" id="inviteStaffModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered text-start">
+            <div class="modal-content border-0 shadow">
+                <form method="POST" action="{{ route('invitations.store') }}">
+                    @csrf
+                    <div class="modal-header border-bottom py-3">
+                        <h5 class="modal-title d-flex align-items-center">
+                            <i class="icon-base ti tabler-mail-plus text-primary me-2"></i> Invite Staff Member
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert bg-label-info border-0 mb-3 py-2 px-3 small">
+                            <i class="icon-base ti tabler-info-circle me-1"></i> An invitation link will be created for <strong>{{ $tenant->name }}</strong> (Slot {{ $slotsUsed + 1 }} of {{ $maxStaff }}). The invitee will receive the link to choose their name and password to join your workspace.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Recipient Work Email <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-mail"></i></span>
+                                <input type="email" name="email" class="form-control" placeholder="colleague@company.com" value="{{ old('email') }}" required autofocus>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Staff Member Name <span class="text-muted fw-normal">(optional)</span></label>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="icon-base ti tabler-user"></i></span>
+                                <input type="text" name="name" class="form-control" placeholder="e.g. Alex Taylor" value="{{ old('name') }}">
+                            </div>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="icon-base ti tabler-clock me-1"></i> Invitation links remain active for 24 hours (1 day).
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top py-3">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="icon-base ti tabler-send me-1"></i> Create Invitation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direct Add Staff Member Modal -->
     <div class="modal fade" id="addStaffModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered text-start">
             <div class="modal-content border-0 shadow">
@@ -586,7 +727,7 @@
                     </div>
                     <div class="modal-body p-4">
                         <div class="alert bg-label-info border-0 mb-3 py-2 px-3 small">
-                            <i class="icon-base ti tabler-info-circle me-1"></i> Staff members have access to search, discover, and export leads within <strong>{{ $tenant->name }}</strong> (Slot {{ $staffCount + 1 }} of {{ $maxStaff }}).
+                            <i class="icon-base ti tabler-info-circle me-1"></i> Directly create login credentials for a staff member within <strong>{{ $tenant->name }}</strong> (Slot {{ $slotsUsed + 1 }} of {{ $maxStaff }}).
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Staff Member Name <span class="text-danger">*</span></label>
@@ -674,6 +815,33 @@
                     icon.className = 'icon-base ti tabler-eye';
                 }
             });
+        });
+
+        // Copy Invitation Link Handler
+        $(document).on('click', '.js-copy-invite-btn', function () {
+            var url = $(this).data('url');
+            if (!url) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Invitation link copied to clipboard!');
+                    } else {
+                        alert('Invitation link copied to clipboard!');
+                    }
+                });
+            } else {
+                var tempInput = document.createElement('input');
+                tempInput.value = url;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Invitation link copied to clipboard!');
+                } else {
+                    alert('Invitation link copied to clipboard!');
+                }
+            }
         });
     });
 </script>

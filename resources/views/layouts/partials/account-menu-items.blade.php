@@ -36,6 +36,14 @@
         </a>
     </li>
 @endif
+@if (session()->has('impersonator_id'))
+    <li>
+        <a href="{{ route('impersonate.stop') }}" class="dropdown-item text-warning fw-semibold">
+            <i class="{{ $iconClass }} tabler-user-off me-2 text-warning"></i>
+            Stop Impersonation
+        </a>
+    </li>
+@endif
 <li>
     <hr class="dropdown-divider">
 </li>

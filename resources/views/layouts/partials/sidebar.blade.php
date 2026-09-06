@@ -141,8 +141,17 @@
             </li>
         @endif
 
+        @if (session()->has('impersonator_id'))
+            <li class="menu-item">
+                <a href="{{ route('impersonate.stop') }}" class="menu-link text-warning fw-semibold">
+                    <i class="menu-icon icon-base ti tabler-user-off text-warning"></i>
+                    <div data-i18n="Stop Impersonation">Stop Impersonation</div>
+                </a>
+            </li>
+        @endif
+
         <!-- Bottom Settings & Copyright (Matching POS) -->
-        <li class="menu-item menu-item-settings-bottom {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <li class="menu-item {{ session()->has('impersonator_id') ? '' : 'menu-item-settings-bottom' }} {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <a href="{{ route('settings.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-settings-cog"></i>
                 <div data-i18n="Settings">Settings</div>

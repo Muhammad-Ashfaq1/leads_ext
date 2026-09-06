@@ -21,6 +21,20 @@
 
         <!-- Right: Actions, Theme Switcher & Account Dropdown -->
         <ul class="navbar-nav flex-row align-items-center ms-auto gap-3">
+            @if (session()->has('impersonator_id'))
+                <li class="nav-item">
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill border border-warning bg-label-warning">
+                        <i class="icon-base ti tabler-user-exclamation icon-sm text-warning" aria-hidden="true"></i>
+                        <span class="small fw-medium text-warning d-none d-sm-inline">
+                            Impersonating as <strong>{{ $authUser?->name }}</strong>
+                        </span>
+                        <a href="{{ route('impersonate.stop') }}" class="btn btn-warning btn-sm py-0 px-2 fw-semibold">
+                            <i class="icon-base ti tabler-x icon-xs me-1" aria-hidden="true"></i>Stop
+                        </a>
+                    </div>
+                </li>
+            @endif
+
             @unless (request()->routeIs('extractor.index'))
                 <li class="nav-item d-none d-md-block">
                     <a href="{{ route('extractor.index') }}" class="btn btn-sm btn-primary">
