@@ -18,8 +18,14 @@ class EmailTemplateController extends Controller
         $isSuperAdmin = $user?->isSuperAdmin() ?? false;
         $tenantId = $user?->tenant_id;
 
+        // Automatically provision default templates if this workspace has none yet
+        if ($tenantId && EmailTemplate::where('tenant_id', $tenantId)->count() === 0) {
+            EmailTemplate::seedDefaultTemplatesForTenant($tenantId, $user?->id);
+        }
+
         $templates = EmailTemplate::query()
             ->forTenant($tenantId, $isSuperAdmin)
+            ->latest('is_default')
             ->latest('id')
             ->get();
 
@@ -38,6 +44,23 @@ class EmailTemplateController extends Controller
             'logs' => $logs,
             'user' => $user,
         ]);
+    }
+
+    public function restoreDefaults(Request $request): RedirectResponse|JsonResponse
+    {
+        $user = Auth::user();
+        $tenantId = $user?->tenant_id;
+
+        EmailTemplate::seedDefaultTemplatesForTenant($tenantId, $user?->id);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Standard Automobile & Garage POS email templates restored successfully.',
+            ]);
+        }
+
+        return redirect()->route('email-templates.index')->with('success', 'Standard Automobile & Garage POS email templates restored successfully.');
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse

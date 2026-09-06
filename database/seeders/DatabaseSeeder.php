@@ -86,5 +86,10 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // Seed standard Automobile & Garage POS Email Templates for tenants and globally
+        EmailTemplate::seedDefaultTemplatesForTenant(null);
+        EmailTemplate::seedDefaultTemplatesForTenant($obtainTenant->id);
+        EmailTemplate::seedDefaultTemplatesForTenant($generalTenant->id);
     }
 }

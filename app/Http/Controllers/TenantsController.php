@@ -94,9 +94,10 @@ class TenantsController extends Controller
             'is_active' => true,
         ]);
 
+        $adminUser = null;
         // If organization admin credentials provided, create the admin user
         if (! empty($validated['admin_email']) && ! empty($validated['admin_password'])) {
-            User::create([
+            $adminUser = User::create([
                 'tenant_id' => $tenant->id,
                 'name' => $validated['admin_name'] ?: $validated['name'].' Admin',
                 'email' => $validated['admin_email'],
@@ -107,7 +108,10 @@ class TenantsController extends Controller
             ]);
         }
 
-        return redirect()->route('tenants.index')->with('success', "Organization workspace '{$validated['name']}' created successfully.");
+        // Automatically provision default Automobile / Garage POS email templates for the new organization
+        \App\Models\EmailTemplate::seedDefaultTemplatesForTenant($tenant->id, $adminUser?->id);
+
+        return redirect()->route('tenants.index')->with('success', "Organization workspace '{$validated['name']}' created successfully with ready-to-use email templates.");
     }
 
     public function update(Request $request, Tenant $tenant): RedirectResponse

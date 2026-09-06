@@ -328,4 +328,48 @@ class EmailOutreachTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_newly_created_tenant_has_automobile_and_garage_pos_templates_provisioned(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+            'email' => 'super@obtainsolutions.com',
+        ]);
+
+        $resp = $this->actingAs($superAdmin)->post(route('tenants.store'), [
+            'name' => 'Apex Garage Systems',
+            'plan' => 'growth',
+            'lead_quota' => 2000,
+            'admin_name' => 'Apex Admin',
+            'admin_email' => 'admin@apexgarage.com',
+            'admin_password' => 'secret1234',
+        ]);
+
+        $resp->assertRedirect(route('tenants.index'));
+
+        $newTenant = Tenant::where('name', 'Apex Garage Systems')->first();
+        $this->assertNotNull($newTenant);
+
+        // Check that default templates were provisioned for the new organization
+        $templates = EmailTemplate::where('tenant_id', $newTenant->id)->get();
+        $this->assertCount(6, $templates);
+
+        $this->assertTrue($templates->contains('name', 'Auto Repair & Garage POS SaaS Invitation'));
+        $this->assertTrue($templates->contains('name', 'Oil Change & Quick Lube POS System'));
+        $this->assertTrue($templates->contains('name', 'Tyre Shop & Wheel Alignment POS & Inventory'));
+        $this->assertTrue($templates->contains('name', 'Auto Electrical, AC & Diagnostic Workshop POS'));
+        $this->assertTrue($templates->contains('name', 'Automobile Workshop Growth & Interactive Demo'));
+        $this->assertTrue($templates->contains('name', 'Garage POS Follow-up & Profitability Consultation'));
+    }
+
+    public function test_tenant_can_restore_standard_templates(): void
+    {
+        EmailTemplate::where('tenant_id', $this->tenant->id)->delete();
+        $this->assertEquals(0, EmailTemplate::where('tenant_id', $this->tenant->id)->count());
+
+        $response = $this->actingAs($this->user)->post(route('email-templates.restore-defaults'));
+        $response->assertRedirect(route('email-templates.index'));
+
+        $this->assertEquals(6, EmailTemplate::where('tenant_id', $this->tenant->id)->count());
+    }
 }
