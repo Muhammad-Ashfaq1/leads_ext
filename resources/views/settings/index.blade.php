@@ -260,7 +260,11 @@
                                         <a href="{{ route('gmail.index') }}" class="btn btn-sm btn-primary">
                                             <i class="icon-base ti tabler-inbox me-1"></i> Open Inbox
                                         </a>
-                                        <form action="{{ route('gmail.disconnect', $gmailAccount->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Disconnect this email account?');">
+                                        <form action="{{ route('gmail.disconnect', $gmailAccount->id) }}" method="POST" class="d-inline"
+                                              data-pos-confirm="Disconnect this email account from your workspace?"
+                                              data-pos-confirm-title="Disconnect Email?"
+                                              data-pos-confirm-text="Yes, Disconnect"
+                                              data-pos-confirm-tone="danger">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="icon-base ti tabler-plug-connected-x me-1"></i> Disconnect
@@ -464,7 +468,11 @@
                                                             <i class="icon-base ti tabler-edit me-1"></i> Edit
                                                         </button>
                                                         @if ($member->role === 'user')
-                                                            <form method="POST" action="{{ route('users.destroy', $member->id) }}" class="d-inline" onsubmit="return confirm('Remove staff member {{ $member->name }}? This will free up a staff slot.');">
+                                                            <form method="POST" action="{{ route('users.destroy', $member->id) }}" class="d-inline"
+                                                                  data-pos-confirm="Remove staff member {{ $member->name }}? This will free up a staff slot."
+                                                                  data-pos-confirm-title="Remove Staff Member?"
+                                                                  data-pos-confirm-text="Yes, Remove"
+                                                                  data-pos-confirm-tone="danger">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-xs btn-outline-danger" title="Remove staff member">
@@ -592,7 +600,11 @@
                                                             <button type="button" class="btn btn-xs btn-outline-primary js-copy-invite-btn" data-url="{{ $invite->accept_url }}" title="Copy Invitation Link">
                                                                 <i class="icon-base ti tabler-copy me-1"></i> Copy Link
                                                             </button>
-                                                            <form method="POST" action="{{ route('invitations.destroy', $invite->id) }}" class="d-inline" onsubmit="return confirm('Revoke invitation for {{ $invite->email }}?');">
+                                                            <form method="POST" action="{{ route('invitations.destroy', $invite->id) }}" class="d-inline"
+                                                                  data-pos-confirm="Revoke invitation for {{ $invite->email }}? This will invalidate the signup link and free up a staff slot."
+                                                                  data-pos-confirm-title="Revoke Invitation?"
+                                                                  data-pos-confirm-text="Yes, Revoke"
+                                                                  data-pos-confirm-tone="danger">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-xs btn-outline-danger" title="Revoke invitation">
@@ -776,14 +788,15 @@
         $(document).on('click', '.js-copy-invite-btn', function () {
             var url = $(this).data('url');
             if (!url) return;
+            var notifySuccess = function() {
+                if (typeof window.appNotify === 'function') {
+                    window.appNotify('success', 'Invitation link copied to clipboard!');
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.success('Invitation link copied to clipboard!');
+                }
+            };
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(function() {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('Invitation link copied to clipboard!');
-                    } else {
-                        alert('Invitation link copied to clipboard!');
-                    }
-                });
+                navigator.clipboard.writeText(url).then(notifySuccess);
             } else {
                 var tempInput = document.createElement('input');
                 tempInput.value = url;
@@ -791,11 +804,7 @@
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                if (typeof toastr !== 'undefined') {
-                    toastr.success('Invitation link copied to clipboard!');
-                } else {
-                    alert('Invitation link copied to clipboard!');
-                }
+                notifySuccess();
             }
         });
     });

@@ -53,7 +53,11 @@
                         <i class="icon-base ti tabler-settings"></i>
                     </button>
 
-                    <form action="{{ route('gmail.disconnect', $account->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Disconnect this email account?');">
+                    <form action="{{ route('gmail.disconnect', $account->id) }}" method="POST" class="d-inline"
+                          data-pos-confirm="Disconnect this email account from your workspace?"
+                          data-pos-confirm-title="Disconnect Email?"
+                          data-pos-confirm-text="Yes, Disconnect"
+                          data-pos-confirm-tone="danger">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-outline-danger shadow-xs" title="Disconnect Email Account">
                             <i class="icon-base ti tabler-plug-connected-x"></i>
@@ -825,25 +829,32 @@
 
     function deleteActiveMessage() {
         if (!activeMessageData) return;
-        if (!confirm('Remove this email from view?')) return;
 
-        fetch(`/gmail/messages/${activeMessageData.id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                toastr.success('Email removed.');
-                const item = document.querySelector(`.message-list-item[data-message-id="${activeMessageData.id}"]`);
-                if (item) item.remove();
-                document.getElementById('previewEmptyState').classList.remove('d-none');
-                document.getElementById('previewContentContainer').classList.add('d-none');
-                activeMessageData = null;
-            }
+        window.showConfirm('Remove Email?', 'Remove this email from view?', 'Yes, Remove', true).then(function (res) {
+            if (!res || !res.isConfirmed) return;
+
+            fetch(`/gmail/messages/${activeMessageData.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof window.appNotify === 'function') {
+                        window.appNotify('success', 'Email removed.');
+                    } else if (typeof toastr !== 'undefined') {
+                        toastr.success('Email removed.');
+                    }
+                    const item = document.querySelector(`.message-list-item[data-message-id="${activeMessageData.id}"]`);
+                    if (item) item.remove();
+                    document.getElementById('previewEmptyState').classList.remove('d-none');
+                    document.getElementById('previewContentContainer').classList.add('d-none');
+                    activeMessageData = null;
+                }
+            });
         });
     }
 

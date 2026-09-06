@@ -437,14 +437,19 @@ function confirmDeleteTemplate(event, form) {
             'Yes, Delete Template',
             true
         ).then(result => {
-            if (result.isConfirmed) {
+            if (result && result.isConfirmed) {
                 form.submit();
             }
         });
-    } else {
-        if (confirm('Are you sure you want to delete this template?')) {
-            form.submit();
-        }
+    } else if (window.PosConfirm) {
+        window.PosConfirm.open({
+            title: 'Delete Template?',
+            message: 'Are you sure you want to delete this outreach email template? This action cannot be undone.',
+            confirmText: 'Yes, Delete Template',
+            tone: 'danger'
+        }).then(ok => {
+            if (ok) form.submit();
+        });
     }
     return false;
 }

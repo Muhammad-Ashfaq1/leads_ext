@@ -116,7 +116,11 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary js-edit-plan" data-id="{{ $p->id }}">
                                     <i class="icon-base ti tabler-edit me-1"></i> Edit
                                 </button>
-                                <form method="POST" action="{{ route('plans.destroy', $p->id) }}" class="d-inline" onsubmit="return confirm('Delete or deactivate plan {{ $p->name }}?');">
+                                <form method="POST" action="{{ route('plans.destroy', $p->id) }}" class="d-inline"
+                                      data-pos-confirm="Delete or deactivate plan {{ $p->name }}?"
+                                      data-pos-confirm-title="Deactivate Plan?"
+                                      data-pos-confirm-text="Yes, Proceed"
+                                      data-pos-confirm-tone="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Plan">
