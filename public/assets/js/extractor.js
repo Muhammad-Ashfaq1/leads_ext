@@ -876,8 +876,13 @@
             if (typeof window.showConfirm === 'function') {
                 const result = await window.showConfirm(title, confirmMessage, confirmText, !isSaveAll);
                 confirmed = Boolean(result && result.isConfirmed);
-            } else {
-                confirmed = window.confirm(confirmMessage);
+            } else if (window.PosConfirm) {
+                confirmed = await window.PosConfirm.open({
+                    title: title,
+                    message: confirmMessage,
+                    confirmText: confirmText,
+                    tone: isSaveAll ? 'primary' : 'danger'
+                });
             }
             if (!confirmed) {
                 return;
