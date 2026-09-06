@@ -23,16 +23,6 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible m-4 mb-0" role="alert">
-            <div class="d-flex align-items-center">
-                <i class="icon-base ti tabler-circle-check fs-5 me-2"></i>
-                <div>{{ session('success') }}</div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">

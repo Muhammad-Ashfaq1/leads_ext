@@ -118,26 +118,6 @@
                 <div class="content-wrapper">
                     <!-- Main Content -->
                     <div class="{{ $contentContainerClass }}">
-                        @if (session('success'))
-                            <div class="alert alert-success alert-dismissible py-2 px-3 mb-3" role="alert">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="icon-base ti tabler-circle-check"></i>
-                                    <div>{{ session('success') }}</div>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
-
-                        @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible py-2 px-3 mb-3" role="alert">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="icon-base ti tabler-alert-circle"></i>
-                                    <div>{{ session('error') }}</div>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
-
                         @yield('content')
                     </div>
                     <!-- / Main Content -->

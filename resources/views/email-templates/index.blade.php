@@ -71,13 +71,6 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible m-3 mb-0" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <!-- Tabs Navigation -->
     <div class="p-3 border-bottom bg-light-subtle">
         <ul class="nav nav-pills" id="emailTemplatesTabs" role="tablist">

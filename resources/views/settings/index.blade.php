@@ -120,31 +120,6 @@
     <!-- Right: Settings Panels (Matching POS) -->
     <div class="col-12 col-md-8 col-xl-9">
         <div class="pos-glass-card pos-tone-primary pos-settings-panel p-4">
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible mb-4" role="alert">
-                    <div class="d-flex align-items-center">
-                        <i class="icon-base ti tabler-circle-check fs-5 me-2"></i>
-                        <div>{{ session('success') }}</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            @if ($errors->any())
-                <div class="alert alert-danger alert-dismissible mb-4" role="alert">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="icon-base ti tabler-alert-circle fs-5 me-2"></i>
-                        <div class="fw-bold">Notice:</div>
-                    </div>
-                    <ul class="mb-0 ps-3">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
             @if ($tenant)
                 <div class="tab-content p-0">
                     <!-- General & Limits Tab -->
@@ -390,26 +365,6 @@
                                 @endif
                             </div>
                         </div>
-
-                        @if (session('invited_url'))
-                            <div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert">
-                                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
-                                    <div>
-                                        <div class="fw-semibold small d-flex align-items-center gap-1">
-                                            <i class="icon-base ti tabler-circle-check text-success"></i> Invitation Link Generated!
-                                        </div>
-                                        <div class="small text-muted">Share this direct link with the team member to complete sign up:</div>
-                                    </div>
-                                    <div class="input-group input-group-sm" style="max-width: 360px;">
-                                        <input type="text" class="form-control" value="{{ session('invited_url') }}" id="newInviteUrl" readonly>
-                                        <button class="btn btn-primary" type="button" onclick="navigator.clipboard.writeText('{{ session('invited_url') }}'); if(typeof toastr !== 'undefined') toastr.success('Invitation link copied to clipboard!'); else alert('Copied to clipboard!');">
-                                            <i class="icon-base ti tabler-copy me-1"></i> Copy
-                                        </button>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
 
                         <!-- Staff Quota Info Bar -->
                         <div class="p-3 mb-4 rounded-3 border bg-light-subtle">

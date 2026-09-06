@@ -23,31 +23,6 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible m-4 mb-0" role="alert">
-            <div class="d-flex align-items-center">
-                <i class="icon-base ti tabler-circle-check fs-5 me-2"></i>
-                <div>{{ session('success') }}</div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible m-4 mb-0" role="alert">
-            <div class="d-flex align-items-center mb-1">
-                <i class="icon-base ti tabler-alert-circle fs-5 me-2"></i>
-                <div class="fw-bold">Validation Error:</div>
-            </div>
-            <ul class="mb-0 ps-3">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <!-- Plan Stat Metrics -->
     <div class="row g-3 p-4 border-bottom bg-light-subtle">
         <div class="col-12 col-md-4">
