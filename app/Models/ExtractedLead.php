@@ -99,13 +99,7 @@ class ExtractedLead extends Model
             });
         }
 
-        if ($user->canViewOrganizationLeads()) {
-            $query->where(function (Builder $sub) use ($user): void {
-                $sub->where('is_saved', true)
-                    ->orWhere('status', 'saved')
-                    ->orWhere('user_id', $user->id);
-            });
-        } else {
+        if (! $user->canViewOrganizationLeads()) {
             $query->where('user_id', $user->id);
         }
 

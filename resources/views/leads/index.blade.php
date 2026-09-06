@@ -355,6 +355,8 @@
                         </td>
                         <td class="pe-3 text-end">
                             <div class="pos-lead-actions d-inline-flex align-items-center gap-1">
+                                {{-- Generate and view website buttons commented out for now --}}
+                                {{--
                                 @if (empty($lead->website))
                                     <button type="button" class="btn btn-sm btn-icon {{ $lead->generated_website_content ? 'btn-label-success' : 'btn-label-warning' }} rounded-pill btn-generate-demo-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $lead->generated_website_content ? 'AI Demo Website Ready (Click to Regenerate)' : 'Generate AI Demo Website' }}" onclick="generateDemo({{ $lead->id }})" id="btn-demo-{{ $lead->id }}">
                                         <i class="icon-base ti tabler-sparkles"></i>
@@ -365,6 +367,7 @@
                                         </a>
                                     @endif
                                 @endif
+                                --}}
                                 @if ($firstEmail)
                                     <button type="button" class="btn btn-sm btn-icon btn-label-primary rounded-pill btn-send-single-email" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Outreach Email ({{ $firstEmail }})" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">
                                         <i class="icon-base ti tabler-send"></i>
@@ -386,6 +389,8 @@
                                         <i class="icon-base ti tabler-dots-vertical"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
+                                        {{-- Generate and view website dropdown options commented out for now --}}
+                                        {{--
                                         @if (empty($lead->website))
                                             <li>
                                                 <button type="button" class="dropdown-item" onClick="generateDemo({{ $lead->id }})">
@@ -400,6 +405,7 @@
                                                 </li>
                                             @endif
                                         @endif
+                                        --}}
                                         @if ($firstEmail)
                                             <li>
                                                 <button type="button" class="dropdown-item btn-send-single-email" data-id="{{ $lead->id }}" data-email="{{ $firstEmail }}" data-name="{{ $lead->business_name }}" data-category="{{ $lead->category }}" data-city="{{ $lead->city }}" data-website="{{ $lead->website }}" data-phone="{{ $lead->phone }}">

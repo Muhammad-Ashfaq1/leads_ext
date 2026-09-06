@@ -503,7 +503,7 @@ class LeadsBulkActionTest extends TestCase
             ->assertDontSee('Beta Crossfit No Phone');
     }
 
-    public function test_org_member_only_sees_own_leads_while_admin_sees_saved_org_leads(): void
+    public function test_org_member_only_sees_own_leads_while_admin_sees_all_org_extracted_leads(): void
     {
         $admin = User::create([
             'tenant_id' => $this->tenant1->id,
@@ -514,17 +514,27 @@ class LeadsBulkActionTest extends TestCase
             'is_active' => true,
         ]);
 
-        $member = User::create([
+        $member1 = User::create([
             'tenant_id' => $this->tenant1->id,
-            'name' => 'Org Member',
-            'email' => 'member@acme.com',
+            'name' => 'Org Member 1',
+            'email' => 'member1@acme.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+
+        $member2 = User::create([
+            'tenant_id' => $this->tenant1->id,
+            'name' => 'Org Member 2',
+            'email' => 'member2@acme.com',
             'password' => bcrypt('secret123'),
             'role' => 'user',
             'is_active' => true,
         ]);
 
         $adminJob = $this->makeJob($this->tenant1, $admin, 'Admin Query');
-        $memberJob = $this->makeJob($this->tenant1, $member, 'Member Query');
+        $member1Job = $this->makeJob($this->tenant1, $member1, 'Member 1 Query');
+        $member2Job = $this->makeJob($this->tenant1, $member2, 'Member 2 Query');
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
@@ -537,33 +547,54 @@ class LeadsBulkActionTest extends TestCase
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
-            'user_id' => $member->id,
-            'extraction_job_id' => $memberJob->id,
-            'business_name' => 'Member Saved Bakery',
+            'user_id' => $member1->id,
+            'extraction_job_id' => $member1Job->id,
+            'business_name' => 'Member1 Saved Bakery',
             'status' => 'saved',
             'is_saved' => true,
         ]);
 
         ExtractedLead::create([
             'tenant_id' => $this->tenant1->id,
-            'user_id' => $member->id,
-            'extraction_job_id' => $memberJob->id,
-            'business_name' => 'Member Unsaved Search Result',
+            'user_id' => $member1->id,
+            'extraction_job_id' => $member1Job->id,
+            'business_name' => 'Member1 Unsaved Search Result',
             'status' => 'new',
             'is_saved' => false,
         ]);
 
-        $this->actingAs($member)->get('/leads')
+        ExtractedLead::create([
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $member2->id,
+            'extraction_job_id' => $member2Job->id,
+            'business_name' => 'Member2 Extracted Clinic',
+            'status' => 'new',
+            'is_saved' => false,
+        ]);
+
+        // Member 1 can only see their own extracted records (not admin's, not member 2's)
+        $this->actingAs($member1)->get('/leads')
             ->assertOk()
-            ->assertSee('Member Saved Bakery')
-            ->assertSee('Member Unsaved Search Result')
+            ->assertSee('Member1 Saved Bakery')
+            ->assertSee('Member1 Unsaved Search Result')
+            ->assertDontSee('Admin Saved Cafe')
+            ->assertDontSee('Member2 Extracted Clinic');
+
+        // Member 2 can only see their own extracted records
+        $this->actingAs($member2)->get('/leads')
+            ->assertOk()
+            ->assertSee('Member2 Extracted Clinic')
+            ->assertDontSee('Member1 Saved Bakery')
+            ->assertDontSee('Member1 Unsaved Search Result')
             ->assertDontSee('Admin Saved Cafe');
 
+        // Admin of the organization can see and access ALL extracted records of the organization
         $this->actingAs($admin)->get('/leads')
             ->assertOk()
             ->assertSee('Admin Saved Cafe')
-            ->assertSee('Member Saved Bakery')
-            ->assertDontSee('Member Unsaved Search Result');
+            ->assertSee('Member1 Saved Bakery')
+            ->assertSee('Member1 Unsaved Search Result')
+            ->assertSee('Member2 Extracted Clinic');
     }
 
     public function test_org_member_cannot_bulk_save_another_members_leads(): void

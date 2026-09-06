@@ -248,6 +248,11 @@ class ExtractorController extends Controller
 
     public function export(Request $request, ExtractionJob $job): StreamedResponse
     {
+        $user = Auth::user();
+        if ($user && ! ExtractionJob::query()->visibleTo($user)->where('id', $job->id)->exists()) {
+            abort(403, 'Unauthorized: Job is not available to your account.');
+        }
+
         $ids = null;
         if ($request->filled('ids')) {
             $rawIds = $request->input('ids');

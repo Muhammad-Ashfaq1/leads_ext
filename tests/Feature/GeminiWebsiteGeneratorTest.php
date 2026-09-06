@@ -349,7 +349,7 @@ class GeminiWebsiteGeneratorTest extends TestCase
         $this->assertStringNotContainsString('{{demo_website_url}}', $rendered);
     }
 
-    public function test_generate_demo_button_is_only_visible_for_leads_without_a_website(): void
+    public function test_generate_and_view_website_buttons_are_commented_out_from_listing(): void
     {
         // Lead without website
         $leadWithoutWebsite = ExtractedLead::create([
@@ -362,31 +362,18 @@ class GeminiWebsiteGeneratorTest extends TestCase
             'address' => '123 Main St, Austin, TX',
             'city' => 'Austin',
             'website' => null,
-        ]);
-
-        // Lead with existing website
-        $leadWithWebsite = ExtractedLead::create([
-            'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
-            'extraction_job_id' => $this->job->id,
-            'uuid' => (string) Str::uuid(),
-            'business_name' => 'Has Website Bakery',
-            'category' => 'Bakery',
-            'address' => '456 Bakery Ave, Austin, TX',
-            'city' => 'Austin',
-            'website' => 'https://haswebsitebakery.com',
+            'generated_website_content' => [
+                'copy' => ['hero_headline' => 'Ready Spec Site'],
+            ],
         ]);
 
         $response = $this->actingAs($this->user)->get(route('leads.index'));
 
         $response->assertStatus(200);
 
-        // Assert button and action exist for lead without website
-        $response->assertSee('id="btn-demo-' . $leadWithoutWebsite->id . '"', false);
-        $response->assertSee('generateDemo(' . $leadWithoutWebsite->id . ')', false);
-
-        // Assert button and action DO NOT exist for lead with website
-        $response->assertDontSee('id="btn-demo-' . $leadWithWebsite->id . '"', false);
-        $response->assertDontSee('generateDemo(' . $leadWithWebsite->id . ')', false);
+        // Assert generate demo button and spec website link are commented out / removed from listing
+        $response->assertDontSee('id="btn-demo-' . $leadWithoutWebsite->id . '"', false);
+        $response->assertDontSee('id="dropdown-preview-' . $leadWithoutWebsite->id . '"', false);
+        $response->assertDontSee('View Spec Website', false);
     }
 }
