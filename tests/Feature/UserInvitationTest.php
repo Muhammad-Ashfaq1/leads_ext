@@ -172,8 +172,7 @@ class UserInvitationTest extends TestCase
         $response = $this->get(route('invitations.accept.form', ['token' => $invitation->token]));
 
         $response->assertStatus(200);
-        $response->assertSee('Accept Team Invitation');
-        $response->assertSee('Acme Outreach Corp');
+        $response->assertSee('Join Acme Outreach Corp');
         $response->assertSee('newbie@acme.test');
     }
 

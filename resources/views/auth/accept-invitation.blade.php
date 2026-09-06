@@ -11,7 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>Accept Invitation - {{ $tenant->name ?? 'VektorLeads' }}</title>
+    <title>Join {{ $tenant->name ?? 'Workspace' }} - VektorLeads</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/favicon/favicon.svg') }}" />
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon-32x32.png') }}" />
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/favicon/favicon-16x16.png') }}" />
@@ -38,20 +38,25 @@
             background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, rgba(248, 249, 250, 0.96) 90%);
         }
         .authentication-wrapper .authentication-inner {
-            max-width: 480px;
+            max-width: 460px;
             width: 100%;
         }
         .tenant-pill {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             padding: 0.35rem 0.85rem;
             background: rgba(115, 103, 240, 0.08);
             border: 1px solid rgba(115, 103, 240, 0.2);
             border-radius: 9999px;
             color: #7367f0;
-            font-size: 0.85rem;
+            font-size: 0.825rem;
             font-weight: 600;
+        }
+        .form-control-validation label.form-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
         }
     </style>
 </head>
@@ -59,11 +64,11 @@
     <div class="container-xxl">
         <div class="authentication-wrapper authentication-basic container-p-y">
             <div class="authentication-inner py-6">
-                <!-- Accept Invite Card -->
+                <!-- Accept Invite Card (AWT Phone & POS Style) -->
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4 p-sm-5">
                         <!-- Logo -->
-                        <div class="app-brand justify-content-center mb-4 text-center">
+                        <div class="app-brand justify-content-center mb-5 text-center">
                             <a href="{{ url('/') }}" class="app-brand-link text-decoration-none d-inline-flex align-items-center gap-2">
                                 @include('layouts.partials.brand-logo', ['size' => 42])
                                 <span class="app-brand-text text-heading fw-bold fs-4">Vektor<span class="text-primary">Leads</span></span>
@@ -71,20 +76,31 @@
                         </div>
                         <!-- /Logo -->
 
-                        <div class="text-center mb-4">
-                            <div class="tenant-pill mb-2">
-                                <i class="icon-base ti tabler-building"></i>
-                                <span>{{ $tenant->name }}</span>
-                            </div>
-                            <h4 class="mb-1 fw-bold">Accept Team Invitation 🎉</h4>
+                        <div class="text-center mb-5">
+                            @if ($tenant)
+                                <div class="tenant-pill mb-2">
+                                    <i class="icon-base ti tabler-building fs-6"></i>
+                                    <span>{{ $tenant->name }}</span>
+                                </div>
+                            @endif
+                            <h4 class="mb-1 fw-bold">Join {{ $tenant->name ?? 'your team' }}</h4>
                             <p class="text-muted small mb-0">
                                 @if ($invitation->invitedBy)
-                                    <strong>{{ $invitation->invitedBy->name }}</strong> has invited you to join their workspace.
+                                    Invited by <strong>{{ $invitation->invitedBy->name }}</strong>. Complete your details to activate your account.
                                 @else
-                                    You've been invited to join the <strong>{{ $tenant->name }}</strong> team workspace.
+                                    Complete your details to activate your team account.
                                 @endif
                             </p>
                         </div>
+
+                        @if (session('error'))
+                            <div class="alert alert-danger py-2 px-3 mb-4" role="alert">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="icon-base ti tabler-alert-circle"></i>
+                                    <div class="small">{{ session('error') }}</div>
+                                </div>
+                            </div>
+                        @endif
 
                         @if ($errors->any())
                             <div class="alert alert-danger py-2 px-3 mb-4" role="alert">
@@ -95,95 +111,99 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('invitations.accept.post', ['token' => $invitation->token]) }}" method="POST">
+                        <form class="mb-4" action="{{ route('invitations.accept.post', ['token' => $invitation->token]) }}" method="POST">
                             @csrf
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label fw-semibold">Email Address</label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text bg-light text-muted"><i class="icon-base ti tabler-mail"></i></span>
-                                    <input
-                                        type="email"
-                                        class="form-control bg-light"
-                                        id="email"
-                                        value="{{ $invitation->email }}"
-                                        readonly />
-                                </div>
-                                <small class="text-muted">This email address is locked to your invitation.</small>
+                            <div class="mb-4 form-control-validation">
+                                <label for="inviteEmail" class="form-label">Email Address</label>
+                                <input
+                                    type="email"
+                                    class="form-control bg-light"
+                                    id="inviteEmail"
+                                    value="{{ $invitation->email }}"
+                                    disabled
+                                    readonly />
+                                <small class="text-muted">You were invited with this email address.</small>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="name" class="form-label fw-semibold">Your Full Name <span class="text-danger">*</span></label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-user"></i></span>
-                                    <input
-                                        type="text"
-                                        class="form-control @error('name') is-invalid @enderror"
-                                        id="name"
-                                        name="name"
-                                        value="{{ old('name', $invitation->name) }}"
-                                        placeholder="e.g. Alex Morgan"
-                                        required
-                                        autofocus />
-                                </div>
+                            <div class="mb-4 form-control-validation">
+                                <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('name') is-invalid @enderror"
+                                    id="name"
+                                    name="name"
+                                    value="{{ old('name', $invitation->name) }}"
+                                    placeholder="Enter your full name"
+                                    required
+                                    autofocus />
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
 
-                            <div class="mb-3">
-                                <label for="phone" class="form-label fw-semibold">Contact Phone Number <span class="text-muted fw-normal">(optional)</span></label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-phone"></i></span>
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        id="phone"
-                                        name="phone"
-                                        value="{{ old('phone') }}"
-                                        placeholder="+1 (555) 000-0000" />
-                                </div>
+                            <div class="mb-4 form-control-validation">
+                                <label for="phone" class="form-label">Phone Number <span class="text-muted fw-normal">(optional)</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('phone') is-invalid @enderror"
+                                    id="phone"
+                                    name="phone"
+                                    value="{{ old('phone') }}"
+                                    placeholder="+1 (555) 000-0000" />
+                                @error('phone')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
 
-                            <div class="mb-3 form-password-toggle">
-                                <label class="form-label fw-semibold" for="password">Create Password <span class="text-danger">*</span></label>
+                            <div class="mb-4 form-password-toggle form-control-validation">
+                                <label class="form-label" for="password">Create Password <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
                                     <input
                                         type="password"
                                         id="password"
                                         class="form-control @error('password') is-invalid @enderror"
                                         name="password"
-                                        placeholder="Minimum 6 characters"
+                                        placeholder="••••••••"
                                         required />
-                                    <span class="input-group-text cursor-pointer toggle-pwd-btn" data-target="password"><i class="icon-base ti tabler-eye-off"></i></span>
+                                    <span class="input-group-text cursor-pointer toggle-pwd-btn" data-target="password">
+                                        <i class="icon-base ti tabler-eye-off"></i>
+                                    </span>
                                 </div>
+                                @error('password')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Minimum 6 characters.</small>
                             </div>
 
-                            <div class="mb-4 form-password-toggle">
-                                <label class="form-label fw-semibold" for="password_confirmation">Confirm Password <span class="text-danger">*</span></label>
+                            <div class="mb-5 form-password-toggle form-control-validation">
+                                <label class="form-label" for="password_confirmation">Confirm Password <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-lock-check"></i></span>
                                     <input
                                         type="password"
                                         id="password_confirmation"
                                         class="form-control"
                                         name="password_confirmation"
-                                        placeholder="Repeat your password"
+                                        placeholder="••••••••"
                                         required />
-                                    <span class="input-group-text cursor-pointer toggle-pwd-btn" data-target="password_confirmation"><i class="icon-base ti tabler-eye-off"></i></span>
+                                    <span class="input-group-text cursor-pointer toggle-pwd-btn" data-target="password_confirmation">
+                                        <i class="icon-base ti tabler-eye-off"></i>
+                                    </span>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <button class="btn btn-primary d-grid w-100 py-2 fw-semibold" type="submit">
-                                    <i class="icon-base ti tabler-user-check me-1"></i> Complete Sign Up &amp; Join Team
+                            <div class="mb-4">
+                                <button class="btn btn-primary d-flex align-items-center justify-content-center gap-2 w-100 py-2" type="submit">
+                                    <i class="icon-base ti tabler-user-check fs-5"></i>
+                                    <span class="fw-semibold">Create Account &amp; Join Team</span>
                                 </button>
                             </div>
-
-                            <div class="text-center">
-                                <a href="{{ route('login') }}" class="text-muted small">
-                                    Already have an existing account? Sign In
-                                </a>
-                            </div>
                         </form>
+
+                        <p class="text-center mb-0">
+                            <span class="text-muted">Already have an account?</span>
+                            <a href="{{ route('login') }}" class="text-primary fw-medium text-decoration-none ms-1">Sign in instead</a>
+                        </p>
                     </div>
                 </div>
                 <!-- /Accept Invite Card -->
