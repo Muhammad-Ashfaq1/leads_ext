@@ -138,7 +138,7 @@
                         </td>
                         <td class="pe-3 text-end">
                             <div class="d-inline-flex align-items-center gap-1">
-                                <button type="button" class="btn btn-sm btn-outline-primary js-edit-plan" data-id="{{ $p->id }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editPlanModal{{ $p->id }}">
                                     <i class="icon-base ti tabler-edit me-1"></i> Edit
                                 </button>
                                 <form method="POST" action="{{ route('plans.destroy', $p->id) }}" class="d-inline" onsubmit="return confirm('Delete or deactivate plan {{ $p->name }}?');">
@@ -148,6 +148,78 @@
                                         <i class="icon-base ti tabler-trash"></i>
                                     </button>
                                 </form>
+                            </div>
+                            <!-- Edit Plan Modal (Matching POS Admin) -->
+                            <div class="modal fade pos-listing-modal" id="editPlanModal{{ $p->id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                                <div class="modal-dialog modal-lg modal-dialog-centered text-start">
+                                    <div class="modal-content border-0 shadow">
+                                        <form method="POST" action="{{ route('plans.update', $p->id) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-header border-bottom py-3">
+                                                <h5 class="modal-title d-flex align-items-center">
+                                                    <i class="icon-base ti tabler-edit text-primary me-2"></i> Edit Plan: {{ $p->name }}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label for="edit_plan_name_{{ $p->id }}" class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" id="edit_plan_name_{{ $p->id }}" name="name" value="{{ old('name', $p->name) }}" required maxlength="150">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="edit_plan_price_{{ $p->id }}" class="form-label fw-semibold">Price ($) <span class="text-danger">*</span></label>
+                                                        <input type="number" step="0.01" min="0" class="form-control" id="edit_plan_price_{{ $p->id }}" name="price" value="{{ old('price', $p->price) }}" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="edit_plan_duration_{{ $p->id }}" class="form-label fw-semibold">Billing Interval</label>
+                                                        <select id="edit_plan_duration_{{ $p->id }}" name="billing_interval" class="form-select">
+                                                            <option value="monthly" @selected($p->billing_interval === 'monthly')>Monthly</option>
+                                                            <option value="yearly" @selected($p->billing_interval === 'yearly')>Yearly</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="edit_plan_quota_{{ $p->id }}" class="form-label fw-semibold">Monthly Lead Quota <span class="text-danger">*</span></label>
+                                                        <input type="number" min="100" class="form-control" id="edit_plan_quota_{{ $p->id }}" name="lead_quota" value="{{ old('lead_quota', $p->lead_quota) }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="edit_plan_staff_{{ $p->id }}" class="form-label fw-semibold">Max Staff Capacity <span class="text-danger">*</span></label>
+                                                        <input type="number" min="1" class="form-control" id="edit_plan_staff_{{ $p->id }}" name="max_staff_members" value="{{ old('max_staff_members', $p->max_staff_members) }}" required>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label for="edit_plan_desc_{{ $p->id }}" class="form-label fw-semibold">Short Description</label>
+                                                        <input type="text" class="form-control" id="edit_plan_desc_{{ $p->id }}" name="description" value="{{ old('description', $p->description) }}" placeholder="Brief summary of plan scope" maxlength="1000">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label for="edit_plan_features_{{ $p->id }}" class="form-label fw-semibold">Feature Highlights (one feature per line)</label>
+                                                        <textarea id="edit_plan_features_{{ $p->id }}" name="features" class="form-control" rows="3" placeholder="Cloud Lead Finder&#10;Email Scraper&#10;Excel / CSV Export">{{ is_array($p->features) ? implode("\n", $p->features) : $p->features }}</textarea>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold d-block">Tier Status</label>
+                                                        <div class="form-check form-switch mt-2">
+                                                            <input class="form-check-input" type="checkbox" name="is_active" id="planActive{{ $p->id }}" value="1" @checked($p->is_active)>
+                                                            <label class="form-check-label" for="planActive{{ $p->id }}">Active Plan Tier</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold d-block">Default Selection</label>
+                                                        <div class="form-check form-switch mt-2">
+                                                            <input class="form-check-input" type="checkbox" name="is_default" id="planDefault{{ $p->id }}" value="1" @checked($p->is_default)>
+                                                            <label class="form-check-label" for="planDefault{{ $p->id }}">Set as Default Plan</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-top py-3">
+                                                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="icon-base ti tabler-device-floppy me-1"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -161,81 +233,71 @@
     </div>
 </div>
 
-<div class="modal fade" id="planFormModal" tabindex="-1" aria-hidden="true" data-allow-outside-close="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg text-start">
+<!-- Create Plan Modal (Matching POS Admin) -->
+<div class="modal fade pos-listing-modal" id="createPlanModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <form method="POST" action="{{ route('plans.store') }}" id="planForm">
+            <form method="POST" action="{{ route('plans.store') }}">
                 @csrf
-                <input type="hidden" name="_method" id="planFormMethod" value="POST" disabled>
                 <div class="modal-header border-bottom py-3">
-                    <h5 class="modal-title d-flex align-items-center" id="planFormTitle">
+                    <h5 class="modal-title d-flex align-items-center">
                         <i class="icon-base ti tabler-packages text-primary me-2 fs-4"></i> Create Subscription Plan
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="row g-3 mb-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-crown"></i></span>
-                                <input type="text" name="name" class="form-control" placeholder="e.g. Growth Plan" required>
-                            </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="create_plan_name" class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="create_plan_name" name="name" placeholder="e.g. Growth Plan" value="{{ old('name') }}" required maxlength="150">
                         </div>
-                        <div class="col-12 col-md-3">
-                            <label class="form-label fw-semibold">Price ($) <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-currency-dollar"></i></span>
-                                <input type="number" step="0.01" name="price" class="form-control" placeholder="49.00" required>
-                            </div>
+                        <div class="col-md-3">
+                            <label for="create_plan_price" class="form-label fw-semibold">Price ($) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="create_plan_price" name="price" placeholder="49.00" value="{{ old('price', 49.00) }}" required>
                         </div>
-                        <div class="col-12 col-md-3">
-                            <label class="form-label fw-semibold">Billing Interval</label>
-                            <select name="billing_interval" class="form-select">
-                                <option value="monthly">Monthly</option>
+                        <div class="col-md-3">
+                            <label for="create_plan_duration" class="form-label fw-semibold">Billing Interval</label>
+                            <select id="create_plan_duration" name="billing_interval" class="form-select">
+                                <option value="monthly" selected>Monthly</option>
                                 <option value="yearly">Yearly</option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Monthly Lead Discovery Allowance <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-chart-bar"></i></span>
-                                <input type="number" name="lead_quota" class="form-control" placeholder="15000" required>
-                            </div>
+                        <div class="col-md-6">
+                            <label for="create_plan_quota" class="form-label fw-semibold">Monthly Lead Discovery Allowance <span class="text-danger">*</span></label>
+                            <input type="number" min="100" class="form-control" id="create_plan_quota" name="lead_quota" placeholder="15000" value="{{ old('lead_quota', 15000) }}" required>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Max Staff Members Allowed <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-users"></i></span>
-                                <input type="number" name="max_staff_members" class="form-control" placeholder="5" required>
-                            </div>
+                        <div class="col-md-6">
+                            <label for="create_plan_staff" class="form-label fw-semibold">Max Staff Capacity <span class="text-danger">*</span></label>
+                            <input type="number" min="1" class="form-control" id="create_plan_staff" name="max_staff_members" placeholder="5" value="{{ old('max_staff_members', 5) }}" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Short Description</label>
-                            <input type="text" name="description" class="form-control" placeholder="Designed for mid-market sales teams">
+                            <label for="create_plan_desc" class="form-label fw-semibold">Short Description</label>
+                            <input type="text" class="form-control" id="create_plan_desc" name="description" placeholder="Designed for mid-market sales teams" value="{{ old('description') }}" maxlength="1000">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Feature Highlights (one feature per line)</label>
-                            <textarea name="features" class="form-control" rows="3" placeholder="15,000 Verified Leads Monthly&#10;5 Staff Accounts&#10;Unlimited Cloud Searches&#10;CSV &amp; Excel Direct Export"></textarea>
+                            <label for="create_plan_features" class="form-label fw-semibold">Feature Highlights (one feature per line)</label>
+                            <textarea id="create_plan_features" name="features" class="form-control" rows="3" placeholder="15,000 Verified Leads Monthly&#10;5 Staff Accounts&#10;Unlimited Cloud Searches&#10;CSV &amp; Excel Direct Export">{{ old('features') }}</textarea>
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold d-block">Tier Status</label>
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" name="is_active" id="planIsActive" value="1">
-                                <label class="form-check-label fw-semibold" for="planIsActive">Active Plan Tier</label>
+                                <input class="form-check-input" type="checkbox" name="is_active" id="createPlanActive" value="1" checked>
+                                <label class="form-check-label" for="createPlanActive">Active Plan Tier</label>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold d-block">Default Selection</label>
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" name="is_default" id="planIsDefault" value="1">
-                                <label class="form-check-label fw-semibold" for="planIsDefault">Set as Default Selection</label>
+                                <input class="form-check-input" type="checkbox" name="is_default" id="createPlanDefault" value="1">
+                                <label class="form-check-label" for="createPlanDefault">Set as Default Selection</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top py-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="planFormSubmit">
-                        <i class="icon-base ti tabler-plus me-1"></i> Add
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="icon-base ti tabler-plus me-1"></i> Save Plan
                     </button>
                 </div>
             </form>
@@ -243,80 +305,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    (function ($) {
-        var storeUrl = @json(route('plans.store'));
-        var $modal = $('#planFormModal');
-        var $form = $('#planForm');
-        var $method = $('#planFormMethod');
-        var $title = $('#planFormTitle');
-        var $submit = $('#planFormSubmit');
-
-        function showModal() {
-            if ($.fn.modal) {
-                $modal.modal('show');
-                return;
-            }
-            bootstrap.Modal.getOrCreateInstance($modal[0]).show();
-        }
-
-        function resetToCreate() {
-            $form[0].reset();
-            $form.attr('action', storeUrl);
-            $method.val('POST').prop('disabled', true);
-            $form.find('[name="price"]').val('49.00');
-            $form.find('[name="billing_interval"]').val('monthly');
-            $form.find('[name="lead_quota"]').val('15000');
-            $form.find('[name="max_staff_members"]').val('5');
-            $form.find('[name="is_active"]').prop('checked', true);
-            $form.find('[name="is_default"]').prop('checked', false);
-            $title.html('<i class="icon-base ti tabler-packages text-primary me-2 fs-4"></i> Create Subscription Plan');
-            $submit.html('<i class="icon-base ti tabler-plus me-1"></i> Add');
-        }
-
-        $('#addPlanBtn').on('click', function () {
-            resetToCreate();
-            showModal();
-        });
-
-        $(document).on('click', '.js-edit-plan', function () {
-            var id = $(this).data('id');
-
-            $.ajax({
-                url: '/plans/' + id,
-                type: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function (response) {
-                    $form[0].reset();
-                    $form.attr('action', '/plans/' + response.id);
-                    $method.val('PUT').prop('disabled', false);
-
-                    $form.find('[name="name"]').val(response.name);
-                    $form.find('[name="price"]').val(response.price);
-                    $form.find('[name="billing_interval"]').val(response.billing_interval);
-                    $form.find('[name="lead_quota"]').val(response.lead_quota);
-                    $form.find('[name="max_staff_members"]').val(response.max_staff_members);
-                    $form.find('[name="description"]').val(response.description);
-                    $form.find('[name="features"]').val(response.features);
-                    $form.find('[name="is_active"]').prop('checked', !!response.is_active);
-                    $form.find('[name="is_default"]').prop('checked', !!response.is_default);
-
-                    $title.html('<i class="icon-base ti tabler-edit text-primary me-2"></i> Edit Plan');
-                    $submit.html('<i class="icon-base ti tabler-device-floppy me-1"></i> Update');
-                    showModal();
-                },
-                error: function () {
-                    if (window.toastr) {
-                        toastr.error('Could not load this plan.');
-                    }
-                }
-            });
-        });
-    })(jQuery);
-</script>
-@endpush

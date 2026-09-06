@@ -145,7 +145,7 @@
     @endif
 </div>
 
-<div class="modal fade" id="tenantFormModal" tabindex="-1" aria-hidden="true" data-allow-outside-close="true">
+<div class="modal fade pos-listing-modal" id="tenantFormModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg text-start">
         <div class="modal-content border-0 shadow">
             <form method="POST" action="{{ route('tenants.store') }}" id="tenantForm">
@@ -158,45 +158,33 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="small fw-bold text-uppercase text-muted mb-2 d-flex align-items-center gap-1">
+                    <h6 class="mb-3 fw-bold text-heading d-flex align-items-center gap-2">
                         <i class="icon-base ti tabler-building text-primary"></i> 1. Organization Details
-                    </div>
+                    </h6>
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Company / Organization Name <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-building"></i></span>
-                                <input type="text" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required>
-                            </div>
+                            <label for="tenant_name" class="form-label fw-semibold">Company / Organization Name <span class="text-danger">*</span></label>
+                            <input type="text" id="tenant_name" name="name" class="form-control" placeholder="e.g. Apex Marketing Agency" required maxlength="150">
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Custom Domain (Optional)</label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-world"></i></span>
-                                <input type="text" name="domain" class="form-control" placeholder="e.g. apexmarketing.io">
-                            </div>
+                            <label for="tenant_domain" class="form-label fw-semibold">Custom Domain (Optional)</label>
+                            <input type="text" id="tenant_domain" name="domain" class="form-control" placeholder="e.g. apexmarketing.io" maxlength="150">
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Subscription Plan <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-crown"></i></span>
-                                <select name="plan_id" id="tenantPlanSelect" class="form-select">
-                                    @forelse ($plans as $p)
-                                        <option value="{{ $p->id }}" data-quota="{{ $p->lead_quota }}" @selected($p->is_default)>
-                                            {{ $p->name }} ({{ $p->formatted_price }} — {{ number_format($p->lead_quota) }} leads)
-                                        </option>
-                                    @empty
-                                        <option value="">No plans available</option>
-                                    @endforelse
-                                </select>
-                            </div>
+                            <label for="tenantPlanSelect" class="form-label fw-semibold">Subscription Plan <span class="text-danger">*</span></label>
+                            <select name="plan_id" id="tenantPlanSelect" class="form-select">
+                                @forelse ($plans as $p)
+                                    <option value="{{ $p->id }}" data-quota="{{ $p->lead_quota }}" @selected($p->is_default)>
+                                        {{ $p->name }} ({{ $p->formatted_price }} — {{ number_format($p->lead_quota) }} leads)
+                                    </option>
+                                @empty
+                                    <option value="">No plans available</option>
+                                @endforelse
+                            </select>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Monthly Lead Allowance <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-chart-bar"></i></span>
-                                <input type="number" id="tenantLeadQuota" name="lead_quota" class="form-control" value="{{ $plans->firstWhere('is_default', true)?->lead_quota ?? 25000 }}" required>
-                            </div>
+                            <label for="tenantLeadQuota" class="form-label fw-semibold">Monthly Lead Allowance <span class="text-danger">*</span></label>
+                            <input type="number" id="tenantLeadQuota" name="lead_quota" class="form-control" value="{{ $plans->firstWhere('is_default', true)?->lead_quota ?? 25000 }}" required>
                         </div>
                         <div class="col-12 js-tenant-active-wrap d-none">
                             <div class="form-check form-switch mt-2">
@@ -207,56 +195,43 @@
                     </div>
 
                     <div id="tenantAdminSection">
-                        <div class="small fw-bold text-uppercase text-muted mb-2 d-flex align-items-center gap-1">
+                        <hr class="my-4">
+                        <h6 class="mb-3 fw-bold text-heading d-flex align-items-center gap-2">
                             <i class="icon-base ti tabler-user-shield text-info"></i> 2. Organization Administrator (Initial Admin)
-                        </div>
+                        </h6>
                         <div class="row g-3 mb-4">
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">Admin Full Name</label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-user"></i></span>
-                                    <input type="text" name="admin_name" class="form-control" placeholder="e.g. John Doe">
-                                </div>
+                                <label for="tenant_admin_name" class="form-label fw-semibold">Admin Full Name</label>
+                                <input type="text" id="tenant_admin_name" name="admin_name" class="form-control" placeholder="e.g. John Doe" maxlength="150">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">Admin Email Address</label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-mail"></i></span>
-                                    <input type="email" name="admin_email" class="form-control" placeholder="admin@apexmarketing.io">
-                                </div>
+                                <label for="tenant_admin_email" class="form-label fw-semibold">Admin Email Address</label>
+                                <input type="email" id="tenant_admin_email" name="admin_email" class="form-control" placeholder="admin@apexmarketing.io" maxlength="150">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">Admin Initial Password</label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
-                                    <input type="password" name="admin_password" class="form-control" placeholder="Min 6 characters">
-                                </div>
+                                <label for="tenant_admin_password" class="form-label fw-semibold">Admin Initial Password</label>
+                                <input type="password" id="tenant_admin_password" name="admin_password" class="form-control" placeholder="Min 6 characters">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">Admin Phone Number</label>
-                                <div class="input-group input-group-merge">
-                                    <span class="input-group-text"><i class="icon-base ti tabler-phone"></i></span>
-                                    <input type="text" name="admin_phone" class="form-control" placeholder="+1 (555) 000-0000">
-                                </div>
+                                <label for="tenant_admin_phone" class="form-label fw-semibold">Admin Phone Number</label>
+                                <input type="text" id="tenant_admin_phone" name="admin_phone" class="form-control" placeholder="+1 (555) 000-0000" maxlength="30">
                             </div>
                         </div>
                     </div>
 
-                    <div class="small fw-bold text-uppercase text-muted mb-2 d-flex align-items-center gap-1">
+                    <hr class="my-4">
+                    <h6 class="mb-3 fw-bold text-heading d-flex align-items-center gap-2">
                         <i class="icon-base ti tabler-key text-warning"></i> <span class="js-api-key-step">3.</span> Dedicated API Key (Optional)
-                    </div>
+                    </h6>
                     <div class="row g-3">
                         <div class="col-12">
-                            <div class="input-group input-group-merge">
-                                <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
-                                <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy...">
-                            </div>
-                            <small class="text-muted">Leave empty to use the platform default Discovery Engine key.</small>
+                            <input type="text" name="google_maps_api_key" class="form-control" placeholder="AIzaSy..." maxlength="255">
+                            <div class="form-text">Leave empty to use the platform default Discovery Engine key.</div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top py-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="tenantFormSubmit">
                         <i class="icon-base ti tabler-plus me-1"></i> Add
                     </button>
