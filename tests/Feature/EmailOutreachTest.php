@@ -334,6 +334,7 @@ class EmailOutreachTest extends TestCase
         $superAdmin = User::factory()->create([
             'role' => 'super_admin',
             'email' => 'super@obtainsolutions.com',
+            'is_active' => true,
         ]);
 
         $resp = $this->actingAs($superAdmin)->post(route('tenants.store'), [

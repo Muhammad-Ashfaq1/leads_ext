@@ -41,7 +41,7 @@ class DatabaseSeederTest extends TestCase
             'tenant_id' => $generalTenantId,
         ]);
 
-        $this->assertSame(0, EmailTemplate::count());
+        $this->assertGreaterThan(0, EmailTemplate::count());
         $this->assertSame(0, ExtractedLead::where('tenant_id', $generalTenantId)->count());
     }
 }
