@@ -32,13 +32,15 @@ composer.lock
 /extractor/.mypy_cache/
 /extractor/*.log
 
-# IDE
+# IDE & AI Agents
 /.fleet
 /.idea
 /.nova
 /.vscode
 /.zed
 .phpactor.json
+/.agents/
+/.gemini/
 
 Homestead.json
 Homestead.yaml
