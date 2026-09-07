@@ -18,9 +18,11 @@ class EmailTemplateController extends Controller
         $isSuperAdmin = $user?->isSuperAdmin() ?? false;
         $tenantId = $user?->tenant_id;
 
-        // Automatically provision default templates if this workspace has none yet
-        if ($tenantId && EmailTemplate::where('tenant_id', $tenantId)->count() === 0) {
+        // Auto-provision or update default templates with modern POS styling for this workspace
+        if ($tenantId) {
             EmailTemplate::seedDefaultTemplatesForTenant($tenantId, $user?->id);
+        } elseif ($isSuperAdmin) {
+            EmailTemplate::seedDefaultTemplatesForTenant(null, $user?->id);
         }
 
         $templates = EmailTemplate::query()
@@ -51,7 +53,7 @@ class EmailTemplateController extends Controller
         $user = Auth::user();
         $tenantId = $user?->tenant_id;
 
-        EmailTemplate::seedDefaultTemplatesForTenant($tenantId, $user?->id);
+        EmailTemplate::seedDefaultTemplatesForTenant($tenantId, $user?->id, force: true);
 
         if ($request->wantsJson()) {
             return response()->json([

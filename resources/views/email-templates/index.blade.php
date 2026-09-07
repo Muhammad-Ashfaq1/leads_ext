@@ -83,6 +83,9 @@
             </p>
         </div>
         <div class="pos-glass-intro-actions d-flex flex-wrap align-items-center gap-2">
+            <a href="https://pos.obtainsolutions.com/" target="_blank" class="btn btn-sm btn-outline-info" title="Open Obtain Solutions POS">
+                <i class="icon-base ti tabler-external-link me-1"></i> Live POS Platform
+            </a>
             <form action="{{ route('email-templates.restore-defaults') }}" method="POST" id="restoreDefaultsForm">
                 @csrf
                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="confirmRestoreDefaults(event)">
@@ -199,6 +202,9 @@
                                             </span>
                                             @if ($tmpl->is_default)
                                                 <span class="badge bg-label-success mb-1 ms-1"><i class="icon-base ti tabler-check me-1"></i>Default</span>
+                                            @endif
+                                            @if (str_contains($tmpl->body, 'pos_url') || str_contains($tmpl->body, 'pos.obtainsolutions.com'))
+                                                <span class="badge bg-label-info mb-1 ms-1" title="Includes live demo CTA to https://pos.obtainsolutions.com/"><i class="icon-base ti tabler-device-laptop me-1"></i>POS Demo</span>
                                             @endif
                                             <h6 class="card-title mb-0 fw-bold text-heading mt-1">{{ $tmpl->name }}</h6>
                                         </div>
