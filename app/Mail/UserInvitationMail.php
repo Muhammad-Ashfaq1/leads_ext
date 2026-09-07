@@ -36,6 +36,8 @@ class UserInvitationMail extends Mailable
                 'tenant' => $this->invitation->tenant,
                 'invitedBy' => $this->invitation->invitedBy,
                 'acceptUrl' => $this->invitation->accept_url,
+                'appUrl' => config('app.url', 'https://leads.obtainsolutions.com'),
+                'posUrl' => 'https://pos.obtainsolutions.com/',
             ],
         );
     }

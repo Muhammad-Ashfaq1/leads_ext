@@ -340,6 +340,8 @@
                                 <span class="badge bg-label-danger var-pill" onclick="insertVariable('@{{rating}}')" title="Google Star Rating">@{{rating}}</span>
                                 <span class="badge bg-label-primary var-pill" onclick="insertVariable('@{{sender_name}}')" title="Your Staff Name">@{{sender_name}}</span>
                                 <span class="badge bg-label-secondary var-pill" onclick="insertVariable('@{{sender_company}}')" title="Your SaaS / Workspace Name">@{{sender_company}}</span>
+                                <span class="badge bg-label-info var-pill" onclick="insertVariable('@{{pos_url}}')" title="Obtain POS Link (https://pos.obtainsolutions.com/)">🚀 @{{pos_url}}</span>
+                                <span class="badge bg-label-primary var-pill" onclick="insertVariable('@{{app_url}}')" title="Application URL">🌐 @{{app_url}}</span>
                                 <span class="badge bg-label-success var-pill" onclick="insertVariable('@{{demo_website_url}}')" title="Interactive Demo Preview Link">✨ @{{demo_website_url}}</span>
                             </div>
                         </div>
@@ -372,6 +374,7 @@
                                     <li>📦 <strong>Inventory &amp; Oil/Filter Tracking:</strong> Real-time alerts for spare parts and fluid levels.</li>
                                     <li>⏰ <strong>Automatic Service Reminders:</strong> Bring customers back automatically for scheduled maintenance.</li>
                                 </ul>
+                                <p>You can test-drive our live POS solution directly at <a href="@{{pos_url}}" target="_blank"><strong>@{{pos_url}}</strong></a> or visit our application at <a href="@{{app_url}}" target="_blank"><strong>@{{app_url}}</strong></a>.</p>
                                 <p>Would you have 5 minutes this week for a quick walkthrough or to activate a 14-day free trial?</p>
                                 <p>Best regards,<br><strong>@{{sender_name}}</strong><br>@{{sender_company}}</p>
                             </div>
@@ -457,21 +460,60 @@
                 <h5 class="modal-title"><i class="icon-base ti tabler-eye me-1 text-primary"></i> Email Template Preview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="email-preview-window mb-2">
-                    <div class="email-preview-header">
+            <div class="modal-body p-3 p-md-4" style="background-color: #f5f4f8;">
+                <div class="email-preview-window mb-2 shadow-sm rounded-3 overflow-hidden border">
+                    <div class="email-preview-header bg-white border-bottom p-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div>
                                 <span class="badge bg-label-primary me-2">Sample Automotive Lead</span>
-                                <small class="text-muted">Simulated Render with Real Values</small>
+                                <small class="text-muted">Simulated POS Client Preview</small>
                             </div>
-                            <span class="badge bg-label-success"><i class="icon-base ti tabler-circle-check me-1"></i>Live Placeholders OK</span>
+                            <span class="badge bg-label-success"><i class="icon-base ti tabler-circle-check me-1"></i>Dynamic Tags Rendered</span>
                         </div>
                         <div class="mb-1 small"><strong>To:</strong> <span class="text-muted" id="previewTo">Apex Auto Garage &amp; Tyre Services &lt;service@apexgarage.com&gt;</span></div>
                         <div class="mb-1 small"><strong>From:</strong> <span class="text-muted">{{ Auth::user()?->name ?? 'Outreach Specialist' }} &lt;{{ Auth::user()?->email ?? 'pos@obtainsolutions.com' }}&gt;</span></div>
                         <div class="small"><strong>Subject:</strong> <span class="fw-semibold text-heading" id="previewSubject"></span></div>
                     </div>
-                    <div class="p-4 bg-white" id="previewBody" style="min-height: 220px; font-size: 0.95rem; line-height: 1.6;"></div>
+
+                    <!-- Email Simulated Layout Wrapper -->
+                    <div class="p-3 p-md-4" style="background-color: #f8f7fa;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e7e5ec; box-shadow: 0 4px 20px rgba(115, 103, 240, 0.08);">
+                            <!-- Header Gradient -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #7367f0 0%, #5e50ee 50%, #4839eb 100%); padding: 22px 28px; text-align: left;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td>
+                                                <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 8px; padding: 5px 12px; margin-bottom: 6px;">
+                                                    <span style="font-size: 13px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">OBTAIN SOLUTIONS</span>
+                                                    <span style="background: #ffffff; color: #7367f0; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase;">POS</span>
+                                                </div>
+                                                <h4 style="margin: 0; color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: -0.2px;">Automotive POS &amp; Garage Cloud</h4>
+                                            </td>
+                                            <td style="text-align: right; vertical-align: middle;">
+                                                <span style="display: inline-block; background: rgba(255, 255, 255, 0.2); color: #ffffff; padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600;">Live SaaS Spec</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Email Body Content -->
+                            <tr>
+                                <td style="padding: 26px 28px; color: #333335; font-size: 14px; line-height: 1.65;" id="previewBody"></td>
+                            </tr>
+                            <!-- Email Footer -->
+                            <tr>
+                                <td style="background: #faf9fc; border-top: 1px solid #ebe8f4; padding: 18px 28px; text-align: center;">
+                                    <div style="margin-bottom: 8px;">
+                                        <a href="https://pos.obtainsolutions.com/" target="_blank" style="color: #7367f0; font-size: 12px; font-weight: 600; text-decoration: none; margin: 0 8px;">Explore POS Platform &rarr;</a>
+                                        <span style="color: #cbd5e1;">&bull;</span>
+                                        <a href="{{ config('app.url') }}" target="_blank" style="color: #7367f0; font-size: 12px; font-weight: 600; text-decoration: none; margin: 0 8px;">VektorLeads Platform</a>
+                                    </div>
+                                    <p style="margin: 0; font-size: 11px; color: #a1a5b7;">&copy; {{ date('Y') }} Obtain Solutions. All rights reserved.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-top">
@@ -660,6 +702,7 @@ function resetBuilderForm() {
             <li>📦 <strong>Live Spare Parts &amp; Oil Tracking:</strong> Automatic low stock alerts for fluids, filters, and spare parts.</li>
             <li>⏰ <strong>Automated Service Reminders:</strong> Bring customers back for regular oil and maintenance service.</li>
         </ul>
+        <p>Explore our live demo at <a href="@{{pos_url}}" target="_blank"><strong>@{{pos_url}}</strong></a> or visit <a href="@{{app_url}}" target="_blank">@{{app_url}}</a>.</p>
         <p>We are offering a <strong>complimentary 14-day full access demo</strong> for @{{business_name}}.</p>
         <p>Would you be open for a quick 5-minute chat or demo setup this week?</p>
         <p>Best regards,<br><strong>@{{sender_name}}</strong><br>@{{sender_company}} | Automotive SaaS Solutions<br>Phone: @{{phone}}</p>
@@ -712,6 +755,8 @@ function renderMockPlaceholders(text) {
         '@{{sender_name}}': '{{ Auth::user()?->name ?? "David Miller" }}',
         '@{{sender_company}}': '{{ Auth::user()?->tenant?->name ?? "Obtain POS" }}',
         '@{{demo_website_url}}': 'https://vektorleads.io/preview/demo-spec-preview-link',
+        '@{{pos_url}}': 'https://pos.obtainsolutions.com/',
+        '@{{app_url}}': '{{ config('app.url') }}',
     };
     let out = text;
     for (const [k, v] of Object.entries(mock)) {

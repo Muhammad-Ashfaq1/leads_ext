@@ -257,4 +257,24 @@ class UserInvitationTest extends TestCase
         $response->assertSee('impersonate-btn');
         $response->assertSee('data-name="Target Member"', false);
     }
+
+    public function test_user_invitation_email_renders_pos_branding_and_app_url(): void
+    {
+        $invitation = UserInvitation::create([
+            'tenant_id' => $this->tenant->id,
+            'invited_by_user_id' => $this->admin->id,
+            'email' => 'designer@acme.test',
+            'token' => UserInvitation::generateToken(),
+            'expires_at' => now()->addHours(24),
+        ]);
+
+        $mailable = new \App\Mail\UserInvitationMail($invitation);
+        $rendered = $mailable->render();
+
+        $this->assertStringContainsString('https://pos.obtainsolutions.com/', $rendered);
+        $this->assertStringContainsString(config('app.url'), $rendered);
+        $this->assertStringContainsString('Accept Invitation', $rendered);
+        $this->assertStringContainsString('Obtain Solutions', $rendered);
+    }
 }
+

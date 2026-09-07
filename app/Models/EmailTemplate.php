@@ -71,6 +71,8 @@ class EmailTemplate extends Model
             '{{reviews}}' => $lead->review_count ? (string) $lead->review_count : '',
             '{{sender_name}}' => $sender?->name ?? 'Our Team',
             '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'VektorLeads'),
+            '{{app_url}}' => config('app.url', 'https://leads.obtainsolutions.com'),
+            '{{pos_url}}' => 'https://pos.obtainsolutions.com/',
         ];
 
         $renderedSubject = str_replace(array_keys($vars), array_values($vars), $this->subject);
@@ -102,9 +104,9 @@ class EmailTemplate extends Model
                     . '<li>🔍 <strong>Complete Vehicle Service History:</strong> Track VIN, mileage, past inspections, and repair logs for every customer.</li>'
                     . '<li>⏰ <strong>Automated Service &amp; Oil Reminders:</strong> Send automatic retention reminders to bring customers back for regular maintenance.</li>'
                     . '</ul>'
-                    . '<p>We are offering a <strong>complimentary 14-day full access demo</strong> for {{business_name}} so your team can test drive the system with zero commitments.</p>'
-                    . '<p>Would you have 5 minutes this week for a quick walkthrough or to set up your free trial?</p>'
-                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} | Automotive SaaS Solutions<br>Phone: {{phone}}</p>',
+                    . '<p>We invite you to test drive our live cloud demo with zero commitments: <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
+                    . '<p>Would you have 5 minutes this week for a quick walkthrough or to set up your free 14-day trial?</p>'
+                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a><br>Platform: <a href="{{app_url}}" style="color: #7367f0; text-decoration: none;">{{app_url}}</a><br>Phone: {{phone}}</p>',
             ],
             [
                 'name' => 'Oil Change & Quick Lube POS System',
@@ -122,9 +124,9 @@ class EmailTemplate extends Model
                     . '<li>📅 <strong>Automated Next-Service Reminders:</strong> Automatically calculate next oil change dates based on vehicle mileage and send automated SMS reminders.</li>'
                     . '<li>💳 <strong>Integrated POS Checkout:</strong> Print branded thermal receipts, digital invoices, and accept card/cash seamlessly.</li>'
                     . '</ul>'
-                    . '<p>We would love to show {{business_name}} how quick-lube shops are saving 2+ hours daily while increasing repeat visits by 35%.</p>'
+                    . '<p>You can test drive our live cloud platform directly here: <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
                     . '<p>Can I share a 3-minute interactive demo with you this week?</p>'
-                    . '<p>Warm regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}}</p>',
+                    . '<p>Warm regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a></p>',
             ],
             [
                 'name' => 'Tyre Shop & Wheel Alignment POS & Inventory',
@@ -142,9 +144,9 @@ class EmailTemplate extends Model
                     . '<li>🧾 <strong>Combo Packages &amp; Labour Billing:</strong> Bundle tyre fitting, wheel balancing, valve replacement, and disposal fees in 1 click.</li>'
                     . '<li>🔔 <strong>Seasonal Rotation Reminders:</strong> Bring customers back every 6 months for tyre rotation and pressure checks automatically.</li>'
                     . '</ul>'
-                    . '<p>Let us help {{business_name}} streamline tyre sales, track every unit in stock, and boost workshop margins.</p>'
+                    . '<p>Experience our live demo for tyre centers at: <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
                     . '<p>Are you available for a brief chat to see how it works?</p>'
-                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}}</p>',
+                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a></p>',
             ],
             [
                 'name' => 'Auto Electrical, AC & Diagnostic Workshop POS',
@@ -161,9 +163,9 @@ class EmailTemplate extends Model
                     . '<li>👨‍🔧 <strong>Technician Labor &amp; Commission Reports:</strong> Track billable diagnostic hours, labor efficiency, and technician payout breakdowns automatically.</li>'
                     . '<li>📲 <strong>WhatsApp &amp; SMS Status Updates:</strong> Keep car owners informed in real-time as repairs progress without spending hours on phone calls.</li>'
                     . '</ul>'
-                    . '<p>We invite you to explore our system with a free personalized trial tailored for {{business_name}}.</p>'
+                    . '<p>Take a tour of our live workshop system: <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
                     . '<p>Let me know if you would like me to set up a quick 1-on-1 demo for your shop this week.</p>'
-                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}}</p>',
+                    . '<p>Best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a></p>',
             ],
             [
                 'name' => 'Automobile Workshop Growth & Interactive Demo',
@@ -181,10 +183,9 @@ class EmailTemplate extends Model
                     . '<li>📈 <strong>Real-time Financial &amp; Profit Reports:</strong> Monitor daily revenue, gross profit per repair job, top-selling parts, and outstanding credit.</li>'
                     . '<li>🔒 <strong>Secure Cloud Backups:</strong> Never lose customer vehicle history or billing records.</li>'
                     . '</ul>'
-                    . '<p>We would love to invite {{business_name}} to experience our interactive live demo:</p>'
-                    . '<p>👉 <strong>Schedule your free demo &amp; activate your 14-day trial:</strong> Reply to this email or visit our portal.</p>'
+                    . '<p>👉 <strong>Test drive our live interactive POS demo right now:</strong> <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
                     . '<p>Looking forward to connecting with you!</p>'
-                    . '<p>Warm regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}}</p>',
+                    . '<p>Warm regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a><br>Outreach Engine: <a href="{{app_url}}" style="color: #7367f0; text-decoration: none;">{{app_url}}</a></p>',
             ],
             [
                 'name' => 'Garage POS Follow-up & Profitability Consultation',
@@ -201,8 +202,9 @@ class EmailTemplate extends Model
                     . '<li>✅ Speed up checkout time by 60% with instant digital invoicing and printed receipts.</li>'
                     . '<li>✅ Increase return visits with automatic service reminders sent right before oil/brake service is due.</li>'
                     . '</ul>'
+                    . '<p>Feel free to click through our live interactive demo in the meantime: <a href="{{pos_url}}" style="color: #7367f0; font-weight: 600;" target="_blank">https://pos.obtainsolutions.com/</a></p>'
                     . '<p>Would you have 10 minutes this Tuesday or Thursday for a quick phone call to see if this is a good fit for {{business_name}}?</p>'
-                    . '<p>Thanks and best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}}</p>',
+                    . '<p>Thanks and best regards,<br><strong>{{sender_name}}</strong><br>{{sender_company}} &bull; <a href="{{pos_url}}" style="color: #7367f0; text-decoration: none; font-weight: 600;" target="_blank">Obtain Solutions POS</a></p>',
             ],
         ];
     }

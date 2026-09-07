@@ -33,6 +33,8 @@ class EmailOutreachService
             '{{sender_company}}' => $sender?->tenant?->name ?? config('app.name', 'VektorLeads'),
             '{{demo_website_url}}' => $demoWebsiteUrl,
             '@{{demo_website_url}}' => $demoWebsiteUrl,
+            '{{app_url}}' => config('app.url', 'https://leads.obtainsolutions.com'),
+            '{{pos_url}}' => 'https://pos.obtainsolutions.com/',
         ];
 
         return str_replace(array_keys($vars), array_values($vars), $text);
@@ -73,8 +75,19 @@ class EmailOutreachService
         $status = 'sent';
         $errorMessage = null;
 
+        $fullHtml = str_contains($renderedBody, '<!DOCTYPE')
+            ? $renderedBody
+            : view('emails.layout', [
+                'title' => $renderedSubject,
+                'headerTitle' => $sender?->tenant?->name ?? 'Obtain Solutions POS',
+                'headerSubtitle' => 'Automotive POS & Workshop Cloud Solutions',
+                'slot' => $renderedBody,
+                'appUrl' => config('app.url'),
+                'posUrl' => 'https://pos.obtainsolutions.com/',
+            ])->render();
+
         try {
-            Mail::html($renderedBody, function ($message) use ($recipientEmail, $recipientName, $renderedSubject, $sender): void {
+            Mail::html($fullHtml, function ($message) use ($recipientEmail, $recipientName, $renderedSubject, $sender): void {
                 $fromEmail = config('mail.from.address', 'hello@vektorleads.io');
                 $fromName = $sender?->tenant?->name ?? config('mail.from.name', 'VektorLeads');
 

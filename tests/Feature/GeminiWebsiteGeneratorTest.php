@@ -349,6 +349,19 @@ class GeminiWebsiteGeneratorTest extends TestCase
         $this->assertStringNotContainsString('{{demo_website_url}}', $rendered);
     }
 
+    public function test_email_outreach_service_replaces_pos_url_and_app_url_tags(): void
+    {
+        $service = new EmailOutreachService();
+
+        $template = '<p>POS: {{pos_url}} | App: {{app_url}}</p>';
+        $rendered = $service->renderVariables($template, $this->lead, $this->user);
+
+        $this->assertStringContainsString('https://pos.obtainsolutions.com/', $rendered);
+        $this->assertStringContainsString(config('app.url'), $rendered);
+        $this->assertStringNotContainsString('{{pos_url}}', $rendered);
+        $this->assertStringNotContainsString('{{app_url}}', $rendered);
+    }
+
     public function test_generate_and_view_website_buttons_are_commented_out_from_listing(): void
     {
         // Lead without website
