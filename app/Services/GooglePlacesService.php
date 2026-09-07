@@ -24,7 +24,8 @@ class GooglePlacesService
 
     public function stream(ExtractionJob $job, ?string $apiKey = null, array $filters = [], ?string $location = null): StreamedResponse
     {
-        $key = $apiKey ?: config('services.google.maps_api_key');
+        $systemKey = $job->tenant?->google_maps_api_key ?: config('services.google.maps_api_key');
+        $key = (! empty($apiKey) && str_starts_with($apiKey, 'AIzaSy')) ? $apiKey : $systemKey;
 
         return response()->stream(function () use ($job, $key, $filters, $location): void {
             if (session_status() === PHP_SESSION_ACTIVE) {

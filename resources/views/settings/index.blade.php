@@ -201,8 +201,8 @@
                                 <label class="form-label fw-semibold" for="tenantApiKeyInput">Platform Engine API Key</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
-                                    <input type="password" name="google_maps_api_key" id="tenantApiKeyInput" class="form-control" value="{{ old('google_maps_api_key', $tenant->google_maps_api_key) }}" placeholder="AIzaSy...">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="const el = document.getElementById('tenantApiKeyInput'); el.type = el.type === 'password' ? 'text' : 'password';">
+                                    <input type="text" name="google_maps_api_key" id="tenantApiKeyInput" class="form-control font-monospace" value="{{ old('google_maps_api_key', $tenant->google_maps_api_key) }}" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" style="-webkit-text-security: disc;">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="const el = document.getElementById('tenantApiKeyInput'); el.style.webkitTextSecurity = el.style.webkitTextSecurity !== 'none' ? 'none' : 'disc';">
                                         <i class="icon-base ti tabler-eye"></i>
                                     </button>
                                 </div>

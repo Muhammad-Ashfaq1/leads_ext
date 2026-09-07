@@ -1163,7 +1163,10 @@
         }
         if (els.engineGoogleApi) els.engineGoogleApi.checked = true;
         const isGoogleApi = true;
-        const customApiKey = (els.customApiKeyInput?.value || '').trim();
+
+        // Only read custom API key if the API key row is explicitly open and visible to user
+        const isCustomKeyRowVisible = els.apiKeyRow && !els.apiKeyRow.classList.contains('d-none');
+        const customApiKey = (isCustomKeyRowVisible && els.customApiKeyInput) ? els.customApiKeyInput.value.trim() : '';
 
         if (prompt.length < 2) {
             setAlert('warning', 'Please enter an industry or business category (e.g. “Dentists”, “Real Estate”).', true);
@@ -1179,8 +1182,17 @@
         } else if (isGoogleApi) {
             mode = 'google_api';
             if (!cfg.hasGoogleApiKey && !customApiKey) {
-                if (els.apiKeyRow) els.apiKeyRow.classList.remove('d-none');
-                setAlert('warning', 'Platform Engine API key is required. Enter your API key below or switch to Deep Crawler mode.', true);
+                if (els.apiKeyRow) {
+                    els.apiKeyRow.classList.remove('d-none');
+                    if (els.customApiKeyInput) els.customApiKeyInput.disabled = false;
+                }
+                setAlert('warning', 'Platform Engine API key is required. Enter your API key below or configure it in your workspace settings.', true);
+                if (els.customApiKeyInput) els.customApiKeyInput.focus();
+                return;
+            }
+
+            if (customApiKey && !customApiKey.startsWith('AIzaSy')) {
+                setAlert('danger', 'The API key entered appears to be invalid. Google Maps API keys must begin with "AIzaSy".', true);
                 if (els.customApiKeyInput) els.customApiKeyInput.focus();
                 return;
             }
@@ -1218,7 +1230,7 @@
                 simulate_verification: Boolean(els.verify?.checked),
             };
 
-            if (customApiKey) {
+            if (customApiKey && customApiKey.startsWith('AIzaSy')) {
                 payloadData.api_key = customApiKey;
             }
             if (isGoogleApi && Object.keys(filters).length > 0) {
@@ -1391,13 +1403,23 @@
     if (els.engineBrowser) els.engineBrowser.addEventListener('change', updateEngineModeUi);
     if (els.toggleApiKeyBtn) {
         els.toggleApiKeyBtn.addEventListener('click', () => {
-            if (els.apiKeyRow) els.apiKeyRow.classList.toggle('d-none');
+            if (els.apiKeyRow) {
+                const isHidden = els.apiKeyRow.classList.toggle('d-none');
+                if (els.customApiKeyInput) {
+                    els.customApiKeyInput.disabled = isHidden;
+                    if (!isHidden) {
+                        els.customApiKeyInput.focus();
+                    } else {
+                        els.customApiKeyInput.value = '';
+                    }
+                }
+            }
         });
     }
     if (els.toggleKeyVisibilityBtn && els.customApiKeyInput) {
         els.toggleKeyVisibilityBtn.addEventListener('click', () => {
-            const isPassword = els.customApiKeyInput.type === 'password';
-            els.customApiKeyInput.type = isPassword ? 'text' : 'password';
+            const hasMask = els.customApiKeyInput.style.webkitTextSecurity !== 'none';
+            els.customApiKeyInput.style.webkitTextSecurity = hasMask ? 'none' : 'disc';
         });
     }
 
@@ -1981,6 +2003,14 @@
             }
         } catch (err) {
             console.warn('Unable to restore extractor session:', err);
+        }
+    }
+
+    // Clear and disable customApiKeyInput when hidden on load to avoid browser password autofill
+    if (els.customApiKeyInput) {
+        els.customApiKeyInput.value = '';
+        if (els.apiKeyRow && els.apiKeyRow.classList.contains('d-none')) {
+            els.customApiKeyInput.disabled = true;
         }
     }
 

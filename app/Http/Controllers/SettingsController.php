@@ -75,7 +75,17 @@ class SettingsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'google_maps_api_key' => ['nullable', 'string', 'max:255'],
+            'google_maps_api_key' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $trimmed = trim((string) $value);
+                    if ($trimmed !== '' && ! str_starts_with($trimmed, 'AIzaSy')) {
+                        $fail('The Discovery Engine API key must be a valid Google API key beginning with "AIzaSy".');
+                    }
+                },
+            ],
             'default_engine' => ['required', 'string', 'in:google_api,browser'],
             'default_limit' => ['required', 'integer', 'in:10,25,50,100,200'],
             'auto_email_enrichment' => ['sometimes', 'boolean'],

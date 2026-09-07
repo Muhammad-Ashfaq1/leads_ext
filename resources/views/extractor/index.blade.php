@@ -159,7 +159,7 @@
             <label class="form-label small fw-semibold" for="customApiKeyInput">Discovery Engine API Key</label>
             <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="icon-base ti tabler-key"></i></span>
-                <input type="password" id="customApiKeyInput" class="form-control" placeholder="AIzaSy...">
+                <input type="text" name="custom_engine_platform_key" id="customApiKeyInput" class="form-control font-monospace" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" style="-webkit-text-security: disc;" disabled>
                 <button class="btn btn-outline-secondary" type="button" id="toggleKeyVisibilityBtn"><i class="icon-base ti tabler-eye"></i></button>
             </div>
             <div class="form-text small text-muted">Enter your dedicated Platform API key or configure it in your workspace settings.</div>

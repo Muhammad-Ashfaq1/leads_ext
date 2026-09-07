@@ -94,10 +94,23 @@ class ExtractorController extends Controller
         $tenantKey = $user?->tenant?->google_maps_api_key;
 
         if ($mode === 'google_api') {
-            $configuredKey = $apiKey ?: ($tenantKey ?: config('services.google.maps_api_key'));
+            $systemKey = $tenantKey ?: config('services.google.maps_api_key');
+
+            // Prevent browser password autofill or malformed custom key from corrupting API queries
+            if (! empty($apiKey)) {
+                if (! str_starts_with($apiKey, 'AIzaSy')) {
+                    Log::warning('Ignored invalid Google API key in start request (does not begin with AIzaSy; likely password autofill)', [
+                        'user_id' => $userId,
+                        'key_length' => strlen($apiKey),
+                    ]);
+                    $apiKey = '';
+                }
+            }
+
+            $configuredKey = $apiKey ?: $systemKey;
             if (empty($configuredKey)) {
                 return response()->json([
-                    'message' => 'Google Maps API key is required. Please provide an API key or configure GOOGLE_MAPS_API_KEY in .env.',
+                    'message' => 'Google Maps API key is required. Please provide a valid API key or configure GOOGLE_MAPS_API_KEY in .env.',
                 ], 422);
             }
 
@@ -453,9 +466,20 @@ class ExtractorController extends Controller
     public function stream(Request $request, ExtractionJob $job): StreamedResponse
     {
         if ($job->mode === 'google_api') {
-            $apiKey = $request->query('api_key') ?: session('google_maps_api_key_'.$job->uuid);
-            $filters = session('google_maps_filters_'.$job->uuid, []);
-            $location = session('google_maps_location_'.$job->uuid);
+            $sessionKeyName = 'google_maps_api_key_'.$job->uuid;
+            $sessionFiltersName = 'google_maps_filters_'.$job->uuid;
+            $sessionLocName = 'google_maps_location_'.$job->uuid;
+
+            $apiKey = $request->query('api_key') ?: session($sessionKeyName);
+            $filters = session($sessionFiltersName, []);
+            $location = session($sessionLocName);
+
+            // Clean up temporary session state to prevent database session bloat
+            session()->forget([$sessionKeyName, $sessionFiltersName, $sessionLocName]);
+
+            if (! empty($apiKey) && ! str_starts_with($apiKey, 'AIzaSy')) {
+                $apiKey = null;
+            }
 
             return $this->googlePlacesService->stream($job, $apiKey, $filters, $location);
         }
