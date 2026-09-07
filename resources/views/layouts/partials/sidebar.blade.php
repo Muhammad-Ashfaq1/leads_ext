@@ -31,6 +31,7 @@
         #layout-menu .menu-inner.menu-layout-column {
             display: flex;
             flex-direction: column;
+            min-height: calc(100% - 4.5rem);
             height: 100%;
         }
 
@@ -40,6 +41,12 @@
 
         #layout-menu .menu-copyright {
             pointer-events: none;
+            margin-top: auto;
+        }
+
+        #layout-menu .menu-item-settings-bottom + .menu-copyright,
+        #layout-menu .menu-item-settings-bottom ~ .menu-copyright {
+            margin-top: 0 !important;
         }
 
         #layout-menu .menu-copyright .menu-link {
@@ -152,7 +159,7 @@
 
         @if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
         <!-- Bottom Settings & Copyright (Matching POS) -->
-        <li class="menu-item {{ session()->has('impersonator_id') ? '' : 'menu-item-settings-bottom' }} {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <li class="menu-item menu-item-settings-bottom {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <a href="{{ route('settings.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-settings-cog"></i>
                 <div data-i18n="Settings">Settings</div>
@@ -160,7 +167,7 @@
         </li>
         @endif
 
-        <li class="menu-item menu-copyright">
+        <li class="menu-item menu-copyright {{ auth()->user()?->hasRole(\App\Models\User::ADMIN) ? '' : 'menu-copyright-alone' }}">
             <div class="menu-link">
                 <div>&copy; {{ date('Y') }} VektorLeads</div>
             </div>
