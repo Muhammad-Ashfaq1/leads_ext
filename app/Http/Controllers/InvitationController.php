@@ -28,7 +28,7 @@ class InvitationController extends Controller
         if ($isSuperAdmin && ! empty($validated['tenant_id'])) {
             $tenant = Tenant::findOrFail($validated['tenant_id']);
         } else {
-            if (! $currentUser->isAdmin() && ! $isSuperAdmin) {
+            if (! $currentUser->hasRole(User::ADMIN)) {
                 abort(403, 'Only organization administrators can send invitations.');
             }
             $tenant = $currentUser->tenant;
@@ -82,12 +82,14 @@ class InvitationController extends Controller
     public function destroy(UserInvitation $invitation): RedirectResponse
     {
         $currentUser = Auth::user();
+        if (! $currentUser || ! $currentUser->hasRole(User::ADMIN)) {
+            abort(403, 'You do not have permission to revoke this invitation.');
+        }
+
         $isSuperAdmin = $currentUser->isSuperAdmin();
 
-        if (! $isSuperAdmin) {
-            if ($invitation->tenant_id !== $currentUser->tenant_id || ! $currentUser->isAdmin()) {
-                abort(403, 'You do not have permission to revoke this invitation.');
-            }
+        if (! $isSuperAdmin && $invitation->tenant_id !== $currentUser->tenant_id) {
+            abort(403, 'You do not have permission to revoke this invitation.');
         }
 
         $email = $invitation->email;

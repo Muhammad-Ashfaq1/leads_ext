@@ -150,6 +150,7 @@
             </li>
         @endif
 
+        @if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
         <!-- Bottom Settings & Copyright (Matching POS) -->
         <li class="menu-item {{ session()->has('impersonator_id') ? '' : 'menu-item-settings-bottom' }} {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <a href="{{ route('settings.index') }}" class="menu-link">
@@ -157,6 +158,7 @@
                 <div data-i18n="Settings">Settings</div>
             </a>
         </li>
+        @endif
 
         <li class="menu-item menu-copyright">
             <div class="menu-link">

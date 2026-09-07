@@ -13,6 +13,16 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ADMIN = 'admin';
+    public const SUPER_ADMIN = 'super_admin';
+    public const USER = 'user';
+    public const MEMBER = 'user';
+
+    public const ROLE_ADMIN = self::ADMIN;
+    public const ROLE_SUPER_ADMIN = self::SUPER_ADMIN;
+    public const ROLE_USER = self::USER;
+    public const ROLE_MEMBER = self::MEMBER;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -63,19 +73,30 @@ class User extends Authenticatable
         return $this->hasMany(GmailAccount::class);
     }
 
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        if ($this->role === self::SUPER_ADMIN) {
+            return true;
+        }
+
+        return in_array($this->role, $roles, true);
+    }
+
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role === self::SUPER_ADMIN;
     }
 
     public function isAdmin(): bool
     {
-        return in_array($this->role, ['super_admin', 'admin'], true);
+        return in_array($this->role, [self::SUPER_ADMIN, self::ADMIN], true);
     }
 
     public function isTenantAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === self::ADMIN;
     }
 
     public function canViewOrganizationLeads(): bool

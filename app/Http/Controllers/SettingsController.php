@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,11 @@ class SettingsController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
+
+        if (! $user->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can access organization settings.');
+        }
+
         $tenant = $user->tenant;
         $isSuperAdmin = $user->isSuperAdmin();
 
@@ -63,7 +69,7 @@ class SettingsController extends Controller
         $user = Auth::user();
         $tenant = $user->tenant;
 
-        if (! $tenant || (! $user->isAdmin() && ! $user->isSuperAdmin())) {
+        if (! $tenant || ! $user->hasRole(User::ADMIN)) {
             abort(403, 'Only administrators can modify organization settings.');
         }
 
@@ -82,7 +88,7 @@ class SettingsController extends Controller
 
         $tenant->update([
             'name' => $validated['name'],
-            'google_maps_api_key' => $validated['google_maps_api_key'] ? trim($validated['google_maps_api_key']) : null,
+            'google_maps_api_key' => ! empty($validated['google_maps_api_key']) ? trim($validated['google_maps_api_key']) : null,
             'settings' => $settings,
         ]);
 

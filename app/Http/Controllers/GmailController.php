@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GmailAccount;
 use App\Models\GmailMessage;
+use App\Models\User;
 use App\Services\EmailReplyService;
 use App\Services\GmailService;
 use App\Services\HostingerEmailService;
@@ -106,6 +107,11 @@ class GmailController extends Controller
 
     public function connectHostinger(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user || ! $user->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can connect email accounts.');
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string'],
@@ -116,7 +122,6 @@ class GmailController extends Controller
             'smtp_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
         ]);
 
-        $user = Auth::user();
         $email = strtolower(trim($validated['email']));
         $password = $validated['password'];
         $name = trim($validated['name'] ?? '') ?: explode('@', $email)[0];
@@ -166,6 +171,11 @@ class GmailController extends Controller
 
     public function connect(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user || ! $user->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can connect email accounts.');
+        }
+
         if (! $this->gmailService->isConfigured()) {
             return redirect()->route('settings.index', ['tab' => 'gmail'])->with(
                 'error',
@@ -180,6 +190,11 @@ class GmailController extends Controller
 
     public function callback(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user || ! $user->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can connect email accounts.');
+        }
+
         $code = $request->query('code');
         $error = $request->query('error');
 
@@ -192,7 +207,6 @@ class GmailController extends Controller
         }
 
         try {
-            $user = Auth::user();
             $account = $this->gmailService->handleCallback($code, $user);
             $account->update(['provider' => 'gmail']);
 
@@ -209,8 +223,8 @@ class GmailController extends Controller
     {
         $user = Auth::user();
 
-        if ($account->tenant_id !== $user->tenant_id && ! $user->isSuperAdmin()) {
-            abort(403, 'Unauthorized action.');
+        if (! $user || ! $user->hasRole(User::ADMIN) || ($account->tenant_id !== $user->tenant_id && ! $user->isSuperAdmin())) {
+            abort(403, 'Only administrators can disconnect email accounts.');
         }
 
         $account->update(['is_active' => false]);

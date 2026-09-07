@@ -49,28 +49,32 @@
                         <span>Sync Now</span>
                     </button>
 
-                    <button type="button" class="btn btn-sm btn-outline-primary shadow-xs" data-bs-toggle="modal" data-bs-target="#connectHostingerModal" title="Account settings">
-                        <i class="icon-base ti tabler-settings"></i>
-                    </button>
-
-                    <form action="{{ route('gmail.disconnect', $account->id) }}" method="POST" class="d-inline"
-                          data-pos-confirm="Disconnect this email account from your workspace?"
-                          data-pos-confirm-title="Disconnect Email?"
-                          data-pos-confirm-text="Yes, Disconnect"
-                          data-pos-confirm-tone="danger">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-xs" title="Disconnect Email Account">
-                            <i class="icon-base ti tabler-plug-connected-x"></i>
+                    @if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
+                        <button type="button" class="btn btn-sm btn-outline-primary shadow-xs" data-bs-toggle="modal" data-bs-target="#connectHostingerModal" title="Account settings">
+                            <i class="icon-base ti tabler-settings"></i>
                         </button>
-                    </form>
+
+                        <form action="{{ route('gmail.disconnect', $account->id) }}" method="POST" class="d-inline"
+                              data-pos-confirm="Disconnect this email account from your workspace?"
+                              data-pos-confirm-title="Disconnect Email?"
+                              data-pos-confirm-text="Yes, Disconnect"
+                              data-pos-confirm-tone="danger">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger shadow-xs" title="Disconnect Email Account">
+                                <i class="icon-base ti tabler-plug-connected-x"></i>
+                            </button>
+                        </form>
+                    @endif
                 @else
-                    <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#connectHostingerModal">
-                        <i class="icon-base ti tabler-mail-plus"></i> Connect Hostinger Email
-                    </button>
-                    @if ($isConfigured)
-                        <a href="{{ route('gmail.connect') }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
-                            <i class="icon-base ti tabler-brand-google"></i> Connect Gmail
-                        </a>
+                    @if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
+                        <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#connectHostingerModal">
+                            <i class="icon-base ti tabler-mail-plus"></i> Connect Hostinger Email
+                        </button>
+                        @if ($isConfigured)
+                            <a href="{{ route('gmail.connect') }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                                <i class="icon-base ti tabler-brand-google"></i> Connect Gmail
+                            </a>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -85,16 +89,20 @@
                 <p class="text-secondary mx-auto mb-3" style="max-width: 540px;">
                     Connect your <strong>Hostinger Business Email</strong> or Google account to automatically pull in customer replies, view lead emails in one dashboard, and reply directly from the app.
                 </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-primary px-4 py-2" data-bs-toggle="modal" data-bs-target="#connectHostingerModal">
-                        <i class="icon-base ti tabler-mail-plus me-1"></i> Connect Hostinger Email (IMAP &amp; SMTP)
-                    </button>
-                    @if ($isConfigured)
-                        <a href="{{ route('gmail.connect') }}" class="btn btn-outline-primary px-4 py-2">
-                            <i class="icon-base ti tabler-brand-google me-1"></i> Connect Google Account
-                        </a>
-                    @endif
-                </div>
+                @if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-primary px-4 py-2" data-bs-toggle="modal" data-bs-target="#connectHostingerModal">
+                            <i class="icon-base ti tabler-mail-plus me-1"></i> Connect Hostinger Email (IMAP &amp; SMTP)
+                        </button>
+                        @if ($isConfigured)
+                            <a href="{{ route('gmail.connect') }}" class="btn btn-outline-primary px-4 py-2">
+                                <i class="icon-base ti tabler-brand-google me-1"></i> Connect Google Account
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-muted small mb-0">Please contact your workspace administrator to connect your organization's email account.</p>
+                @endif
             </div>
         @endif
     </div>
@@ -341,6 +349,7 @@
     @endif
 </div>
 
+@if (auth()->user()?->hasRole(\App\Models\User::ADMIN))
 <!-- Connect Hostinger Modal -->
 <div class="modal fade" id="connectHostingerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -424,6 +433,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <!-- Reply to Email Modal -->
 <div class="modal fade" id="replyModal" tabindex="-1" aria-hidden="true">

@@ -57,12 +57,8 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::delete('/email-templates/{emailTemplate}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
     Route::post('/email-templates/{emailTemplate}/default', [EmailTemplateController::class, 'setDefault'])->name('email-templates.default');
 
-    // Gmail / Hostinger Email Integration & Inbox Hub
+    // Gmail / Hostinger Inbox Hub & Messaging (All Workspace Members)
     Route::get('/gmail', [\App\Http\Controllers\GmailController::class, 'index'])->name('gmail.index');
-    Route::get('/gmail/connect', [\App\Http\Controllers\GmailController::class, 'connect'])->name('gmail.connect');
-    Route::post('/gmail/connect-hostinger', [\App\Http\Controllers\GmailController::class, 'connectHostinger'])->name('gmail.connect-hostinger');
-    Route::get('/gmail/callback', [\App\Http\Controllers\GmailController::class, 'callback'])->name('gmail.callback');
-    Route::post('/gmail/disconnect/{account}', [\App\Http\Controllers\GmailController::class, 'disconnect'])->name('gmail.disconnect');
     Route::post('/gmail/sync/{account?}', [\App\Http\Controllers\GmailController::class, 'sync'])->name('gmail.sync');
     Route::get('/gmail/messages/{message}', [\App\Http\Controllers\GmailController::class, 'show'])->name('gmail.messages.show');
     Route::post('/gmail/messages/{message}/reply', [\App\Http\Controllers\GmailController::class, 'sendReply'])->name('gmail.messages.reply');
@@ -74,25 +70,34 @@ Route::middleware(['auth', TenantMiddleware::class])->group(function (): void {
     Route::get('/jobs', [JobsController::class, 'index'])->name('jobs.index');
     Route::get('/jobs/{job}/export', [ExtractorController::class, 'export'])->name('extractor.job.export');
 
-    // Team Members
-    Route::get('/users', [UsersController::class, 'index'])->name('users.index');
-    Route::post('/users', [UsersController::class, 'store'])->name('users.store');
-    Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
-    Route::get('/users/{user}/impersonate', [ImpersonationController::class, 'impersonateUser'])->name('users.impersonate');
-
-    // Invitations
-    Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
-    Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
-
-    // Profile Settings
+    // Profile Settings (All Workspace Members)
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
-    // Organization & Extractor Settings
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    // Admin Only: Workspace Settings, Team Members, Invitations & Email Integrations
+    Route::middleware(RoleMiddleware::class.':admin')->group(function (): void {
+        // Team Members
+        Route::get('/users', [UsersController::class, 'index'])->name('users.index');
+        Route::post('/users', [UsersController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+        Route::get('/users/{user}/impersonate', [ImpersonationController::class, 'impersonateUser'])->name('users.impersonate');
+
+        // Invitations
+        Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
+        Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
+
+        // Organization & Extractor Settings (General & Limits, Discovery Engine API, Gmail Integration, Team Members)
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+        // Gmail & Hostinger Email Account Integration (Connect & Disconnect)
+        Route::get('/gmail/connect', [\App\Http\Controllers\GmailController::class, 'connect'])->name('gmail.connect');
+        Route::post('/gmail/connect-hostinger', [\App\Http\Controllers\GmailController::class, 'connectHostinger'])->name('gmail.connect-hostinger');
+        Route::get('/gmail/callback', [\App\Http\Controllers\GmailController::class, 'callback'])->name('gmail.callback');
+        Route::post('/gmail/disconnect/{account}', [\App\Http\Controllers\GmailController::class, 'disconnect'])->name('gmail.disconnect');
+    });
 
     // Super Admin Only
     Route::middleware(RoleMiddleware::class.':super_admin')->group(function (): void {

@@ -11,22 +11,24 @@
         Profile
     </a>
 </li>
-@if ($authUser?->tenant)
+@if ($authUser?->hasRole(\App\Models\User::ADMIN))
+    @if ($authUser?->tenant)
+        <li>
+            <a href="{{ route('settings.index', ['tab' => 'team']) }}"
+               class="dropdown-item {{ request()->get('tab') === 'team' ? 'active' : '' }}">
+                <i class="{{ $iconClass }} tabler-users me-2"></i>
+                Team Members
+            </a>
+        </li>
+    @endif
     <li>
-        <a href="{{ route('settings.index', ['tab' => 'team']) }}"
-           class="dropdown-item {{ request()->get('tab') === 'team' ? 'active' : '' }}">
-            <i class="{{ $iconClass }} tabler-users me-2"></i>
-            Team Members
+        <a href="{{ route('settings.index') }}"
+           class="dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            <i class="{{ $iconClass }} tabler-settings-cog me-2"></i>
+            Workspace Settings
         </a>
     </li>
 @endif
-<li>
-    <a href="{{ route('settings.index') }}"
-       class="dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-        <i class="{{ $iconClass }} tabler-settings-cog me-2"></i>
-        Workspace Settings
-    </a>
-</li>
 @if ($isSuperAdmin)
     <li>
         <a href="{{ route('tenants.index') }}"

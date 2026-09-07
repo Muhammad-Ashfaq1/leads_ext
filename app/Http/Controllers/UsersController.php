@@ -17,12 +17,21 @@ class UsersController extends Controller
 
     public function index(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user || ! $user->hasRole(User::ADMIN)) {
+            abort(403, 'Only organization administrators can view team members.');
+        }
+
         return redirect()->route('settings.index', ['tab' => 'team']);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $currentUser = Auth::user();
+        if (! $currentUser || ! $currentUser->hasRole(User::ADMIN)) {
+            abort(403, 'Only organization administrators can add team members.');
+        }
+
         $isSuperAdmin = $currentUser->isSuperAdmin();
         $tenant = $currentUser->tenant;
 
@@ -48,7 +57,7 @@ class UsersController extends Controller
                 }
             }
         } else {
-            if (! $tenant || ! $currentUser->isAdmin()) {
+            if (! $tenant) {
                 abort(403, 'Only organization administrators can add team members.');
             }
 
@@ -82,14 +91,14 @@ class UsersController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $currentUser = Auth::user();
+        if (! $currentUser || ! $currentUser->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can update team members.');
+        }
+
         $isSuperAdmin = $currentUser->isSuperAdmin();
 
         if (! $isSuperAdmin && $user->tenant_id !== $currentUser->tenant_id) {
             abort(403);
-        }
-
-        if (! $isSuperAdmin && ! $currentUser->isAdmin()) {
-            abort(403, 'Only administrators can update team members.');
         }
 
         if ($isSuperAdmin) {
@@ -139,6 +148,10 @@ class UsersController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         $currentUser = Auth::user();
+        if (! $currentUser || ! $currentUser->hasRole(User::ADMIN)) {
+            abort(403, 'Only administrators can remove team members.');
+        }
+
         $isSuperAdmin = $currentUser->isSuperAdmin();
 
         if ($user->id === $currentUser->id) {
@@ -146,7 +159,7 @@ class UsersController extends Controller
         }
 
         if (! $isSuperAdmin) {
-            if ($user->tenant_id !== $currentUser->tenant_id || ! $currentUser->isAdmin()) {
+            if ($user->tenant_id !== $currentUser->tenant_id) {
                 abort(403);
             }
             if ($user->role !== 'user') {
