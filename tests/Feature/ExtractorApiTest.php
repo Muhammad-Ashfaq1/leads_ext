@@ -255,7 +255,7 @@ class ExtractorApiTest extends TestCase
             'location' => '90210',
             'mode' => 'google_api',
         ])->assertStatus(422)->assertJsonFragment([
-            'message' => 'Google Maps API key is required. Please provide an API key or configure GOOGLE_MAPS_API_KEY in .env.',
+            'message' => 'Google Maps API key is required. Please provide a valid API key or configure GOOGLE_MAPS_API_KEY in .env.',
         ]);
     }
 
