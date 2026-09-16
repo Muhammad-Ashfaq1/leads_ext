@@ -135,9 +135,14 @@ To support background email inbox synchronization, scheduled outreach, and queue
    ```bash
    /usr/bin/php /home/u407529782/domains/obtainsolutions.com/public_html/leads/artisan schedule:run >> /dev/null 2>&1
    ```
-3. Add a Cron Job running **Every 5 Minutes** for queue processing:
+3. Add a Cron Job running **Every 2 Minutes** for queue processing:
    ```bash
-   /usr/bin/php /home/u407529782/domains/obtainsolutions.com/public_html/leads/artisan queue:work --stop-when-empty >> /dev/null 2>&1
+   /usr/bin/php /home/u407529782/domains/obtainsolutions.com/public_html/leads/artisan queue:work --stop-when-empty --tries=3 --max-time=50 >> /dev/null 2>&1
+   ```
+   *(Note: Never run `--timeout=0` without exit on shared hosting, as CloudLinux LVE will kill the process or cause 503 errors).*
+4. *(Optional)* If you want a standalone cron solely for syncing emails every 5 minutes:
+   ```bash
+   /usr/bin/php /home/u407529782/domains/obtainsolutions.com/public_html/leads/artisan email:sync --limit=50 >> /dev/null 2>&1
    ```
 
 ---
